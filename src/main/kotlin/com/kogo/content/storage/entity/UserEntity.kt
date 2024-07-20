@@ -4,9 +4,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "users")
-data class User (
+data class UserEntity (
     @Id
     var id: String? = "",
     var username: String? = "",
     var email: String? = "",
-)
+) : MongoEntity()

@@ -21,4 +21,5 @@ class MongoDBConfig(
     fun mongoTemplate(): MongoTemplate {
         return MongoTemplate(mongoDatabaseFactory())
     }
+
 }

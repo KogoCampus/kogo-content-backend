@@ -1,14 +1,13 @@
-package com.example.springboot.restapi.interceptor
+package com.kogo.content.logging
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.servlet.HandlerInterceptor
 import org.springframework.web.servlet.ModelAndView
 import java.lang.Exception
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 
-class UserInterceptor: HandlerInterceptor {
-    private val log = KotlinLogging.logger {}
+class RequestInterceptor: HandlerInterceptor {
+    companion object : Logger()
 
     override fun preHandle(
         request: HttpServletRequest,
