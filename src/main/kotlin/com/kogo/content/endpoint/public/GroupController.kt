@@ -1,34 +1,46 @@
 package com.kogo.content.endpoint.public
 
+import com.kogo.content.endpoint.public.model.ApiResponse
 import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.logging.Logger
 import com.kogo.content.service.EntityService
 import com.kogo.content.storage.entity.GroupEntity
 import jakarta.validation.Valid
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/media")
-class GroupController(
-    private val entityService : EntityService<GroupEntity, GroupDto>
+@RequestMapping("media")
+class GroupController @Autowired constructor(
+    private val groupService : EntityService<GroupEntity, GroupDto>
 ) {
-    companion object : Logger()
+    @GetMapping("groups/{id}")
+    fun getGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.find(groupId))
 
-    @GetMapping("/groups/{id}")
-    fun getGroup(@PathVariable("id") groupId: String) {
-        /*ResponseEntity<GroupEntity> {
-            return groupService.find(groupId)?.let {
-                ResponseEntity.ok(it)
-            } ?: ResponseEntity.notFound().build()
-        }*/
+    @PostMapping("groups")
+    fun createGroup(@Valid groupDto: GroupDto) = ApiResponse.success(groupService.create(groupDto))
+
+    @PutMapping("groups/{id}")
+    fun updateGroup(
+        @PathVariable("id") groupId: String,
+        @RequestPart("groupName", required = false) groupName: String?,
+        @RequestPart("description", required = false) description: String?,
+        @RequestPart("tags", required = false) tags: String?,
+        @RequestPart("profileImage", required = false) profileImage: MultipartFile?): ApiResponse {
+
+        val attributes = mapOf(
+            "groupName" to groupName,
+            "description" to description,
+            "tags" to tags,
+            "profileImage" to profileImage
+        ).filterValues { it != null }
+
+        if (attributes.isEmpty())
+            throw IllegalArgumentException("Empty request body")
+
+        return ApiResponse.success(groupService.update(groupId, attributes))
     }
 
-    @PostMapping("/groups")
-    fun createGroup(@Valid @RequestBody groupDto: GroupDto) {
-        /*ResponseEntity<GroupEntity> {
-            return groupService.create(groupDto)?.let {
-                ResponseEntity.ok(it)
-            } ?: ResponseEntity.unprocessableEntity().build()
-        }*/
-    }
+    @DeleteMapping("groups/{id}")
+    fun deleteGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.delete(groupId))
 }

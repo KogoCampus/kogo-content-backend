@@ -10,7 +10,23 @@ data class GroupEntity (
     var id : String? = null,
 
     @Indexed(unique = true)
-    var groupName: String? = "",
+    var groupName: String = "",
 
     var userCount: Int? = 0,
-) : MongoEntity()
+
+    var profileImage: ProfileImage? = null,
+
+    var description: String = "",
+
+    var tags: List<String> = emptyList()
+
+) : MongoEntity() {
+    companion object {
+        fun parseTags(tags: String): List<String> {
+            return tags.replace(" ", "")
+                .split(",")
+                .filter { s -> (s != null && s.length > 0) }
+                .toList()
+        }
+    }
+}

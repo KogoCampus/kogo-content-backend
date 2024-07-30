@@ -1,4 +1,4 @@
-package com.kogo.content.exception
+package com.kogo.content.storage.exception
 
 import kotlin.reflect.KClass
 

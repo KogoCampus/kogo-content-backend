@@ -10,6 +10,5 @@ class HealthIndicator : AbstractHealthIndicator() {
     @Override
     override fun doHealthCheck(builder: Health.Builder) {
         builder.up()
-        // builder.withDetails()
     }
 }

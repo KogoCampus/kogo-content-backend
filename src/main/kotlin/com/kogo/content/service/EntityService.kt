@@ -4,9 +4,6 @@ import com.kogo.content.endpoint.public.model.BaseDto
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.MongoEntity
 import org.springframework.transaction.annotation.Transactional
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.jvm.internal.impl.metadata.ProtoBuf.Constructor
 
 interface EntityService<Entity : MongoEntity, DTO : BaseDto> {
     companion object : Logger()

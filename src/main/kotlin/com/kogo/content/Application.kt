@@ -12,7 +12,5 @@ fun main(args: Array<String>) {
     val logger = KotlinLogging.logger() {}
     runApplication<Application>(*args) {
         setBannerMode(Banner.Mode.CONSOLE);
-        logger.debug { "test" }
-        logger.info { "test info" }
     }
 }

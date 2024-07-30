@@ -1,5 +1,7 @@
 package com.kogo.content.util
 
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.web.multipart.MultipartFile
 import kotlin.random.Random
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -22,7 +24,7 @@ fun <T : Any> mountClass(
 
     val parameters = constructor.parameters
         .map { parameter ->
-            overrides()[parameter.name] ?: getRandomParameterValue(parameter.type)
+            if (parameter.name in overrides()) overrides()[parameter.name] else getRandomParameterValue(parameter.type)
         }
 
     return constructor.call(*parameters.toTypedArray())
@@ -45,7 +47,6 @@ private fun getRandomParameterValue(type: KType): Any {
                 ?: throw IllegalArgumentException("Cannot process types without type arguments: $type")
             List(1) { getRandomParameterValue(elementType) }
         }
-
         classifier?.isData == true -> fixture(classifier)
         classifier?.java?.isEnum == true -> {
             val enumConstants = classifier.java.enumConstants

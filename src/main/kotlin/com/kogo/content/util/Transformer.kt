@@ -6,7 +6,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
 open class Transformer<in IN : Any, out OUT : Any>
-    protected constructor(inClass: KClass<IN>, outClass: KClass<OUT>)
+protected constructor(inClass: KClass<IN>, outClass: KClass<OUT>)
 {
     private val outConstructor = outClass.primaryConstructor!!
     private val inPropertiesByName by lazy {
@@ -15,13 +15,6 @@ open class Transformer<in IN : Any, out OUT : Any>
 
     fun transform(data: IN): OUT = with(outConstructor) {
         callBy(parameters.associateWith { parameter -> argFor(parameter, data) })
-    }
-
-    fun transformByAttributes(attributes: Map<String, Any?>, propertyMap: Map<String, String> = emptyMap()): OUT = with(outConstructor) {
-        callBy(parameters.associateWith { parameter -> when {
-            propertyMap.isNotEmpty() && parameter.name in propertyMap -> attributes[propertyMap[parameter.name]]
-            else -> attributes[parameter.name]
-        } })
     }
 
     /**

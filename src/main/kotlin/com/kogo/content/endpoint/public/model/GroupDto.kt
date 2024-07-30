@@ -3,14 +3,30 @@ package com.kogo.content.endpoint.public.model
 import com.kogo.content.storage.entity.GroupEntity
 import com.kogo.content.util.Transformer
 import jakarta.validation.constraints.NotBlank
+import org.springframework.web.multipart.MultipartFile
+import kotlin.reflect.KParameter
 
 data class GroupDto (
     @field:NotBlank
     var groupName: String = "",
+
+    var description: String = "",
+
+    var tags: String = "",
+
+    var profileImage: MultipartFile? = null
+
 ) : BaseDto() {
     companion object {
-        val transformer: Transformer<GroupDto, GroupEntity> = object :
-            Transformer<GroupDto, GroupEntity>(GroupDto::class, GroupEntity::class) {}
+        val transformer: Transformer<GroupDto, GroupEntity> = object : Transformer<GroupDto, GroupEntity>(GroupDto::class, GroupEntity::class) {
+            override fun argFor(parameter: KParameter, data: GroupDto): Any? {
+                return when (parameter.name) {
+                    "tags" -> with(data) { GroupEntity.parseTags(tags) }
+                    "profileImage" -> null
+                    else -> super.argFor(parameter, data)
+                }
+            }
+        }
     }
 
     fun toEntity(): GroupEntity {
