@@ -6,6 +6,7 @@ import com.kogo.content.service.EntityService
 import com.kogo.content.storage.entity.GroupEntity
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -17,10 +18,16 @@ class GroupController @Autowired constructor(
     @GetMapping("groups/{id}")
     fun getGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.find(groupId))
 
-    @PostMapping("groups")
+    @RequestMapping(
+        path = ["groups"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createGroup(@Valid groupDto: GroupDto) = ApiResponse.success(groupService.create(groupDto))
 
-    @PutMapping("groups/{id}")
+    @RequestMapping(
+        path = ["groups/{id}"],
+        method = [RequestMethod.PUT],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun updateGroup(
         @PathVariable("id") groupId: String,
         @RequestPart("groupName", required = false) groupName: String?,
