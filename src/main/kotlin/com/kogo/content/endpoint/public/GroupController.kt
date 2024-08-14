@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.public
 
-import com.kogo.content.endpoint.public.model.ApiResponse
+import com.kogo.content.endpoint.common.ApiResponse
 import com.kogo.content.endpoint.public.model.GroupDto
 import com.kogo.content.service.EntityService
 import com.kogo.content.storage.entity.GroupEntity

@@ -1,3 +1,3 @@
 package com.kogo.content.storage.exception
 
-class DBAccessException(message: String) : RuntimeException(message)
+class DBAccessException(throwable: Throwable) : RuntimeException(throwable)

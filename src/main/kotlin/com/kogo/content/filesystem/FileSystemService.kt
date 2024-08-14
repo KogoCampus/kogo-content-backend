@@ -99,7 +99,7 @@ class FileSystemService (
 
     fun write(filepath: Path, content: MultipartFile) {
         try {
-            content.transferTo(filepath.toFile())
+            content.transferTo(filepath)
         } catch (e: IOException) {
             val errorMessage = String.format("Failed to write to a file; path=%s;", filepath)
             throw LocalStorageException(errorMessage, e)

@@ -30,7 +30,7 @@ class LocalStorageFileHandler : FileHandler {
         val storePath = fileSystemService.createFile(fileStoreName, fileStoreLocation)
         fileSystemService.write(storePath, content)
         return FileStoreResult(
-            url = storePath.toString(),
+            url = storePath.toAbsolutePath().toString(),
             fileName = fileStoreName,
             metadata = metadata
         )
@@ -43,7 +43,7 @@ class LocalStorageFileHandler : FileHandler {
         val storePath = fileSystemService.createFile(fileStoreName, fileStoreLocation)
         fileSystemService.write(storePath, content)
         return FileStoreResult(
-            url = storePath.toString(),
+            url = storePath.toAbsolutePath().toString(),
             fileName = fileStoreName,
             metadata = metadata
         )

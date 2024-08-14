@@ -45,7 +45,7 @@ class LocalStorageFileHandlerTest {
             fileSystemService.createFile(any(), any())
             fileSystemService.write(tempPath, inputStream)
         }
-        assertEquals(result.url, tempPath.toString())
+        assertEquals(result.url, tempPath.toAbsolutePath().toString())
         assertEquals(result.metadata, metadata)
     }
 
@@ -61,7 +61,7 @@ class LocalStorageFileHandlerTest {
             fileSystemService.createFile(any(), any())
             fileSystemService.write(tempPath, multipartFile)
         }
-        assertEquals(result.url, tempPath.toString())
+        assertEquals(result.url, tempPath.toAbsolutePath().toString())
         assertEquals(result.metadata.originalFileName, "test.txt")
         assertEquals(result.metadata.contentType, "text/plain")
     }

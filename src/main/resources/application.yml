@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: kogo-content-backend
+  data:
+    mongodb:
+      database: kogocontent
+      uri: mongodb://localhost:27017/kogocontent
+      username: admin
+      password: password
+      auto-index-creation: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj
+          jwk-set-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj/.well-known/jwks.json
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+
+management:
+  endpoints:
+    web:
+      base-path: /-
+      exposure:
+        include: health
+
+filehandler:
+  provider: local
+  mountLocation: local
