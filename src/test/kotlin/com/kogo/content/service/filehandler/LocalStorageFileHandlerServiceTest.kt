@@ -1,6 +1,6 @@
 package com.kogo.content.service.filehandler
 
-import com.kogo.content.filesystem.FileSystemService
+import com.kogo.content.filesystem.FileSystem
 import com.kogo.content.util.fixture
 import io.mockk.every
 import io.mockk.mockk
@@ -15,21 +15,21 @@ import java.nio.file.Path
 import kotlin.test.assertEquals
 
 
-class LocalStorageFileHandlerTest {
+class LocalStorageFileHandlerServiceTest {
 
     companion object {
         @TempDir
         lateinit var tempPath: Path
     }
 
-    private val fileSystemService : FileSystemService = mockk()
+    private val fileSystem : FileSystem = mockk()
 
-    private val localStorageFileHandler : LocalStorageFileHandler = LocalStorageFileHandler()
+    private val localStorageFileHandler : LocalStorageFileHandlerService = LocalStorageFileHandlerService()
 
     @BeforeEach
     fun setUp(): Unit {
         ReflectionTestUtils.setField(localStorageFileHandler, "mountLocation", tempPath.toString())
-        ReflectionTestUtils.setField(localStorageFileHandler, "fileSystemService", fileSystemService)
+        ReflectionTestUtils.setField(localStorageFileHandler, "fileSystemService", fileSystem)
     }
 
     @Test
@@ -37,13 +37,13 @@ class LocalStorageFileHandlerTest {
         val inputStream: InputStream = mockk()
         val metadata: FileMetadata = fixture<FileMetadata>()
 
-        every { fileSystemService.createFile(any(), any()) } returns tempPath
-        every { fileSystemService.write(tempPath, inputStream) } returns Unit
+        every { fileSystem.createFile(any(), any()) } returns tempPath
+        every { fileSystem.write(tempPath, inputStream) } returns Unit
         val result = localStorageFileHandler.store(inputStream, metadata)
 
         verify (exactly = 1) {
-            fileSystemService.createFile(any(), any())
-            fileSystemService.write(tempPath, inputStream)
+            fileSystem.createFile(any(), any())
+            fileSystem.write(tempPath, inputStream)
         }
         assertEquals(result.url, tempPath.toAbsolutePath().toString())
         assertEquals(result.metadata, metadata)
@@ -53,13 +53,13 @@ class LocalStorageFileHandlerTest {
     fun `should handle multipart file and store in a file in the filesystem`() {
         val multipartFile = MockMultipartFile("data", "test.txt", "text/plain", "hello world".toByteArray())
 
-        every { fileSystemService.createFile(any(), any()) } returns tempPath
-        every { fileSystemService.write(tempPath, multipartFile) } returns Unit
+        every { fileSystem.createFile(any(), any()) } returns tempPath
+        every { fileSystem.write(tempPath, multipartFile) } returns Unit
         val result = localStorageFileHandler.store(multipartFile)
 
         verify {
-            fileSystemService.createFile(any(), any())
-            fileSystemService.write(tempPath, multipartFile)
+            fileSystem.createFile(any(), any())
+            fileSystem.write(tempPath, multipartFile)
         }
         assertEquals(result.url, tempPath.toAbsolutePath().toString())
         assertEquals(result.metadata.originalFileName, "test.txt")

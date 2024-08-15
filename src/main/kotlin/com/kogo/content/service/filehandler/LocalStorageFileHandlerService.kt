@@ -1,7 +1,6 @@
 package com.kogo.content.service.filehandler
 
-import com.kogo.content.filesystem.FileSystemService
-import com.kogo.content.filesystem.LocalStorageException
+import com.kogo.content.filesystem.FileSystem
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -12,23 +11,23 @@ import java.util.UUID
 
 
 @Component
-class LocalStorageFileHandler : FileHandler {
+class LocalStorageFileHandlerService : FileHandlerService {
 
     @Value("\${filehandler.local.mountLocation}")
     lateinit var mountLocation: String
 
-    lateinit var fileSystemService: FileSystemService
+    lateinit var fileSystem: FileSystem
 
     @PostConstruct
     fun init() {
-        fileSystemService = FileSystemService(mountLocation)
+        fileSystem = FileSystem(mountLocation)
     }
 
     override fun store(content: InputStream, metadata: FileMetadata): FileStoreResult {
         val fileStoreLocation = fileStoreLocation()
         val fileStoreName = fileStoreName(metadata.originalFileName ?: "")
-        val storePath = fileSystemService.createFile(fileStoreName, fileStoreLocation)
-        fileSystemService.write(storePath, content)
+        val storePath = fileSystem.createFile(fileStoreName, fileStoreLocation)
+        fileSystem.write(storePath, content)
         return FileStoreResult(
             url = storePath.toAbsolutePath().toString(),
             fileName = fileStoreName,
@@ -40,8 +39,8 @@ class LocalStorageFileHandler : FileHandler {
         val metadata = FileMetadata.from(content)
         val fileStoreLocation = fileStoreLocation()
         val fileStoreName = fileStoreName(metadata.originalFileName ?: "")
-        val storePath = fileSystemService.createFile(fileStoreName, fileStoreLocation)
-        fileSystemService.write(storePath, content)
+        val storePath = fileSystem.createFile(fileStoreName, fileStoreLocation)
+        fileSystem.write(storePath, content)
         return FileStoreResult(
             url = storePath.toAbsolutePath().toString(),
             fileName = fileStoreName,
