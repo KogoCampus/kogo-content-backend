@@ -15,7 +15,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj
+          issuer-uri: https://kogo-dev.auth.us-west-2.amazoncognito.com
           jwk-set-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj/.well-known/jwks.json
 
 springdoc:
