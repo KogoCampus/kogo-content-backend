@@ -10,20 +10,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class FileSystemServiceTest {
+class FileSystemTest {
 
     companion object {
         @TempDir
         lateinit var tempFolder: Path
     }
 
-    private val fileSystemService = FileSystemService(mountLocation = tempFolder.toString())
+    private val fileSystem = FileSystem(mountLocation = tempFolder.toString())
 
     @Nested
     inner class `when handle a file` {
         @Test
         fun `should create a file`() {
-            fileSystemService.createFile("dummy.txt", "dummy/file/path")
+            fileSystem.createFile("dummy.txt", "dummy/file/path")
             val path = Paths.get(tempFolder.toString(), "dummy/file/path", "dummy.txt")
             assertTrue { Files.exists(path) }
             assertFalse { Files.isDirectory(path) }
@@ -31,18 +31,18 @@ class FileSystemServiceTest {
 
         @Test
         fun `should throw exception if file already exists`() {
-            fileSystemService.createFile("dummy.txt", "dummy/file/path")
+            fileSystem.createFile("dummy.txt", "dummy/file/path")
             assertThrows<LocalStorageException> {
-                fileSystemService.createFile("dummy.txt", "dummy/file/path")
+                fileSystem.createFile("dummy.txt", "dummy/file/path")
             }
         }
 
         @Test
         fun `should delete a file`() {
-            fileSystemService.createFile("dummy.txt", "dummy/file/path")
+            fileSystem.createFile("dummy.txt", "dummy/file/path")
             val path = Paths.get(tempFolder.toString(), "dummy/file/path", "dummy.txt")
             assertTrue { Files.exists(path) }
-            fileSystemService.delete(path.toString())
+            fileSystem.delete(path.toString())
             assertFalse { Files.exists(path) }
         }
     }
@@ -51,7 +51,7 @@ class FileSystemServiceTest {
     inner class `when handle a folder` {
         @Test
         fun `should create a folder`() {
-            fileSystemService.createFolder("dummy")
+            fileSystem.createFolder("dummy")
             val path = Paths.get(tempFolder.toString(), "dummy")
             Assertions.assertTrue(Files.exists(path))
             Assertions.assertTrue(Files.isDirectory(path))
@@ -59,34 +59,34 @@ class FileSystemServiceTest {
 
         @Test
         fun `should throw exception if folder already exists`() {
-            fileSystemService.createFolder("dummy")
+            fileSystem.createFolder("dummy")
             assertThrows<LocalStorageException> {
-                fileSystemService.createFolder("dummy")
+                fileSystem.createFolder("dummy")
             }
         }
 
         @Test
         fun `should delete a folder`() {
-            fileSystemService.createFolder("dummy", "example/file/path")
+            fileSystem.createFolder("dummy", "example/file/path")
             val path = Paths.get(tempFolder.toString(), "example/file/path", "dummy")
             assertTrue(Files.exists(path))
-            fileSystemService.delete(path.toString())
+            fileSystem.delete(path.toString())
             assertFalse { Files.exists(path) }
         }
 
         @Test
         fun `should delete all files and subdirectories in a folder`() {
-            fileSystemService.createFile("dummy1.txt", "example/file/path")
-            fileSystemService.createFile("dummy2.txt", "example/file/path")
-            fileSystemService.createFile("dummy.txt", "example/file/path/dir")
-            fileSystemService.createFile("dummy.txt", "example/file/path/sub/dir")
+            fileSystem.createFile("dummy1.txt", "example/file/path")
+            fileSystem.createFile("dummy2.txt", "example/file/path")
+            fileSystem.createFile("dummy.txt", "example/file/path/dir")
+            fileSystem.createFile("dummy.txt", "example/file/path/sub/dir")
             val path = Paths.get(tempFolder.toString(), "example/file/path")
             assertTrue { Files.exists(path) }
             assertTrue { Files.exists(path.resolve("dummy1.txt")) }
             assertTrue { Files.exists(path.resolve("dummy2.txt")) }
             assertTrue { Files.exists(path.resolve("dir/dummy.txt")) }
             assertTrue { Files.exists(path.resolve("sub/dir/dummy.txt")) }
-            fileSystemService.delete(path.toString())
+            fileSystem.delete(path.toString())
             assertFalse { Files.exists(path) }
             assertFalse { Files.exists(path.resolve("dummy1.txt")) }
             assertFalse { Files.exists(path.resolve("dummy2.txt")) }
@@ -101,8 +101,8 @@ class FileSystemServiceTest {
         val inputStream = content.byteInputStream()
         val fileName = "dummy.txt"
 
-        val path = fileSystemService.createFile(fileName)
-        fileSystemService.write(path, inputStream)
+        val path = fileSystem.createFile(fileName)
+        fileSystem.write(path, inputStream)
 
         val writtenContent = Files.readAllLines(path).joinToString("")
         assertEquals(content, writtenContent)
@@ -118,8 +118,8 @@ class FileSystemServiceTest {
             content.toByteArray()
         )
 
-        val path = fileSystemService.createFile(multipartFile.originalFilename!!)
-        fileSystemService.write(path, multipartFile)
+        val path = fileSystem.createFile(multipartFile.originalFilename!!)
+        fileSystem.write(path, multipartFile)
 
         val writtenContent = Files.readAllLines(path).joinToString("")
         assertEquals(content, writtenContent)
@@ -127,6 +127,6 @@ class FileSystemServiceTest {
 
     @AfterEach
     fun tearDown() {
-        fileSystemService.delete(tempFolder.toString())
+        fileSystem.delete(tempFolder.toString())
     }
 }

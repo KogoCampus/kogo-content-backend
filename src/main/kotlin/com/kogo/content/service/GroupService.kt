@@ -3,16 +3,13 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.public.model.GroupDto
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
-import com.kogo.content.service.filehandler.FileHandler
-import com.kogo.content.storage.exception.DocumentNotFoundException
+import com.kogo.content.service.filehandler.FileHandlerService
 import com.kogo.content.storage.entity.GroupEntity
 import com.kogo.content.storage.entity.ProfileImage
-import com.kogo.content.storage.exception.DBAccessException
 import com.kogo.content.storage.repository.GroupRepository
 import com.kogo.content.storage.repository.findByIdOrThrow
 import com.kogo.content.storage.repository.saveOrThrow
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,7 +22,7 @@ import kotlin.reflect.full.memberProperties
 @Service
 class GroupService @Autowired constructor(
     private val repository: GroupRepository,
-    private val fileHandler: FileHandler
+    private val fileHandlerService: FileHandlerService
 ) : EntityService<GroupEntity, GroupDto> {
 
     fun find(documentId: String): GroupEntity? {
@@ -82,7 +79,7 @@ class GroupService @Autowired constructor(
                 acceptedMediaTypes.toString(), contentType)
             UnsupportedMediaTypeException(errorMessage)
         }
-        val storeResult = fileHandler.store(imageFile)
+        val storeResult = fileHandlerService.store(imageFile)
         return ProfileImage(
             imageUrl = storeResult.url,
             metadata = storeResult.metadata

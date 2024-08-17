@@ -4,10 +4,9 @@ import com.kogo.content.endpoint.public.model.GroupDto
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
 import com.kogo.content.service.filehandler.FileMetadata
 import com.kogo.content.service.filehandler.FileStoreResult
-import com.kogo.content.service.filehandler.LocalStorageFileHandler
+import com.kogo.content.service.filehandler.LocalStorageFileHandlerService
 import com.kogo.content.storage.exception.DocumentNotFoundException
 import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.exception.DBAccessException
 import com.kogo.content.storage.repository.GroupRepository
 import com.kogo.content.util.fixture
 import io.mockk.*
@@ -17,16 +16,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.web.multipart.MultipartFile
-import kotlin.io.path.Path
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
 
 class GroupServiceTest {
 
     private val groupRepository : GroupRepository = mockk()
 
-    private val fileHandler : LocalStorageFileHandler = mockk()
+    private val fileHandler : LocalStorageFileHandlerService = mockk()
 
     private val groupService : GroupService = GroupService(groupRepository, fileHandler)
 

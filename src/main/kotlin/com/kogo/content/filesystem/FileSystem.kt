@@ -1,7 +1,6 @@
 package com.kogo.content.filesystem
 
 import com.kogo.content.logging.Logger
-import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.io.IOException
@@ -11,7 +10,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 
-class FileSystemService (
+class FileSystem (
     private val mountLocation: String
 ) {
     companion object : Logger()

@@ -33,4 +33,5 @@ management:
 
 filehandler:
   provider: local
-  mountLocation: local
+  local:
+    mountLocation: local
