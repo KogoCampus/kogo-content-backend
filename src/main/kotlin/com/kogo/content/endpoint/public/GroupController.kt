@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.public
 
 import com.kogo.content.endpoint.common.ApiResponse
 import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.service.EntityService
+import com.kogo.content.service.GroupService
 import com.kogo.content.storage.entity.GroupEntity
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("media")
 class GroupController @Autowired constructor(
-    private val groupService : EntityService<GroupEntity, GroupDto>
+    private val groupService : GroupService
 ) {
     @GetMapping("groups/{id}")
     fun getGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.find(groupId))

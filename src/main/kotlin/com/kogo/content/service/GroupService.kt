@@ -12,6 +12,7 @@ import com.kogo.content.storage.repository.saveOrThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
@@ -24,13 +25,12 @@ class GroupService @Autowired constructor(
     private val fileHandlerService: FileHandlerService
 ) : EntityService<GroupEntity, GroupDto> {
 
-    companion object : Logger()
-
-    override fun find(documentId: String): GroupEntity? {
+    fun find(documentId: String): GroupEntity? {
         return repository.findByIdOrThrow(documentId)
     }
 
-    override fun create(dto: GroupDto): GroupEntity {
+    @Transactional
+    fun create(dto: GroupDto): GroupEntity {
         val entity = dto.toEntity()
         validateGroupNameIsUnique(entity.groupName)
         dto.profileImage?.takeIf { !it.isEmpty }?.let {
@@ -40,7 +40,8 @@ class GroupService @Autowired constructor(
         return entity
     }
 
-    override fun update(documentId: String, attributes: Map<String, Any?>): GroupEntity? {
+    @Transactional
+    fun update(documentId: String, attributes: Map<String, Any?>): GroupEntity? {
         val updatingEntity = repository.findByIdOrThrow(documentId)
 
         if (attributes.containsKey("groupName") &&
@@ -62,7 +63,8 @@ class GroupService @Autowired constructor(
         return repository.saveOrThrow(updatingEntity)
     }
 
-    override fun delete(documentId: String) {
+    @Transactional
+    fun delete(documentId: String) {
         repository.findByIdOrThrow(documentId)
         repository.deleteById(documentId)
     }

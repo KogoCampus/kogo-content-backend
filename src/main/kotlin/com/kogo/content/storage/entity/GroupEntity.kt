@@ -12,7 +12,7 @@ data class GroupEntity (
     @Indexed(unique = true)
     var groupName: String = "",
 
-    var userCount: Int? = 0,
+    var userCount: Int? = 1,
 
     var profileImage: ProfileImage? = null,
 
