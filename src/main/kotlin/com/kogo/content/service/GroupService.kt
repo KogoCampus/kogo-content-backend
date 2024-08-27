@@ -5,7 +5,6 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
 import com.kogo.content.service.filehandler.FileHandlerService
 import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.entity.ProfileImage
 import com.kogo.content.storage.repository.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType

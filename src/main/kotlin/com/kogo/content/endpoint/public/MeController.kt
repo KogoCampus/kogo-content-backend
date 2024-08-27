@@ -6,7 +6,6 @@ import com.kogo.content.endpoint.public.model.PostDto
 import org.springframework.beans.factory.annotation.Autowired
 import com.kogo.content.service.MeService
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.ProfileImage
 import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
