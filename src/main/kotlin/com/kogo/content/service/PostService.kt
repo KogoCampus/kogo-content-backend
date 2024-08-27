@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile
 class PostService @Autowired constructor(
     private val repository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
-    private val userRepository: UserRepository,
     private val attachmentService: AttachmentService,
     private val groupService: GroupService,
     private val userService: UserService,
@@ -38,23 +37,21 @@ class PostService @Autowired constructor(
         // check if group exists
         val groupEntity = checkGroupExists(groupId)
 
-        // TO BE DELETED - START
-        val user = userRepository.save(userService.createUser("testUser"))
-        entity.author = user
-        // END
-
         entity.group = groupEntity
         val savedPost = repository.save(entity)
 
         val attachments = dto.attachments?.map { file ->
-            attachmentService.saveAttachment(file, savedPost.id)
+            attachmentService.saveAttachment(file, savedPost.id, "post")
         } ?: emptyList()
 
         savedPost.attachments = attachments
 
-        repository.save(savedPost)
-
-        return entity
+        //TO BE DELETED/MODIFIED
+        //START
+        val author = userService.findUser("testUser")
+        savedPost.author = author
+        //END
+        return repository.save(savedPost)
     }
 
     @Transactional
@@ -86,7 +83,7 @@ class PostService @Autowired constructor(
     @Transactional
     fun addAttachment(postId: String, attachmentFile: MultipartFile) {
         val updatingEntity = repository.findByIdOrThrow(postId)
-        val attachment = attachmentService.saveAttachment(attachmentFile, postId)
+        val attachment = attachmentService.saveAttachment(attachmentFile, postId, "post")
         val attachments = updatingEntity.attachments?.plus(attachment)
         updatingEntity.attachments = attachments
         repository.save(updatingEntity)

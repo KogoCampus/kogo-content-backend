@@ -5,4 +5,5 @@ import org.springframework.data.mongodb.repository.MongoRepository
 
 interface GroupRepository : MongoRepository<GroupEntity, String> {
     fun findByGroupName(groupName: String): GroupEntity?
+    fun findByOwnerId(ownerId: String): List<GroupEntity>
 }

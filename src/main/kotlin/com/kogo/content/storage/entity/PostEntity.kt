@@ -2,10 +2,12 @@ package com.kogo.content.storage.entity
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
+@CompoundIndex(def = "{'author.id': 1}")
 data class PostEntity (
     @Id
     var id : String? = null,
