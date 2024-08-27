@@ -23,6 +23,7 @@ data class GroupDto (
                 return when (parameter.name) {
                     "tags" -> with(data) { GroupEntity.parseTags(tags) }
                     "profileImage" -> null
+                    "owner" -> null
                     else -> super.argFor(parameter, data)
                 }
             }

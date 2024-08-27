@@ -19,4 +19,6 @@ data class Attachment(
     var metadata: FileMetadata,
 
     var post: String? = null,
+    var group: String? = null,
+    var user: String? = null,
 )

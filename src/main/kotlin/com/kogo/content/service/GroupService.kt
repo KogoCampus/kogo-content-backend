@@ -5,10 +5,7 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
 import com.kogo.content.service.filehandler.FileHandlerService
 import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.entity.ProfileImage
-import com.kogo.content.storage.repository.GroupRepository
-import com.kogo.content.storage.repository.findByIdOrThrow
-import com.kogo.content.storage.repository.saveOrThrow
+import com.kogo.content.storage.repository.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -22,7 +19,9 @@ import kotlin.reflect.full.memberProperties
 @Service
 class GroupService @Autowired constructor(
     private val repository: GroupRepository,
-    private val fileHandlerService: FileHandlerService
+    private val attachmentRepository: AttachmentRepository,
+    private val attachmentService: AttachmentService,
+    private val userService: UserService
 ) : EntityService<GroupEntity, GroupDto> {
 
     fun find(documentId: String): GroupEntity? {
@@ -33,11 +32,20 @@ class GroupService @Autowired constructor(
     fun create(dto: GroupDto): GroupEntity {
         val entity = dto.toEntity()
         validateGroupNameIsUnique(entity.groupName)
-        dto.profileImage?.takeIf { !it.isEmpty }?.let {
-            entity.profileImage = processProfileImageMultipart(it)
+        val newGroup = repository.saveOrThrow(entity)
+
+        val profileImage = dto.profileImage?.takeIf { !it.isEmpty }?.let {
+            attachmentService.saveAttachment(it, newGroup.id, "group")
         }
-        repository.saveOrThrow(entity)
-        return entity
+        newGroup.profileImage = profileImage
+
+        //TO BE DELETED/MODIFIED
+        //START
+        val owner = userService.findUser("testUser")
+        newGroup.owner = owner
+        //END
+
+        return repository.saveOrThrow(newGroup)
     }
 
     @Transactional
@@ -53,7 +61,17 @@ class GroupService @Autowired constructor(
         val properties = GroupEntity::class.memberProperties.associateBy(KProperty<*>::name)
         val mutableAttributes = attributes.toMutableMap()
         mutableAttributes.takeIf { "tags" in it }?.let { it["tags"] = GroupEntity.parseTags(it["tags"] as String) }
-        mutableAttributes.takeIf { "profileImage" in it }?.let { it["profileImage"] = processProfileImageMultipart(it["profileImage"] as MultipartFile) }
+        mutableAttributes.takeIf { "profileImage" in it }?.let {
+            val newProfileImageFile = it["profileImage"] as MultipartFile
+            val newAttachment = attachmentService.saveAttachment(newProfileImageFile, documentId, "group")
+
+            updatingEntity.profileImage?.let { existingAttachment ->
+                existingAttachment.group = null
+                attachmentRepository.save(existingAttachment)
+            }
+
+            it["profileImage"] = newAttachment
+        }
         mutableAttributes.forEach { (name, value) ->
             properties[name]
                 .takeIf { it is KMutableProperty<*> }
@@ -65,25 +83,14 @@ class GroupService @Autowired constructor(
 
     @Transactional
     fun delete(documentId: String) {
-        repository.findByIdOrThrow(documentId)
-        repository.deleteById(documentId)
-    }
-
-    private fun processProfileImageMultipart(imageFile: MultipartFile): ProfileImage {
-        val acceptedMediaTypes = arrayOf(
-            MediaType.IMAGE_PNG_VALUE,
-            MediaType.IMAGE_JPEG_VALUE
-        )
-        imageFile.takeIf { it.contentType in acceptedMediaTypes } ?: throw with(imageFile) {
-            val errorMessage = String.format("Invalid media type for profile image. Accepted types are: %s, but provided: %s.",
-                acceptedMediaTypes.toString(), contentType)
-            UnsupportedMediaTypeException(errorMessage)
+        val group = repository.findByIdOrThrow(documentId)
+        group.profileImage?.id?.let { profileImageId ->
+            attachmentRepository.findById(profileImageId).ifPresent { attachment ->
+                attachment.group = null
+                attachmentRepository.save(attachment)
+            }
         }
-        val storeResult = fileHandlerService.store(imageFile)
-        return ProfileImage(
-            imageUrl = storeResult.url,
-            metadata = storeResult.metadata
-        )
+        repository.deleteById(documentId)
     }
 
     private fun validateGroupNameIsUnique(groupName: String) {

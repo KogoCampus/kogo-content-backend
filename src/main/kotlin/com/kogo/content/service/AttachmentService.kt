@@ -13,7 +13,7 @@ class AttachmentService(
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandlerService
 ) {
-    fun saveAttachment(file: MultipartFile, postId: String?) : Attachment {
+    fun saveAttachment(file: MultipartFile, entityId: String?, entityType: String) : Attachment {
         val acceptedMediaTypes = arrayOf(
             MediaType.IMAGE_PNG_VALUE,
             MediaType.IMAGE_JPEG_VALUE
@@ -21,14 +21,19 @@ class AttachmentService(
         file.takeIf { it.contentType in acceptedMediaTypes } ?: throw with(file) {
             val errorMessage = String.format("Invalid media type for profile image. Accepted types are: %s, but provided: %s.",
                 acceptedMediaTypes.toString(), contentType)
-            UnsupportedMediaTypeException("Invalid media type.")
+            UnsupportedMediaTypeException(errorMessage)
         }
         val storeResult = fileHandler.store(file)
         val attachment = Attachment(
             imageUrl = storeResult.url,
             metadata = storeResult.metadata,
-            post = postId
         )
+        when (entityType.lowercase()) {
+            "post" -> attachment.post = entityId
+            "group" -> attachment.group = entityId
+            "user" -> attachment.user = entityId
+            else -> throw IllegalArgumentException("Unsupported entity type: $entityType")
+        }
         return attachmentRepository.save(attachment)
     }
 }
