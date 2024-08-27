@@ -14,9 +14,6 @@ class PostDto (
     @field:NotBlank
     var content: String = "",
 
-    @field:NotBlank
-    var group: String = "",
-
     var attachments: List<MultipartFile>? = null
 
 ) : BaseDto() {
