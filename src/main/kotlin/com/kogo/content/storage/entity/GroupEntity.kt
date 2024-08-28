@@ -16,7 +16,7 @@ data class GroupEntity (
     @Indexed(unique = true)
     var groupName: String = "",
 
-    var userCount: Int? = 1,
+    var userCount: Int = 1,
 
     @DBRef
     var profileImage: Attachment ?= null,

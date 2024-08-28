@@ -27,6 +27,8 @@ repositories {
 
 dependencies {
     val log4jVersion = "2.17.1"
+    implementation ("com.meilisearch.sdk:meilisearch-java:0.14.0")
+    implementation ("org.json:json:20240303")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")

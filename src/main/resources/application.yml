@@ -35,3 +35,7 @@ filehandler:
   provider: local
   local:
     mountLocation: local
+
+meilisearch:
+  host: http://localhost:7700
+  apiKey: eGF8XnMo/fQeXWubiKvH24u55RQ+uuBEbQX9R1nkj7s=
