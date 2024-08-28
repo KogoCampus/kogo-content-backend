@@ -29,9 +29,7 @@ class MeilisearchService(
     private val postIndex: Index = client.index("posts")
 
     override fun searchGroups(query: String): List<Map<String, Any>> {
-        println(query)
         val searchResult: SearchResult = groupIndex.search(query)
-        println(searchResult)
 
         val gson = Gson()
         val type = object : TypeToken<Map<String, Any>>() {}.type
@@ -55,10 +53,8 @@ class MeilisearchService(
             put("description", group.description)
             put("tags", JSONArray(group.tags))
         }
-        println(document.toString())
         val jsonArray = JSONArray().put(document)
         val documents = jsonArray.toString()
-        println(documents)
         groupIndex.addDocuments(documents)
     }
 
