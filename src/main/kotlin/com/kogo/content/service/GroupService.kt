@@ -35,7 +35,7 @@ class GroupService @Autowired constructor(
         val newGroup = repository.saveOrThrow(entity)
 
         val profileImage = dto.profileImage?.takeIf { !it.isEmpty }?.let {
-            attachmentService.saveAttachment(it, newGroup.id, "group")
+            attachmentService.saveAttachment(it, newGroup.id)
         }
         newGroup.profileImage = profileImage
 
@@ -63,10 +63,10 @@ class GroupService @Autowired constructor(
         mutableAttributes.takeIf { "tags" in it }?.let { it["tags"] = GroupEntity.parseTags(it["tags"] as String) }
         mutableAttributes.takeIf { "profileImage" in it }?.let {
             val newProfileImageFile = it["profileImage"] as MultipartFile
-            val newAttachment = attachmentService.saveAttachment(newProfileImageFile, documentId, "group")
+            val newAttachment = attachmentService.saveAttachment(newProfileImageFile, documentId)
 
             updatingEntity.profileImage?.let { existingAttachment ->
-                existingAttachment.group = null
+                existingAttachment.parent = null
                 attachmentRepository.save(existingAttachment)
             }
 
@@ -86,7 +86,7 @@ class GroupService @Autowired constructor(
         val group = repository.findByIdOrThrow(documentId)
         group.profileImage?.id?.let { profileImageId ->
             attachmentRepository.findById(profileImageId).ifPresent { attachment ->
-                attachment.group = null
+                attachment.parent = null
                 attachmentRepository.save(attachment)
             }
         }

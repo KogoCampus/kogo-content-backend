@@ -41,10 +41,10 @@ class MeService @Autowired constructor(
                 "username" -> if (value is String) updatingUser.username = value
                 "profileImage" -> if (value is MultipartFile) {
                     updatingUser.profileImage?.let { currentProfileImage ->
-                            currentProfileImage.user = null
+                            currentProfileImage.parent = null
                             attachmentRepository.save(currentProfileImage)
                     }
-                    val newAttachment = attachmentService.saveAttachment(value, updatingUser.id, "user")
+                    val newAttachment = attachmentService.saveAttachment(value, updatingUser.id)
                     updatingUser.profileImage = newAttachment
                 }
             }

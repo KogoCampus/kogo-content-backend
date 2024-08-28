@@ -18,7 +18,7 @@ class UserService @Autowired constructor(
         val savedUser = repository.saveOrThrow(newUser)
 
         val profileImage = userDto.profileImage?.takeIf { !it.isEmpty }?.let {
-            attachmentService.saveAttachment(it, savedUser.id, "user")
+            attachmentService.saveAttachment(it, savedUser.id)
         }
         savedUser.profileImage = profileImage
         return repository.saveOrThrow(newUser)

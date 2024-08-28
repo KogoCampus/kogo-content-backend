@@ -13,7 +13,7 @@ class AttachmentService(
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandlerService
 ) {
-    fun saveAttachment(file: MultipartFile, entityId: String?, entityType: String) : Attachment {
+    fun saveAttachment(file: MultipartFile, entityId: String?) : Attachment {
         val acceptedMediaTypes = arrayOf(
             MediaType.IMAGE_PNG_VALUE,
             MediaType.IMAGE_JPEG_VALUE
@@ -28,12 +28,7 @@ class AttachmentService(
             imageUrl = storeResult.url,
             metadata = storeResult.metadata,
         )
-        when (entityType.lowercase()) {
-            "post" -> attachment.post = entityId
-            "group" -> attachment.group = entityId
-            "user" -> attachment.user = entityId
-            else -> throw IllegalArgumentException("Unsupported entity type: $entityType")
-        }
+        attachment.parent = entityId
         return attachmentRepository.save(attachment)
     }
 }

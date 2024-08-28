@@ -41,7 +41,7 @@ class PostService @Autowired constructor(
         val savedPost = repository.save(entity)
 
         val attachments = dto.attachments?.map { file ->
-            attachmentService.saveAttachment(file, savedPost.id, "post")
+            attachmentService.saveAttachment(file, savedPost.id)
         } ?: emptyList()
 
         savedPost.attachments = attachments
@@ -73,7 +73,7 @@ class PostService @Autowired constructor(
         post.attachments?.forEach { file ->
             val attachmentToDelete = file.id?.let { attachmentRepository.findById(it) }
             attachmentToDelete?.ifPresent { attachment ->
-                attachment.post = null
+                attachment.parent = null
                 attachmentRepository.save(attachment)
             }
         }
@@ -83,7 +83,7 @@ class PostService @Autowired constructor(
     @Transactional
     fun addAttachment(postId: String, attachmentFile: MultipartFile) {
         val updatingEntity = repository.findByIdOrThrow(postId)
-        val attachment = attachmentService.saveAttachment(attachmentFile, postId, "post")
+        val attachment = attachmentService.saveAttachment(attachmentFile, postId)
         val attachments = updatingEntity.attachments?.plus(attachment)
         updatingEntity.attachments = attachments
         repository.save(updatingEntity)
@@ -97,7 +97,7 @@ class PostService @Autowired constructor(
         val updatedAttachments = post.attachments?.filter { it.id != attachmentId }
 
         post.attachments = updatedAttachments
-        attachmentToDelete.post = null
+        attachmentToDelete.parent = null
 
         repository.save(post)
         attachmentRepository.save(attachmentToDelete)

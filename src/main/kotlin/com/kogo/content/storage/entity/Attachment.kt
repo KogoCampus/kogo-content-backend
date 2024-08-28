@@ -18,7 +18,5 @@ data class Attachment(
     @Field(name = "meta")
     var metadata: FileMetadata,
 
-    var post: String? = null,
-    var group: String? = null,
-    var user: String? = null,
+    var parent: String? = null
 )
