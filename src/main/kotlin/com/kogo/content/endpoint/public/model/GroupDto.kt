@@ -22,6 +22,7 @@ data class GroupDto (
             override fun argFor(parameter: KParameter, data: GroupDto): Any? {
                 return when (parameter.name) {
                     "tags" -> with(data) { GroupEntity.parseTags(tags) }
+                    "userCount" -> 1
                     "profileImage" -> null
                     "owner" -> null
                     else -> super.argFor(parameter, data)

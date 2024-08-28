@@ -4,6 +4,7 @@ import com.kogo.content.endpoint.public.model.GroupDto
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
 import com.kogo.content.service.filehandler.FileHandlerService
+import com.kogo.content.service.meilisearch.MeilisearchService
 import com.kogo.content.storage.entity.GroupEntity
 import com.kogo.content.storage.repository.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,7 +22,8 @@ class GroupService @Autowired constructor(
     private val repository: GroupRepository,
     private val attachmentRepository: AttachmentRepository,
     private val attachmentService: AttachmentService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val meilisearchService: MeilisearchService
 ) : EntityService<GroupEntity, GroupDto> {
 
     fun find(documentId: String): GroupEntity? {
@@ -44,6 +46,8 @@ class GroupService @Autowired constructor(
         val owner = userService.findUser("testUser")
         newGroup.owner = owner
         //END
+
+        meilisearchService.indexGroup(newGroup)
 
         return repository.saveOrThrow(newGroup)
     }
@@ -90,6 +94,7 @@ class GroupService @Autowired constructor(
                 attachmentRepository.save(attachment)
             }
         }
+        meilisearchService.deleteGroup(group.id)
         repository.deleteById(documentId)
     }
 
