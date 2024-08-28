@@ -2,14 +2,14 @@ package com.kogo.content.endpoint.public
 
 import com.kogo.content.endpoint.common.ApiResponse
 import com.kogo.content.service.GroupService
-import com.kogo.content.service.meilisearch.MeilisearchService
+import com.kogo.content.service.meilisearch.SearchService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("media")
 class SearchController @Autowired constructor(
-    private val meiliSearchService: MeilisearchService
+    private val meiliSearchService: SearchService
 ) {
     @GetMapping("groups")
     fun searchGroups(
