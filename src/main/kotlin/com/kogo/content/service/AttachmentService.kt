@@ -1,5 +1,6 @@
 package com.kogo.content.service
 
+import com.kogo.content.service.exception.MaxFileSizeExceededException
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.service.exception.UnsupportedMediaTypeException
 import com.kogo.content.storage.repository.AttachmentRepository
@@ -18,10 +19,14 @@ class AttachmentService(
             MediaType.IMAGE_PNG_VALUE,
             MediaType.IMAGE_JPEG_VALUE
         )
+        val acceptedFileSize = 128000000 // 128MB
         file.takeIf { it.contentType in acceptedMediaTypes } ?: throw with(file) {
             val errorMessage = String.format("Invalid media type for profile image. Accepted types are: %s, but provided: %s.",
                 acceptedMediaTypes.toString(), contentType)
             UnsupportedMediaTypeException(errorMessage)
+        }
+        file.takeIf { it.size >= acceptedFileSize } ?: throw with(file) {
+            MaxFileSizeExceededException("Expected: < $acceptedFileSize B, Actual: $size B")
         }
         val storeResult = fileHandler.store(file)
         val attachment = Attachment(
