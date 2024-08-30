@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint.public.model
 
+import com.kogo.content.endpoint.public.validator.ValidTag
 import com.kogo.content.storage.entity.GroupEntity
 import com.kogo.content.util.Transformer
 import jakarta.validation.constraints.NotBlank
@@ -12,6 +13,7 @@ data class GroupDto (
 
     var description: String = "",
 
+    @ValidTag
     var tags: String = "",
 
     var profileImage: MultipartFile? = null
