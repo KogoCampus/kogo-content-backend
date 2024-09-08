@@ -1,4 +1,4 @@
-package com.kogo.content.monitoring
+package com.kogo.content.endpoint
 
 import org.springframework.boot.actuate.health.AbstractHealthIndicator
 import org.springframework.boot.actuate.health.Health

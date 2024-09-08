@@ -1,12 +1,10 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.public.model.PostDto
+import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.entity.UserEntity
+import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.repository.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.actuate.metrics.data.DefaultRepositoryTagsProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -16,8 +14,8 @@ class PostService @Autowired constructor(
     private val repository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val attachmentService: AttachmentService,
-    private val groupService: GroupService,
-    private val userService: UserService,
+    private val topicService: TopicService,
+    private val authenticatedUserService: AuthenticatedUserService,
 ) : EntityService<PostEntity, PostDto> {
 
     fun findPostsbyGroupId(groupId: String): List<PostEntity>? {
@@ -48,7 +46,7 @@ class PostService @Autowired constructor(
 
         //TO BE DELETED/MODIFIED
         //START
-        val author = userService.findUser("testUser")
+        val author = authenticatedUserService.findUser("testUser")
         savedPost.author = author
         //END
         return repository.save(savedPost)
@@ -103,8 +101,8 @@ class PostService @Autowired constructor(
         attachmentRepository.save(attachmentToDelete)
     }
 
-    private fun checkGroupExists(groupId: String) : GroupEntity {
-        return groupService.find(groupId)
+    private fun checkGroupExists(groupId: String) : TopicEntity {
+        return topicService.find(groupId)
             ?: throw IllegalArgumentException("Group not found for id: $groupId")
     }
 }

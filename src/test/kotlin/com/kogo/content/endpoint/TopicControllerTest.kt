@@ -1,8 +1,8 @@
-package com.kogo.content.endpoint.public
+package com.kogo.content.endpoint
 
-import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.service.GroupService
-import com.kogo.content.storage.entity.GroupEntity
+import com.kogo.content.endpoint.model.GroupDto
+import com.kogo.content.service.TopicService
+import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.util.fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -20,19 +20,19 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @WebMvcTest
-class GroupControllerTest @Autowired constructor(
+class TopicControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
 
     @MockkBean
-    lateinit var groupService: GroupService
+    lateinit var topicService: TopicService
 
     @Nested
     inner class `when get request to groups`() {
         @Test
         fun `should retrieve an existing group by group id`() {
-            val serviceResponse = fixture<GroupEntity>()
-            every { groupService.find("1") } returns serviceResponse
+            val serviceResponse = fixture<TopicEntity>()
+            every { topicService.find("1") } returns serviceResponse
             mockMvc.get("/media/groups/1")
                 .andExpect { status { isOk() } }
                 .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
@@ -51,7 +51,7 @@ class GroupControllerTest @Autowired constructor(
                 "tags" to "tag1,tag2,tag3",
                 "profileImage" to mockProfileImage
             ) }
-            every { groupService.create(any()) } returns group.toEntity()
+            every { topicService.create(any()) } returns group.toEntity()
             mockMvc.perform(
                 multipart("/media/groups")
                     .part(MockPart("groupName", group.groupName.toByteArray()))
@@ -100,7 +100,7 @@ class GroupControllerTest @Autowired constructor(
                 "description" to "description",
                 "profileImage" to mockProfileImage
             ) }
-            every { groupService.update("1", any()) } returns group.toEntity()
+            every { topicService.update("1", any()) } returns group.toEntity()
             mockMvc.perform(
                 multipart("/media/groups/1")
                     .part(MockPart("groupName", group.groupName.toByteArray()))
@@ -129,7 +129,7 @@ class GroupControllerTest @Autowired constructor(
     inner class `when delete request groups`() {
         @Test
         fun `should delete a group`() {
-            every { groupService.delete("1") } returns Unit
+            every { topicService.delete("1") } returns Unit
             mockMvc.delete("/media/groups/1")
                 .andExpect { status { isOk() } }
                 .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }

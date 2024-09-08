@@ -1,7 +1,7 @@
-package com.kogo.content.endpoint.public
+package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ApiResponse
-import com.kogo.content.endpoint.public.model.PostDto
+import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.service.PostService
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,4 +1,4 @@
-package com.kogo.content.endpoint.public
+package com.kogo.content.endpoint.exception
 
 import com.kogo.content.service.exception.DBAccessException
 import com.kogo.content.service.exception.MaxFileSizeExceededException

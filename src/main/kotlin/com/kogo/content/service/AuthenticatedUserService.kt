@@ -1,19 +1,19 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.public.model.UserDto
-import com.kogo.content.storage.entity.UserEntity
-import com.kogo.content.storage.repository.UserRepository
+import com.kogo.content.endpoint.model.UserDto
+import com.kogo.content.storage.entity.StudentUserEntity
+import com.kogo.content.storage.repository.StudentUserRepository
 import com.kogo.content.storage.repository.saveOrThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 // Temporary file - to be modified or deleted
 @Service
-class UserService @Autowired constructor(
-    private val repository: UserRepository,
+class AuthenticatedUserService @Autowired constructor(
+    private val repository: StudentUserRepository,
     private val attachmentService: AttachmentService
-) : EntityService<UserEntity, UserDto> {
-    fun createUser(userDto: UserDto): UserEntity {
+) : EntityService<StudentUserEntity, UserDto> {
+    fun createUser(userDto: UserDto): StudentUserEntity {
         val newUser = userDto.toEntity()
         val savedUser = repository.saveOrThrow(newUser)
 
@@ -24,7 +24,7 @@ class UserService @Autowired constructor(
         return repository.saveOrThrow(newUser)
     }
 
-    fun findUser(userName: String): UserEntity? {
+    fun findUser(userName: String): StudentUserEntity? {
         return repository.findByUsername(userName)
     }
 }

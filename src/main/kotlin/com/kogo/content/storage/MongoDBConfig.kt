@@ -8,6 +8,8 @@ import org.springframework.data.mongodb.MongoDatabaseFactory
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter
+import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 
 
 @Configuration

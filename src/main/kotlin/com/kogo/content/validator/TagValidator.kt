@@ -1,6 +1,5 @@
-package com.kogo.content.endpoint.public.validator
+package com.kogo.content.validator
 
-import com.kogo.content.storage.entity.GroupEntity
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 

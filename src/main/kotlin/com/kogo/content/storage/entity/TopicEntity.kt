@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
 @CompoundIndex(def = "{'owner.id': 1}")
-data class GroupEntity (
+data class TopicEntity (
     @Id
     var id : String? = null,
 
@@ -23,7 +23,7 @@ data class GroupEntity (
 
     @DBRef
     @JsonBackReference
-    var owner: UserEntity? = null,
+    var owner: StudentUserEntity? = null,
 
     var description: String = "",
 

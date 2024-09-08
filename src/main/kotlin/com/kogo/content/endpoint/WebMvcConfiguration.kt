@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.logging.RequestInterceptor
+import com.kogo.content.endpoint.interceptor.RequestInterceptor
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer

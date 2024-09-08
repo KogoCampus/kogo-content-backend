@@ -1,9 +1,8 @@
-package com.kogo.content.endpoint.public
+package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ApiResponse
-import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.service.GroupService
-import com.kogo.content.storage.entity.GroupEntity
+import com.kogo.content.endpoint.model.GroupDto
+import com.kogo.content.service.TopicService
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -12,17 +11,24 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("media")
-class GroupController @Autowired constructor(
-    private val groupService : GroupService
+class TopicController @Autowired constructor(
+    private val topicService : TopicService
 ) {
     @GetMapping("groups/{id}")
-    fun getGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.find(groupId))
+    fun getGroup(@PathVariable("id") groupId: String) = ApiResponse.success(topicService.find(groupId))
+
+    // @GetMapping("groups")
+    // fun searchGroupsByKeyword(
+    //     @RequestParam(name = "q", defaultValue = "") query: String
+    // ): ApiResponse {
+    //     return ApiResponse.success(meiliSearchService.searchGroups(query))
+    // }
 
     @RequestMapping(
         path = ["groups"],
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun createGroup(@Valid groupDto: GroupDto) = ApiResponse.success(groupService.create(groupDto))
+    fun createGroup(@Valid groupDto: GroupDto) = ApiResponse.success(topicService.create(groupDto))
 
     @RequestMapping(
         path = ["groups/{id}"],
@@ -45,9 +51,9 @@ class GroupController @Autowired constructor(
         if (attributes.isEmpty())
             throw IllegalArgumentException("Empty request body")
 
-        return ApiResponse.success(groupService.update(groupId, attributes))
+        return ApiResponse.success(topicService.update(groupId, attributes))
     }
 
     @DeleteMapping("groups/{id}")
-    fun deleteGroup(@PathVariable("id") groupId: String) = ApiResponse.success(groupService.delete(groupId))
+    fun deleteGroup(@PathVariable("id") groupId: String) = ApiResponse.success(topicService.delete(groupId))
 }

@@ -1,4 +1,4 @@
-package com.kogo.content.endpoint.public.validator
+package com.kogo.content.validator
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload

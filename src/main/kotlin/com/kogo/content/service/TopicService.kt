@@ -1,14 +1,10 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.logging.Logger
-import com.kogo.content.service.exception.UnsupportedMediaTypeException
-import com.kogo.content.service.filehandler.FileHandlerService
-import com.kogo.content.service.meilisearch.MeilisearchService
-import com.kogo.content.storage.entity.GroupEntity
+import com.kogo.content.endpoint.model.GroupDto
+import com.kogo.content.searchengine.MeilisearchService
+import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.repository.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -18,20 +14,20 @@ import kotlin.reflect.full.memberProperties
 
 
 @Service
-class GroupService @Autowired constructor(
-    private val repository: GroupRepository,
+class TopicService @Autowired constructor(
+    private val repository: TopicRepository,
     private val attachmentRepository: AttachmentRepository,
     private val attachmentService: AttachmentService,
-    private val userService: UserService,
+    private val authenticatedUserService: AuthenticatedUserService,
     private val meilisearchService: MeilisearchService
-) : EntityService<GroupEntity, GroupDto> {
+) : EntityService<TopicEntity, GroupDto> {
 
-    fun find(documentId: String): GroupEntity? {
+    fun find(documentId: String): TopicEntity? {
         return repository.findByIdOrThrow(documentId)
     }
 
     @Transactional
-    fun create(dto: GroupDto): GroupEntity {
+    fun create(dto: GroupDto): TopicEntity {
         val entity = dto.toEntity()
         validateGroupNameIsUnique(entity.groupName)
         val newGroup = repository.saveOrThrow(entity)
@@ -43,7 +39,7 @@ class GroupService @Autowired constructor(
 
         //TO BE DELETED/MODIFIED
         //START
-        val owner = userService.findUser("testUser")
+        val owner = authenticatedUserService.findUser("testUser")
         newGroup.owner = owner
         //END
 
@@ -53,7 +49,7 @@ class GroupService @Autowired constructor(
     }
 
     @Transactional
-    fun update(documentId: String, attributes: Map<String, Any?>): GroupEntity? {
+    fun update(documentId: String, attributes: Map<String, Any?>): TopicEntity? {
         val updatingEntity = repository.findByIdOrThrow(documentId)
 
         if (attributes.containsKey("groupName") &&
@@ -62,9 +58,9 @@ class GroupService @Autowired constructor(
             validateGroupNameIsUnique(attributes["groupName"] as String)
         }
 
-        val properties = GroupEntity::class.memberProperties.associateBy(KProperty<*>::name)
+        val properties = TopicEntity::class.memberProperties.associateBy(KProperty<*>::name)
         val mutableAttributes = attributes.toMutableMap()
-        mutableAttributes.takeIf { "tags" in it }?.let { it["tags"] = GroupEntity.parseTags(it["tags"] as String) }
+        mutableAttributes.takeIf { "tags" in it }?.let { it["tags"] = TopicEntity.parseTags(it["tags"] as String) }
         mutableAttributes.takeIf { "profileImage" in it }?.let {
             val newProfileImageFile = it["profileImage"] as MultipartFile
             val newAttachment = attachmentService.saveAttachment(newProfileImageFile, documentId)

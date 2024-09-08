@@ -37,3 +37,6 @@ build/
 
 ### .gradle ###
 .gradle
+
+### bin
+bin/meili_data

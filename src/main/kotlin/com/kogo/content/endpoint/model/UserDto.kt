@@ -1,7 +1,7 @@
-package com.kogo.content.endpoint.public.model
+package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.entity.UserEntity
+import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.StudentUserEntity
 import com.kogo.content.util.Transformer
 import jakarta.validation.constraints.NotBlank
 import org.springframework.web.multipart.MultipartFile
@@ -18,18 +18,18 @@ data class UserDto (
 
 ) : BaseDto() {
     companion object {
-        val transformer: Transformer<UserDto, UserEntity> = object : Transformer<UserDto, UserEntity>(UserDto::class, UserEntity::class ){
+        val transformer: Transformer<UserDto, StudentUserEntity> = object : Transformer<UserDto, StudentUserEntity>(UserDto::class, StudentUserEntity::class ){
             override fun argFor(parameter: KParameter, data: UserDto): Any? {
                 return when (parameter.name) {
                     "profileImage" -> null
-                    "following" -> emptyList<GroupEntity>()
+                    "following" -> emptyList<TopicEntity>()
                     else -> super.argFor(parameter, data)
                 }
             }
         }
     }
 
-    fun toEntity(): UserEntity {
+    fun toEntity(): StudentUserEntity {
         return transformer.transform(this)
     }
 }

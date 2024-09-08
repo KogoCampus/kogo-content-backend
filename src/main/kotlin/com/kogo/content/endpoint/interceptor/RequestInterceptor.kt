@@ -1,5 +1,6 @@
-package com.kogo.content.logging
+package com.kogo.content.endpoint.interceptor
 
+import com.kogo.content.logging.Logger
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.servlet.HandlerInterceptor

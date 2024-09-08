@@ -1,11 +1,10 @@
-package com.kogo.content.endpoint.public
+package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ApiResponse
-import com.kogo.content.endpoint.public.model.UserDto
-import com.kogo.content.endpoint.public.model.PostDto
+import com.kogo.content.endpoint.model.UserDto
 import org.springframework.beans.factory.annotation.Autowired
 import com.kogo.content.service.MeService
-import com.kogo.content.service.UserService
+import com.kogo.content.service.AuthenticatedUserService
 import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
@@ -15,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("media")
 class MeController @Autowired constructor(
     private val meService : MeService,
-    private val userService: UserService
+    private val authenticatedUserService: AuthenticatedUserService
 ) {
     // TO BE DELETED
     // START
@@ -27,7 +26,7 @@ class MeController @Autowired constructor(
     ) fun createUser(
         @Valid userDto: UserDto
     ) : ApiResponse {
-        val user = userService.createUser(userDto)
+        val user = authenticatedUserService.createUser(userDto)
         return ApiResponse.success(user)
     }
     // END

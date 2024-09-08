@@ -1,14 +1,11 @@
-package com.kogo.content.service.meilisearch
+package com.kogo.content.searchengine
 
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.GroupEntity
+import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.UserEntity
 import org.springframework.stereotype.Service
 import com.meilisearch.sdk.Client as MeiliSearchClient
 import com.meilisearch.sdk.Config
 import com.meilisearch.sdk.Index
-import com.meilisearch.sdk.SearchRequest
 import com.meilisearch.sdk.model.SearchResult
 import org.springframework.beans.factory.annotation.Value
 import org.json.JSONObject
@@ -43,7 +40,7 @@ class MeilisearchService(
         TODO()
     }
 
-    override fun indexGroup(group: GroupEntity) {
+    override fun indexGroup(group: TopicEntity) {
         val document = JSONObject().apply {
             put("id", group.id)
             put("groupName", group.groupName)

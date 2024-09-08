@@ -1,6 +1,6 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.public.model.BaseDto
+import com.kogo.content.endpoint.model.BaseDto
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.MongoEntity
 import org.springframework.transaction.annotation.Transactional
