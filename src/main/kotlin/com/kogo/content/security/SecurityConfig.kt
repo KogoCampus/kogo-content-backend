@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 
 @Configuration
@@ -15,6 +16,9 @@ class SecurityConfig {
 
     @Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     lateinit var jwkSetUri: String
+
+    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    lateinit var oauth2IssuerUri: String
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain = http
@@ -27,6 +31,7 @@ class SecurityConfig {
         }
         .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // disable server-side session user
         .oauth2ResourceServer { it.jwt { it.jwkSetUri(jwkSetUri) } }
+        .addFilterBefore(CognitoOAuth2RequestFilter(oauth2IssuerUri), UsernamePasswordAuthenticationFilter::class.java)
         .build()
 
     @Bean
