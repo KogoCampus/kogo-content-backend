@@ -4,6 +4,6 @@ import com.kogo.content.storage.entity.PostEntity
 import org.springframework.data.mongodb.repository.MongoRepository
 
 interface PostRepository: MongoRepository<PostEntity, String> {
-    fun findByGroupId(groupId: String): List<PostEntity>
+    fun findByTopicId(topicId: String): List<PostEntity>
     fun findByAuthorId(authorId: String): List<PostEntity>
 }

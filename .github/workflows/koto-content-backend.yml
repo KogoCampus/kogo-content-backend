@@ -1,0 +1,32 @@
+name: kcback
+on:
+    pull_request:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: [ubuntu-latest]
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.event.pull_request.head.sha }}
+
+            - uses: actions/setup-java@v3
+              with:
+                distribution: temurin
+                java-version: 21
+
+            - name: Run tests
+              run: ./gradlew test
+
+            - name: Gradle Build
+              if: success()
+              run: |
+                  ./gradlew clean build --refresh-dependencies --stacktrace
+
+

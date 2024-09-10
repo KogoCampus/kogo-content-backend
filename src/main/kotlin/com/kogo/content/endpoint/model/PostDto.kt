@@ -1,40 +1,26 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.util.Transformer
+import com.kogo.content.validator.ValidFile
 import jakarta.validation.constraints.NotBlank
+import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
-import kotlin.reflect.KParameter
 
-class PostDto (
+data class PostDto (
     @field:NotBlank
-    var title: String = "",
+    var title: String,
 
     @field:NotBlank
-    var content: String = "",
+    var content: String,
 
-    var attachments: List<MultipartFile>? = null
+    @field:ValidFile(
+        sizeLimit = 128000000, // 128MB
+        acceptedMediaTypes = [MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_JPEG_VALUE],
+        message = "An image must have either 'image/png' or 'image/jpeg' media type and maximum size 128MB")
+    var images: List<MultipartFile> = listOf(),
 
-) : BaseDto() {
-    companion object {
-        val transformer: Transformer<PostDto, PostEntity> = object : Transformer<PostDto, PostEntity>(PostDto::class, PostEntity::class ){
-            override fun argFor(parameter: KParameter, data: PostDto): Any? {
-                return when (parameter.name) {
-                    "comments" -> emptyList<String>()
-                    "commentCount" -> 0
-                    "group" -> null
-                    "viewed" -> false
-                    "liked" -> false
-                    "attachments" -> emptyList<Attachment>()
-                    "author" -> null
-                    else -> super.argFor(parameter, data)
-                }
-            }
-        }
-    }
-
-    fun toEntity(): PostEntity {
-        return transformer.transform(this)
-    }
-}
+    @field:ValidFile(
+        sizeLimit = 0,
+        acceptedMediaTypes = ["video/mp4"],
+        message = "A video must have either 'video/mp4' media type and maximum size 0MB")
+    var videos: List<MultipartFile> = listOf(),
+)

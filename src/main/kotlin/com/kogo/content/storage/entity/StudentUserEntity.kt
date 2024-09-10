@@ -3,6 +3,7 @@ package com.kogo.content.storage.entity
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.validation.constraints.NotBlank
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
 
@@ -12,13 +13,14 @@ data class StudentUserEntity (
     var id: String? = null,
 
     @field:NotBlank
-    var username: String = "",
+    @Indexed(unique = true)
+    var username: String,
 
     @field:NotBlank
-    var email: String = "",
+    var email: String,
 
     @field:NotBlank
-    var schoolId: String = "",
+    var schoolId: String,
 
     @DBRef
     var profileImage: Attachment? = null,
@@ -26,4 +28,4 @@ data class StudentUserEntity (
     @DBRef
     @JsonManagedReference
     var followingTopics: List<TopicEntity>? = emptyList()
-) : MongoEntity()
+)

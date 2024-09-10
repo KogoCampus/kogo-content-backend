@@ -1,6 +1,6 @@
 package com.kogo.content.service
 
-import com.kogo.content.service.filehandler.FileHandlerService
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.entity.PostEntity
 import com.kogo.content.storage.entity.StudentUserEntity
@@ -11,10 +11,10 @@ import com.kogo.content.storage.repository.StudentUserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-
+/*
 @Service
 class MeService @Autowired constructor(
-    private val fileHandlerService: FileHandlerService,
+    private val fileHandler: FileHandler,
     private val topicRepository: TopicRepository,
     private val postRepository: PostRepository,
     private val userRepository: StudentUserRepository,
@@ -71,3 +71,4 @@ class MeService @Autowired constructor(
         return user?.followingTopics ?: emptyList()
     }
 }
+*/

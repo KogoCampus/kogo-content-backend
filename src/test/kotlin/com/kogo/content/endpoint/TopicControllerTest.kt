@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.endpoint.model.GroupDto
+import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.util.fixture
@@ -45,7 +45,7 @@ class TopicControllerTest @Autowired constructor(
         @Test
         fun `should create a group`() {
             val mockProfileImage = MockMultipartFile("profileImage", "image.jpeg", "image/jpeg", "some image".toByteArray())
-            val group = fixture<GroupDto> { mapOf(
+            val group = fixture<TopicDto> { mapOf(
                 "groupName" to "dummy group name",
                 "description" to "description",
                 "tags" to "tag1,tag2,tag3",
@@ -95,7 +95,7 @@ class TopicControllerTest @Autowired constructor(
         @Test
         fun `should update a group`() {
             val mockProfileImage = MockMultipartFile("profileImage", "image.jpeg", "image/jpeg", "some image".toByteArray())
-            val group = fixture<GroupDto> { mapOf(
+            val group = fixture<TopicDto> { mapOf(
                 "groupName" to "dummy group name",
                 "description" to "description",
                 "profileImage" to mockProfileImage

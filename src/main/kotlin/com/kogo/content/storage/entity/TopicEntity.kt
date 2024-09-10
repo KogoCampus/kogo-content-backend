@@ -14,28 +14,19 @@ data class TopicEntity (
     var id : String? = null,
 
     @Indexed(unique = true)
-    var groupName: String = "",
+    var topicName: String,
 
     var userCount: Int = 1,
 
     @DBRef
-    var profileImage: Attachment ?= null,
+    var profileImage: Attachment?,
 
     @DBRef
     @JsonBackReference
-    var owner: StudentUserEntity? = null,
+    var owner: StudentUserEntity?,
 
     var description: String = "",
 
     var tags: List<String> = emptyList()
 
-) : MongoEntity() {
-    companion object {
-        fun parseTags(tags: String): List<String> {
-            return tags.replace(" ", "")
-                .split(",")
-                .filter { s -> (s != null && s.length > 0) }
-                .toList()
-        }
-    }
-}
+)

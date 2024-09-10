@@ -1,103 +1,62 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.model.GroupDto
-import com.kogo.content.searchengine.MeilisearchService
+import com.kogo.content.endpoint.model.TopicDto
+import com.kogo.content.endpoint.model.TopicUpdate
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.repository.*
-import org.springframework.beans.factory.annotation.Autowired
+import com.kogo.content.service.util.Transformer
+import com.kogo.content.service.util.deleteAttachment
+import com.kogo.content.service.util.saveFileAndConvertToAttachment
+import com.kogo.content.storage.entity.StudentUserEntity
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.multipart.MultipartFile
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
+import kotlin.reflect.KParameter
 
 
 @Service
-class TopicService @Autowired constructor(
+class TopicService (
     private val repository: TopicRepository,
     private val attachmentRepository: AttachmentRepository,
-    private val attachmentService: AttachmentService,
-    private val authenticatedUserService: AuthenticatedUserService,
-    private val meilisearchService: MeilisearchService
-) : EntityService<TopicEntity, GroupDto> {
-
-    fun find(documentId: String): TopicEntity? {
-        return repository.findByIdOrThrow(documentId)
-    }
-
-    @Transactional
-    fun create(dto: GroupDto): TopicEntity {
-        val entity = dto.toEntity()
-        validateGroupNameIsUnique(entity.groupName)
-        val newGroup = repository.saveOrThrow(entity)
-
-        val profileImage = dto.profileImage?.takeIf { !it.isEmpty }?.let {
-            attachmentService.saveAttachment(it, newGroup.id)
-        }
-        newGroup.profileImage = profileImage
-
-        //TO BE DELETED/MODIFIED
-        //START
-        val owner = authenticatedUserService.findUser("testUser")
-        newGroup.owner = owner
-        //END
-
-        meilisearchService.indexGroup(newGroup)
-
-        return repository.saveOrThrow(newGroup)
-    }
-
-    @Transactional
-    fun update(documentId: String, attributes: Map<String, Any?>): TopicEntity? {
-        val updatingEntity = repository.findByIdOrThrow(documentId)
-
-        if (attributes.containsKey("groupName") &&
-            attributes["groupName"] != null &&
-            attributes["groupName"] != updatingEntity.groupName) {
-            validateGroupNameIsUnique(attributes["groupName"] as String)
-        }
-
-        val properties = TopicEntity::class.memberProperties.associateBy(KProperty<*>::name)
-        val mutableAttributes = attributes.toMutableMap()
-        mutableAttributes.takeIf { "tags" in it }?.let { it["tags"] = TopicEntity.parseTags(it["tags"] as String) }
-        mutableAttributes.takeIf { "profileImage" in it }?.let {
-            val newProfileImageFile = it["profileImage"] as MultipartFile
-            val newAttachment = attachmentService.saveAttachment(newProfileImageFile, documentId)
-
-            updatingEntity.profileImage?.let { existingAttachment ->
-                existingAttachment.parent = null
-                attachmentRepository.save(existingAttachment)
-            }
-
-            it["profileImage"] = newAttachment
-        }
-        mutableAttributes.forEach { (name, value) ->
-            properties[name]
-                .takeIf { it is KMutableProperty<*> }
-                ?.let { it as KMutableProperty<*> }
-                ?.let { it.setter.call(updatingEntity, value) }
-        }
-        return repository.saveOrThrow(updatingEntity)
-    }
-
-    @Transactional
-    fun delete(documentId: String) {
-        val group = repository.findByIdOrThrow(documentId)
-        group.profileImage?.id?.let { profileImageId ->
-            attachmentRepository.findById(profileImageId).ifPresent { attachment ->
-                attachment.parent = null
-                attachmentRepository.save(attachment)
+    private val fileHandler: FileHandler
+) {
+    private val transformer: Transformer<TopicDto, TopicEntity> = object : Transformer<TopicDto, TopicEntity>(TopicDto::class, TopicEntity::class) {
+        override fun argFor(parameter: KParameter, data: TopicDto): Any? {
+            return when (parameter.name) {
+                "profileImage" -> data.profileImage?.let {
+                    saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
+                else -> super.argFor(parameter, data)
             }
         }
-        meilisearchService.deleteGroup(group.id)
-        repository.deleteById(documentId)
     }
 
-    private fun validateGroupNameIsUnique(groupName: String) {
-        repository.findByGroupName(groupName)?.let {
-            throw IllegalArgumentException(String.format("Duplicate key constraint. Group name must be unique. key=%s; value=%s.", "groupName", groupName))
+    fun find(topicId: String): TopicEntity? = repository.findByIdOrNull(topicId)
+
+    fun findByTopicName(topicName: String): TopicEntity? = repository.findByTopicName(topicName)
+
+    @Transactional
+    fun create(dto: TopicDto, owner: StudentUserEntity): TopicEntity {
+        val topic = transformer.transform(dto)
+        topic.owner = owner
+        // meilisearchService.indexGroup(newGroup)
+        return repository.save(topic)
+    }
+
+    @Transactional
+    fun update(topic: TopicEntity, topicUpdate: TopicUpdate): TopicEntity {
+        with(topicUpdate) {
+            topicName?.let { topic.topicName = it }
+            description?.let { topic.description = it }
+            tags.takeIf { it.isNotEmpty() }?.let { topic.tags = it }
+            profileImage?.let { topic.profileImage = saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
         }
+        return repository.save(topic)
     }
 
+    @Transactional
+    fun delete(topic: TopicEntity) {
+        topic.profileImage?.let { deleteAttachment(it, attachmentRepository) }
+        repository.deleteById(topic.id!!)
+    }
 }
