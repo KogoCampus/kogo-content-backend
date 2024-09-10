@@ -13,17 +13,14 @@ import org.springframework.web.util.DefaultUriBuilderFactory
 
 
 class CognitoOAuth2RequestFilter(
-    val issuerUri: String,
+    private val issuerUri: String,
 ) : OncePerRequestFilter() {
 
     companion object {
         const val COGNITO_GROUPS: String = "cognito:groups"
         const val COGNITO_USERNAME: String = "username"
+        const val COGNITO_EMAIL: String = "email"
     }
-
-    inner class CognitoUserInfoResposne(
-        val test: String
-    )
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -50,7 +47,7 @@ class CognitoOAuth2RequestFilter(
         filterChain.doFilter(request, response)
     }
 
-    fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String? {
+    private fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader("Authorization")
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
             return bearerToken.substring(7)

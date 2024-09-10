@@ -1,23 +1,5 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.public.model.GroupDto
-import com.kogo.content.service.exception.UnsupportedMediaTypeException
-import com.kogo.content.service.filehandler.FileMetadata
-import com.kogo.content.service.filehandler.FileStoreResult
-import com.kogo.content.service.filehandler.LocalStorageFileHandlerService
-import com.kogo.content.storage.exception.DocumentNotFoundException
-import com.kogo.content.storage.entity.GroupEntity
-import com.kogo.content.storage.repository.GroupRepository
-import com.kogo.content.util.fixture
-import io.mockk.*
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import org.springframework.data.repository.findByIdOrNull
-import org.springframework.mock.web.MockMultipartFile
-import kotlin.test.assertEquals
-
 //class GroupServiceTest {
 //
 //    private val groupRepository : GroupRepository = mockk()

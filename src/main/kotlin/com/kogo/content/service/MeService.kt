@@ -1,41 +1,39 @@
 package com.kogo.content.service
 
-import com.kogo.content.service.filehandler.FileHandlerService
-import com.kogo.content.storage.entity.GroupEntity
+import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.UserEntity
+import com.kogo.content.storage.entity.StudentUserEntity
 import com.kogo.content.storage.repository.AttachmentRepository
-import com.kogo.content.storage.repository.GroupRepository
+import com.kogo.content.storage.repository.TopicRepository
 import com.kogo.content.storage.repository.PostRepository
-import com.kogo.content.storage.repository.UserRepository
+import com.kogo.content.storage.repository.StudentUserRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.security.SecurityProperties
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-
+/*
 @Service
 class MeService @Autowired constructor(
-    private val fileHandlerService: FileHandlerService,
-    private val groupRepository: GroupRepository,
+    private val fileHandler: FileHandler,
+    private val topicRepository: TopicRepository,
     private val postRepository: PostRepository,
-    private val userRepository: UserRepository,
+    private val userRepository: StudentUserRepository,
     private val attachmentRepository: AttachmentRepository,
-    private val groupService: GroupService,
+    private val topicService: TopicService,
     private val postService: PostService,
-    private val userService: UserService,
+    private val authenticatedUserService: AuthenticatedUserService,
     private val attachmentService: AttachmentService
 ) {
     // TO BE MODIFIED
-    fun getUser(): UserEntity? {
+    fun getUser(): StudentUserEntity? {
         // TO BE MODIFIED
-        return userService.findUser("testUser")
+        return authenticatedUserService.findUser("testUser")
     }
 
     // TO BE MODIFIED
-    fun updateUserDetails(attributes: Map<String, Any?>): UserEntity? {
+    fun updateUserDetails(attributes: Map<String, Any?>): StudentUserEntity? {
         // TO BE MODIFIED
-        val updatingUser = userService.findUser("testUser")!!
+        val updatingUser = authenticatedUserService.findUser("testUser")!!
         attributes.forEach { (key, value) ->
             when (key) {
                 "username" -> if (value is String) updatingUser.username = value
@@ -55,21 +53,22 @@ class MeService @Autowired constructor(
     // TO BE MODIFIED
     fun getUserPosts(): List<PostEntity>?{
         // TO BE MODIFIED
-        val userId = userService.findUser("testUser")?.id!!
+        val userId = authenticatedUserService.findUser("testUser")?.id!!
         return postRepository.findByAuthorId(userId)
     }
 
     // TO BE MODIFIED
-    fun getUserGroups(): List<GroupEntity>?{
+    fun getUserGroups(): List<TopicEntity>?{
         // TO BE MODIFIED
-        val userId = userService.findUser("testUser")?.id!!
-        return groupRepository.findByOwnerId(userId)
+        val userId = authenticatedUserService.findUser("testUser")?.id!!
+        return topicRepository.findByOwnerId(userId)
     }
 
     // TO BE MODIFIED
-    fun getUserFollowing(): List<GroupEntity>?{
+    fun getUserFollowing(): List<TopicEntity>?{
         // TO BE MODIFIED
-        val user = userService.findUser("testUser")
-        return user?.following ?: emptyList()
+        val user = authenticatedUserService.findUser("testUser")
+        return user?.followingTopics ?: emptyList()
     }
 }
+*/

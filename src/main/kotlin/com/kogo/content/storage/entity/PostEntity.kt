@@ -1,6 +1,5 @@
 package com.kogo.content.storage.entity
 
-import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.mapping.DBRef
@@ -13,18 +12,24 @@ data class PostEntity (
     var id : String? = null,
 
     var title: String = "",
+
+    @DBRef
+    var topic: TopicEntity?,
+
+    @DBRef
+    var author: StudentUserEntity?,
+
     var content: String = "",
 
-    var comments: List<String> = emptyList(),
-    var commentCount: Int = 0,
+    @DBRef
+    var attachments: List<Attachment> = emptyList(),
 
-    @DBRef
-    var author: UserEntity?= null,
-    @DBRef
-    var attachments: List<Attachment>? = emptyList(),
-    @DBRef
-    var group: GroupEntity ?= null,
+    // TODO: comment entity ref
+    var comments: List<String> = emptyList(),
+
+    var viewcount: Int = 0,
+    var likes: Int = 0,
 
     var viewed: Boolean = false,
     var liked: Boolean = false,
-) : MongoEntity()
+)
