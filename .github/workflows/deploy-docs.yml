@@ -6,7 +6,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    build:
+    deploy-docs:
         runs-on: [ubuntu-latest]
 
         steps:
@@ -38,9 +38,16 @@ jobs:
                   curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui-standalone-preset.js -o build/swagger-ui/swagger-ui-standalone-preset.js
                   curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/index.html -o build/swagger-ui/index.html
 
-            - name: Upload Swagger UI and JSON to S3
-              run: |
-                  aws s3 sync build/swagger-ui/ s3://kogo-content-backend-swagger-ui/ --delete
-              env:
-                  AWS_REGION: us-west-2
+            #- name: Upload Swagger UI and JSON to S3
+            #  run: |
+            #      aws s3 sync build/swagger-ui/ s3://kogo-content-backend-swagger-ui/ --delete
+            #  env:
+            #      AWS_REGION: us-west-2
+
+            -  name: Build and Deploy to GitHub Pages
+               uses: peaceiris/actions-gh-pages@v3
+               with:
+                   github_token: ${{ secrets.GITHUB_TOKEN }}
+                   publish_dir: ./build/swagger-ui
+                   publish_branch: gh-pages
 
