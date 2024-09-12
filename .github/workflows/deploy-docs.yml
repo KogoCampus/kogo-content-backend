@@ -3,6 +3,8 @@ on:
     push:
         branches:
             - main
+        paths:
+            - 'src/**'
     workflow_dispatch:
 
 jobs:
@@ -30,14 +32,6 @@ jobs:
             - name: Generate OpenAPI Documentation
               run: ./gradlew generateOpenApiDocs
 
-            - name: Download Swagger UI
-              run: |
-                  mkdir -p build/swagger-ui
-                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui.css -o build/swagger-ui/swagger-ui.css
-                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui-bundle.js -o build/swagger-ui/swagger-ui-bundle.js
-                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui-standalone-preset.js -o build/swagger-ui/swagger-ui-standalone-preset.js
-                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/index.html -o build/swagger-ui/index.html
-
             #- name: Upload Swagger UI and JSON to S3
             #  run: |
             #      aws s3 sync build/swagger-ui/ s3://kogo-content-backend-swagger-ui/ --delete
@@ -48,6 +42,6 @@ jobs:
                uses: peaceiris/actions-gh-pages@v3
                with:
                    deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                   publish_dir: ./build/swagger-ui
+                   publish_dir: ./src/main/swagger-ui
                    publish_branch: gh-pages
 

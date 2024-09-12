@@ -75,7 +75,7 @@ kotlin {
 */
 openApi {
     outputFileName.set("swagger.json")
-    outputDir.set(file("build/swagger-ui"))
+    outputDir.set(file("src/main/swagger-ui"))
     apiDocsUrl.set("http://localhost:8080/api-docs")
 }
 
