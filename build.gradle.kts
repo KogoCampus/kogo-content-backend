@@ -4,6 +4,7 @@ plugins {
     val kotlinVersion = "2.0.0"
     id("org.springframework.boot") version "3.3.1"
     // id("org.jlleitschuh.gradle.ktlint").version("12.1.0")
+    id("it.nicolasfarabegoli.conventional-commits") version "3.1.3"
     id("io.spring.dependency-management") version "1.1.5"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -64,6 +65,26 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
+}
+
+conventionalCommits {
+    val admittedTypes = listOf(
+        "feat",
+        "fix",
+        "chore",
+        "ci",
+        "docs",
+        "revert")
+    warningIfNoGitRoot = true
+    types = admittedTypes
+    scopes = emptyList()
+    successMessage = "Commit message meets Conventional Commit standards..."
+    failureMessage = """
+        The commit message does not meet the Conventional Commit standard.
+        Admitted Types: ${admittedTypes.toString()}.
+        e.g.
+        git commit -m 'chore: upgrade convetional commit plugin version to 3.1.3'
+    """.trimIndent()
 }
 
 tasks.withType<Test> {
