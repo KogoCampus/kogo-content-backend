@@ -17,9 +17,6 @@ class SecurityConfig {
     @Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     lateinit var jwkSetUri: String
 
-    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    lateinit var oauth2IssuerUri: String
-
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain = http
         .csrf { it.disable() }
@@ -31,7 +28,7 @@ class SecurityConfig {
         }
         .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // disable server-side session user
         .oauth2ResourceServer { it.jwt { it.jwkSetUri(jwkSetUri) } }
-        .addFilterBefore(CognitoOAuth2RequestFilter(oauth2IssuerUri), UsernamePasswordAuthenticationFilter::class.java)
+        .addFilterBefore(CognitoOAuth2RequestFilter(), UsernamePasswordAuthenticationFilter::class.java)
         .build()
 
     @Bean

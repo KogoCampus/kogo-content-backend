@@ -2,11 +2,11 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.Response
-import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.logging.Logger
 import com.kogo.content.service.AuthenticatedUserService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
@@ -17,11 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("media")
@@ -29,6 +26,8 @@ class TopicController @Autowired constructor(
     private val topicService : TopicService,
     private val authenticatedUserService: AuthenticatedUserService,
 ) {
+    companion object : Logger()
+
     @GetMapping("topics/{id}")
     @Operation(
         summary = "return a topic info",
@@ -64,7 +63,7 @@ class TopicController @Autowired constructor(
         if (topicService.findByTopicName(topicDto.topicName) != null)
             return Response.error(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
 
-        Response.success(buildTopicResponse(topicService.create(topicDto, authenticatedUserService.currentUserContext())))
+        Response.success(buildTopicResponse(topicService.create(topicDto, authenticatedUserService.getCurrentAuthenticatedUser())))
     }
 
     @RequestMapping(
