@@ -35,7 +35,7 @@ class PostService @Autowired constructor(
         post.topic = topic
         post.author = author
 
-        val attachments = (dto.images + dto.videos).map {
+        val attachments = (dto.images!! + dto.videos!!).map {
             saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
         post.attachments = attachments
         return repository.save(post)
@@ -46,8 +46,8 @@ class PostService @Autowired constructor(
         postUpdate.title?.let { post.title = it }
         postUpdate.content?.let { post.content = it }
 
-        val attachmentsUpdated: List<Attachment> = post.attachments.filter { attachment -> attachment.id !in postUpdate.attachmentDelete }
-        val attachmentAdded = (postUpdate.images + postUpdate.videos).map {
+        val attachmentsUpdated: List<Attachment> = post.attachments.filter { attachment -> attachment.id !in postUpdate.attachmentDelete!! }
+        val attachmentAdded = (postUpdate.images!! + postUpdate.videos!!).map {
             saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
         post.attachments = attachmentsUpdated + attachmentAdded
         return repository.save(post)

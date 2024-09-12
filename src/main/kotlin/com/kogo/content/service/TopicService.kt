@@ -48,7 +48,7 @@ class TopicService (
         with(topicUpdate) {
             topicName?.let { topic.topicName = it }
             description?.let { topic.description = it }
-            tags.takeIf { it.isNotEmpty() }?.let { topic.tags = it }
+            tags!!.takeIf { it.isNotEmpty() }?.let { topic.tags = it }
             profileImage?.let { topic.profileImage = saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
         }
         return repository.save(topic)

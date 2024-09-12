@@ -59,7 +59,7 @@ class TopicController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))],
         )])
-    fun createTopic(@Valid topicDto: TopicDto): Response = run {
+    fun createTopic(@Valid @RequestBody topicDto: TopicDto): Response = run {
         if (topicService.findByTopicName(topicDto.topicName) != null)
             return Response.error(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
 
@@ -79,7 +79,7 @@ class TopicController @Autowired constructor(
         )])
     fun updateGroup(
         @PathVariable("id") topicId: String,
-        @Valid topicUpdate: TopicUpdate): Response = run {
+        @Valid @RequestBody topicUpdate: TopicUpdate): Response = run {
             val topic = topicService.find(topicId) ?: throw ResourceNotFoundException("Topic not found for id: $topicId")
             Response.success(buildTopicResponse(topicService.update(topic, topicUpdate)))
     }

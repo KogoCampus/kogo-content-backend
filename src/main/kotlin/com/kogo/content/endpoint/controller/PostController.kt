@@ -73,14 +73,15 @@ class PostController @Autowired constructor(
         )])
     fun createPost(
         @PathVariable("topicId") topicId: String,
-        @Valid postDto: PostDto) = run {
+        @Valid @RequestBody postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
             Response.success(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), authenticatedUserService.getCurrentAuthenticatedUser(), postDto)))
     }
 
     @RequestMapping(
         path = ["topics/{topicId}/posts/{postId}"],
-        method = [RequestMethod.PUT]
+        method = [RequestMethod.PUT],
+        consumes = [org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE]
     )
     @Operation(
         summary = "update attributes of an existing post",
@@ -92,7 +93,7 @@ class PostController @Autowired constructor(
     fun updatePost(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
-        @Valid postUpdate: PostUpdate): Response = run {
+        @Valid @RequestBody postUpdate: PostUpdate): Response = run {
         val post = postService.find(postId) ?: throw ResourceNotFoundException("Post not found for id: $postId")
         Response.success(buildPostResponse(postService.update(post, postUpdate)))
     }
