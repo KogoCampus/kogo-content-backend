@@ -71,16 +71,18 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "postUpdate",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PostUpdate"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "ok",
@@ -185,7 +187,8 @@
                 "$ref": "#/components/schemas/TopicUpdate"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -244,7 +247,8 @@
                 "$ref": "#/components/schemas/TopicDto"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -316,7 +320,8 @@
                 "$ref": "#/components/schemas/PostDto"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -438,11 +443,6 @@
         }
       },
       "PostUpdate": {
-        "required": [
-          "attachmentDelete",
-          "images",
-          "videos"
-        ],
         "type": "object",
         "properties": {
           "title": {
@@ -454,13 +454,15 @@
           "attachmentDelete": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "list of attachment ids to delete from the post"
             }
           },
           "images": {
             "type": "array",
             "items": {
               "type": "string",
+              "description": "list of image files to add to the post",
               "format": "binary"
             }
           },
@@ -468,6 +470,7 @@
             "type": "array",
             "items": {
               "type": "string",
+              "description": "list of video files to add to the post",
               "format": "binary"
             }
           }
@@ -534,9 +537,6 @@
         }
       },
       "TopicUpdate": {
-        "required": [
-          "tags"
-        ],
         "type": "object",
         "properties": {
           "topicName": {
@@ -548,7 +548,8 @@
           "tags": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
             }
           },
           "profileImage": {
@@ -560,7 +561,6 @@
       "TopicDto": {
         "required": [
           "description",
-          "tags",
           "topicName"
         ],
         "type": "object",
@@ -574,7 +574,8 @@
           "tags": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "list of tags to attach to the topic. Valid tag must not contain any special characters."
             }
           },
           "profileImage": {
@@ -586,9 +587,7 @@
       "PostDto": {
         "required": [
           "content",
-          "images",
-          "title",
-          "videos"
+          "title"
         ],
         "type": "object",
         "properties": {
@@ -602,6 +601,7 @@
             "type": "array",
             "items": {
               "type": "string",
+              "description": "list of image files to add to the post",
               "format": "binary"
             }
           },
@@ -609,6 +609,7 @@
             "type": "array",
             "items": {
               "type": "string",
+              "description": "list of video files to add to the post",
               "format": "binary"
             }
           }
