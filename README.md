@@ -35,8 +35,8 @@ aws configure // enter your access id and secret
 
 ### Dependencies
 
-**Install MongoDB Locally (if not already installed):**
-Follow the official MongoDB installation guide: https://www.mongodb.com/try/download/community
+**Install MongoDB Locally (if not already installed):**  
+Follow the official MongoDB installation guide: https://www.mongodb.com/try/download/community  
 Start the MongoDB Server in your local machine.
 
 **Run Meilisearch Locally:**
