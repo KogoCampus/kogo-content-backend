@@ -11,7 +11,7 @@ import java.util.UUID
 @Component
 class LocalStorageFileHandler : FileHandler {
 
-    @Value("\${filehandler.local.mountLocation}")
+    @Value("\${filehandler.localMountLocation}")
     lateinit var mountLocation: String
 
     lateinit var localFileSystem: LocalFileSystem

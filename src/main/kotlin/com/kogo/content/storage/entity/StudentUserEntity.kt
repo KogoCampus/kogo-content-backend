@@ -12,15 +12,12 @@ data class StudentUserEntity (
     @Id
     var id: String? = null,
 
-    @field:NotBlank
     @Indexed(unique = true)
     var username: String,
 
-    @field:NotBlank
-    var email: String,
+    var email: String? = null,
 
-    @field:NotBlank
-    var schoolId: String,
+    var schoolId: String? = null,
 
     @DBRef
     var profileImage: Attachment? = null,

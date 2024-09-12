@@ -75,7 +75,7 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
-            Response.success(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), authenticatedUserService.currentUserContext(), postDto)))
+            Response.success(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), authenticatedUserService.getCurrentAuthenticatedUser(), postDto)))
     }
 
     @RequestMapping(
