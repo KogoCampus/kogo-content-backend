@@ -1,0 +1,46 @@
+name: deploy-swagger-docs
+on:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: [ubuntu-latest]
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.event.pull_request.head.sha }}
+
+            - uses: actions/setup-java@v3
+              with:
+                distribution: temurin
+                java-version: 21
+
+            - name: Setup AWS CLI
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: us-west-2
+
+            - name: Generate OpenAPI Documentation
+              run: ./gradlew generateOpenApiDocs
+
+            - name: Download Swagger UI
+              run: |
+                  mkdir -p build/swagger-ui
+                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui.css -o build/swagger-ui/swagger-ui.css
+                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui-bundle.js -o build/swagger-ui/swagger-ui-bundle.js
+                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/swagger-ui-standalone-preset.js -o build/swagger-ui/swagger-ui-standalone-preset.js
+                  curl -L https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.6.2/index.html -o build/swagger-ui/index.html
+
+            - name: Upload Swagger UI and JSON to S3
+              run: |
+                  aws s3 sync build/swagger-ui/ s3://kogo-content-backend-swagger-ui/ --delete
+              env:
+                  AWS_REGION: us-west-2
+

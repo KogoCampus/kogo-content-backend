@@ -85,6 +85,12 @@ class TopicController @Autowired constructor(
     }
 
     @DeleteMapping("topics/{id}")
+    @Operation(
+        summary = "delete a topic",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+        )])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throw ResourceNotFoundException("Topic not found for id: $topicId")
         Response.success(topicService.delete(topic))

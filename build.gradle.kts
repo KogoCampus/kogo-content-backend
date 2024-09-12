@@ -2,12 +2,13 @@ import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 
 plugins {
     val kotlinVersion = "2.0.0"
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.spring") version kotlinVersion
     id("org.springframework.boot") version "3.3.1"
+    id("org.springdoc.openapi-gradle-plugin") version "1.9.0"
     // id("org.jlleitschuh.gradle.ktlint").version("12.1.0")
     id("it.nicolasfarabegoli.conventional-commits") version "3.1.3"
     id("io.spring.dependency-management") version "1.1.5"
-    kotlin("jvm") version kotlinVersion
-    kotlin("plugin.spring") version kotlinVersion
 }
 
 group = "com.kogo"
@@ -16,7 +17,7 @@ description = "kogo-content-backend"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(22)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -43,7 +44,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
     implementation("org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure:2.6.8")
+    // Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    // ---
     implementation("com.google.code.gson:gson")
     implementation("org.apache.logging.log4j:log4j-spring-boot:$log4jVersion")
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
@@ -65,6 +68,15 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
+}
+
+/*
+* Swagger docs generation configuration
+*/
+openApi {
+    outputFileName.set("swagger.json")
+    outputDir.set(file("build/swagger-ui"))
+    apiDocsUrl.set("http://localhost:8080/api-docs")
 }
 
 conventionalCommits {
