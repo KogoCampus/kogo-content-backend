@@ -47,7 +47,7 @@ jobs:
             -  name: Build and Deploy to GitHub Pages
                uses: peaceiris/actions-gh-pages@v3
                with:
-                   github_token: ${{ secrets.GITHUB_TOKEN }}
+                   deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
                    publish_dir: ./build/swagger-ui
                    publish_branch: gh-pages
 
