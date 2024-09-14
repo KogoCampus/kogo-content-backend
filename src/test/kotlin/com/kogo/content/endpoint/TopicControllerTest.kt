@@ -22,16 +22,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain
+@AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
 class TopicControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
 
     @MockkBean
     lateinit var topicService: TopicService
-
-    @MockkBean
-    lateinit var postService: PostService
 
     @MockkBean
     lateinit var userService: UserContextService
@@ -66,14 +63,14 @@ class TopicControllerTest @Autowired constructor(
         val topicOwner = createUserFixture()
         val topic = createTopicFixture()
         topic.owner = topicOwner
-        every { topicService.findByTopicName(any()) } returns null
+        every { topicService.existsByTopicName(any()) } returns false
         every { userService.getCurrentUserContext() } returns topicOwner
         every { topicService.create(any(), topicOwner) } returns topic
         mockMvc.perform(
             multipart(buildTopicApiUrl())
                 .part(MockPart("topicName", topic.topicName.toByteArray()))
                 .part(MockPart("description", topic.description.toByteArray()))
-                .part(MockPart("tags", "awefawef##$@#$@#".toByteArray()))
+                .part(MockPart("tags", topic.tags.first().toByteArray()))
                 .file(MockMultipartFile("profileImage", "image.jpeg", "image/jpeg", "some image".toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it })
@@ -86,9 +83,7 @@ class TopicControllerTest @Autowired constructor(
     @Test
     fun `should return 400 when topic name is not unique`() {
         val topicName = "existing-topic"
-        val existingTopic = createTopicFixture()
-        existingTopic.topicName = topicName
-        every { topicService.findByTopicName(topicName) } returns existingTopic
+        every { topicService.existsByTopicName(topicName) } returns true
         mockMvc.perform(
             multipart(buildTopicApiUrl())
                 .part(MockPart("topicName", topicName.toByteArray()))
@@ -106,7 +101,8 @@ class TopicControllerTest @Autowired constructor(
         val updatedTopic = Topic(
             id = topicId,
             topicName = "updated topic name",
-            description = "updated description"
+            description = "updated description",
+            owner = topic.owner
         )
         every { topicService.find(topicId) } returns topic
         every { topicService.update(topic, any()) } returns updatedTopic
@@ -159,7 +155,9 @@ class TopicControllerTest @Autowired constructor(
         if (paths.isNotEmpty()) "$TOPIC_API_BASE_URL/" + paths.joinToString("/")
         else TOPIC_API_BASE_URL
 
-    private fun createTopicFixture() = fixture<Topic>()
+    private fun createTopicFixture() = fixture<Topic> { mapOf(
+        "owner" to createUserFixture()
+    ) }
 
     private fun createUserFixture() = fixture<UserDetails>()
 }

@@ -122,6 +122,7 @@ class PostController @Autowired constructor(
     private fun buildPostResponse(post: Post): PostResponse = with(post) {
         PostResponse(
             id = id!!,
+            topicId = post.topic.id,
             authorUserId = author.id!!,
             title = title,
             content = content,
