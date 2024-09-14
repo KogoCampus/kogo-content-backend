@@ -404,6 +404,9 @@
           "authorUserId": {
             "type": "string"
           },
+          "topicId": {
+            "type": "string"
+          },
           "title": {
             "type": "string"
           },
