@@ -401,7 +401,7 @@
           "id": {
             "type": "string"
           },
-          "authorUsername": {
+          "authorUserId": {
             "type": "string"
           },
           "title": {
@@ -512,7 +512,7 @@
           "id": {
             "type": "string"
           },
-          "ownerUsername": {
+          "ownerUserId": {
             "type": "string"
           },
           "topicName": {
