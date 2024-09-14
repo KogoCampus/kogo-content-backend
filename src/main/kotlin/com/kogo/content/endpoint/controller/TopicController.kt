@@ -10,7 +10,7 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.Topic
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -100,7 +100,7 @@ class TopicController @Autowired constructor(
         HttpJsonResponse.successResponse(topicService.delete(topic))
     }
 
-    private fun buildTopicResponse(topic: TopicEntity) = with(topic) {
+    private fun buildTopicResponse(topic: Topic) = with(topic) {
         TopicResponse(
             id = id!!,
             ownerUsername = owner,
@@ -121,5 +121,5 @@ class TopicController @Autowired constructor(
         )
     }
 
-    private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<TopicEntity>(topicId)
+    private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
 }

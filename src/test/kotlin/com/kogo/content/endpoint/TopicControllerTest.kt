@@ -3,8 +3,8 @@ package com.kogo.content.endpoint
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
-import com.kogo.content.storage.entity.UserDetailsEntity
-import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.storage.entity.Topic
 import com.kogo.content.util.fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -103,7 +103,7 @@ class TopicControllerTest @Autowired constructor(
     fun `should update an existing topic`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
-        val updatedTopic = TopicEntity(
+        val updatedTopic = Topic(
             id = topicId,
             topicName = "updated topic name",
             description = "updated description"
@@ -159,7 +159,7 @@ class TopicControllerTest @Autowired constructor(
         if (paths.isNotEmpty()) "$TOPIC_API_BASE_URL/" + paths.joinToString("/")
         else TOPIC_API_BASE_URL
 
-    private fun createTopicFixture() = fixture<TopicEntity>()
+    private fun createTopicFixture() = fixture<Topic>()
 
-    private fun createUserFixture() = fixture<UserDetailsEntity>()
+    private fun createUserFixture() = fixture<UserDetails>()
 }

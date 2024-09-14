@@ -3,13 +3,11 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.logging.Logger
-import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
 import com.kogo.content.service.util.saveFileAndConvertToAttachment
-import com.kogo.content.storage.entity.UserDetailsEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,7 +20,7 @@ class TopicService (
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler
 ) {
-    private val transformer: Transformer<TopicDto, TopicEntity> = object : Transformer<TopicDto, TopicEntity>(TopicDto::class, TopicEntity::class) {
+    private val transformer: Transformer<TopicDto, Topic> = object : Transformer<TopicDto, Topic>(TopicDto::class, Topic::class) {
         override fun argFor(parameter: KParameter, data: TopicDto): Any? {
             return when (parameter.name) {
                 "profileImage" -> data.profileImage?.let {
@@ -32,17 +30,17 @@ class TopicService (
         }
     }
 
-    fun find(topicId: String): TopicEntity? = repository.findByIdOrNull(topicId)
+    fun find(topicId: String): Topic? = repository.findByIdOrNull(topicId)
 
-    fun findByTopicName(topicName: String): TopicEntity? = repository.findByTopicName(topicName)
+    fun findByTopicName(topicName: String): Topic? = repository.findByTopicName(topicName)
 
-    fun findByOwnerId(ownerId: String): List<TopicEntity> = repository.findByOwner(ownerId)
+    fun findByOwnerId(ownerId: String): List<Topic> = repository.findByOwner(ownerId)
 
     fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
 
     @Transactional
-    fun create(dto: TopicDto, owner: String): TopicEntity {
-        val topic = TopicEntity(
+    fun create(dto: TopicDto, owner: String): Topic {
+        val topic = Topic(
             topicName = dto.topicName,
             description = dto.description,
             owner = owner,
@@ -55,7 +53,7 @@ class TopicService (
     }
 
     @Transactional
-    fun update(topic: TopicEntity, topicUpdate: TopicUpdate): TopicEntity {
+    fun update(topic: Topic, topicUpdate: TopicUpdate): Topic {
         with(topicUpdate) {
             topicName?.let { topic.topicName = it }
             description?.let { topic.description = it }
@@ -66,7 +64,7 @@ class TopicService (
     }
 
     @Transactional
-    fun delete(topic: TopicEntity) {
+    fun delete(topic: Topic) {
         topic.profileImage?.let { deleteAttachment(it, attachmentRepository) }
         repository.deleteById(topic.id!!)
     }

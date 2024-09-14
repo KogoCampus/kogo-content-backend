@@ -1,15 +1,5 @@
 package com.kogo.content.searchengine
 
-import com.kogo.content.storage.entity.TopicEntity
-import com.kogo.content.storage.entity.PostEntity
-import org.springframework.stereotype.Service
-import com.meilisearch.sdk.Client as MeiliSearchClient
-import com.meilisearch.sdk.Config
-import com.meilisearch.sdk.Index
-import com.meilisearch.sdk.model.SearchResult
-import org.springframework.beans.factory.annotation.Value
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 /*
 
 @Service

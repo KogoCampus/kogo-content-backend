@@ -7,14 +7,14 @@ import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
 @CompoundIndex(def = "{'author.id': 1}")
-data class PostEntity (
+data class Post (
     @Id
     var id : String? = null,
 
     var title: String = "",
 
     @DBRef
-    var topic: TopicEntity,
+    var topic: Topic,
 
     var author: String,
 

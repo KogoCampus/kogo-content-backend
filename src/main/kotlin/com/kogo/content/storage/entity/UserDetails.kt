@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
-data class UserDetailsEntity (
+data class UserDetails (
     @Id
     var id: String? = null,
 
@@ -23,5 +23,5 @@ data class UserDetailsEntity (
 
     @DBRef
     @JsonManagedReference
-    var followingTopics: List<TopicEntity>? = emptyList()
+    var followingTopics: List<Topic>? = emptyList()
 )

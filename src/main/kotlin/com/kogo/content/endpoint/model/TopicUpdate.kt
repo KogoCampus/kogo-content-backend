@@ -1,16 +1,11 @@
 package com.kogo.content.endpoint.model
 
 import com.kogo.content.validator.ValidTag
-import com.kogo.content.storage.entity.TopicEntity
-import com.kogo.content.service.util.Transformer
 import com.kogo.content.validator.ValidFile
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.Valid
-import jakarta.validation.constraints.NotBlank
 import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
-import kotlin.reflect.KParameter
 
 data class TopicUpdate (
     var topicName: String? = null,

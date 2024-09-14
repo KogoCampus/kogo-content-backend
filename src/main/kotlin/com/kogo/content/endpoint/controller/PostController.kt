@@ -9,8 +9,8 @@ import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
@@ -115,11 +115,11 @@ class PostController @Autowired constructor(
         HttpJsonResponse.successResponse(postService.delete(post))
     }
 
-    private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<TopicEntity>(topicId)
+    private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
-    private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<PostEntity>(postId)
+    private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<Post>(postId)
 
-    private fun buildPostResponse(post: PostEntity): PostResponse = with(post) {
+    private fun buildPostResponse(post: Post): PostResponse = with(post) {
         PostResponse(
             id = id!!,
             authorUsername = author,

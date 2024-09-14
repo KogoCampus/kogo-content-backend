@@ -1,6 +1,6 @@
 package com.kogo.content.service
 
-import com.kogo.content.storage.entity.UserDetailsEntity
+import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.UserDetailsRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
@@ -19,13 +19,13 @@ class UserContextService @Autowired constructor(
         return username
     }
 
-    fun findUserProfileByUsername(username: String): UserDetailsEntity? =
+    fun findUserProfileByUsername(username: String): UserDetails? =
         userDetailsRepository.findByUsername(username)
 
     fun existsUserProfileByUsername(username: String) = userDetailsRepository.existsByUsername(username)
 
-    fun createUserProfile(username: String, email: String): UserDetailsEntity =
-        userDetailsRepository.save(UserDetailsEntity(
+    fun createUserProfile(username: String, email: String): UserDetails =
+        userDetailsRepository.save(UserDetails(
             username = username,
             email = email
         ))

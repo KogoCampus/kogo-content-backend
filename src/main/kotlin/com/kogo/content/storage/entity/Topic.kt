@@ -1,6 +1,5 @@
 package com.kogo.content.storage.entity
 
-import com.fasterxml.jackson.annotation.JsonBackReference
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
@@ -9,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
 @CompoundIndex(def = "{'owner.id': 1}")
-data class TopicEntity (
+data class Topic (
     @Id
     var id : String? = null,
 

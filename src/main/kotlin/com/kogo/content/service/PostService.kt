@@ -4,9 +4,8 @@ import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.UserDetailsEntity
-import com.kogo.content.storage.entity.TopicEntity
+import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
@@ -21,16 +20,16 @@ class PostService (
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
 ) {
-    private val transformer: Transformer<PostDto, PostEntity> = object : Transformer<PostDto, PostEntity>(PostDto::class, PostEntity::class) {}
+    private val transformer: Transformer<PostDto, Post> = object : Transformer<PostDto, Post>(PostDto::class, Post::class) {}
 
-    fun find(postId: String): PostEntity? = repository.findByIdOrNull(postId)
+    fun find(postId: String): Post? = repository.findByIdOrNull(postId)
 
-    fun listPostsByTopicId(topicId: String): List<PostEntity> = repository.findByTopicId(topicId)
+    fun listPostsByTopicId(topicId: String): List<Post> = repository.findByTopicId(topicId)
 
-    fun listPostsByAuthorId(authorId: String): List<PostEntity> = repository.findByAuthor(authorId)
+    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findByAuthor(authorId)
 
     @Transactional
-    fun create(topic: TopicEntity, author: String, dto: PostDto): PostEntity {
+    fun create(topic: Topic, author: String, dto: PostDto): Post {
         val post = transformer.transform(dto)
         post.topic = topic
         post.author = author
@@ -42,7 +41,7 @@ class PostService (
     }
 
     @Transactional
-    fun update(post: PostEntity, postUpdate: PostUpdate) : PostEntity {
+    fun update(post: Post, postUpdate: PostUpdate) : Post {
         postUpdate.title?.let { post.title = it }
         postUpdate.content?.let { post.content = it }
 
@@ -54,7 +53,7 @@ class PostService (
     }
 
     @Transactional
-    fun delete(post: PostEntity) {
+    fun delete(post: Post) {
         post.attachments.forEach { deleteAttachment(it, attachmentRepository) }
         repository.deleteById(post.id!!)
     }

@@ -82,7 +82,9 @@ class CognitoOAuth2RequestFilter(
     }
 
     private fun createNewUserProfileIfNotExist(username: String, email: String) {
+        log.error { "test out $username, $email" }
         if (!userContextService.existsUserProfileByUsername(username)) {
+            log.error { "test in $username, $email" }
             userContextService.createUserProfile(username, email)
         }
     }

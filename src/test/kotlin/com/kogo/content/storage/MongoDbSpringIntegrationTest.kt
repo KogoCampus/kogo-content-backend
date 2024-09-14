@@ -1,6 +1,6 @@
 package com.kogo.content.storage
 
-import com.kogo.content.storage.entity.UserDetailsEntity
+import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.util.fixture
 import com.mongodb.BasicDBObjectBuilder
 import com.mongodb.DBObject
@@ -43,7 +43,7 @@ class MongoDbSpringIntegrationTest @Autowired constructor(
 
     @Test
     fun `should validate entity before creation`() {
-        val userWithoutUsername = fixture<UserDetailsEntity> { mapOf("username" to "") }
+        val userWithoutUsername = fixture<UserDetails> { mapOf("username" to "") }
 
         assertThrows<ValidationException> { mongoTemplate.save(userWithoutUsername, "collection") }
     }
