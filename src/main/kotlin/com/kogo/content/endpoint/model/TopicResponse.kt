@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.model
 
 data class TopicResponse(
     var id: String,
-    var ownerUsername: String? = null,
+    var ownerUserId: String? = null,
     var topicName: String,
     var description: String,
     var tags: List<String> = emptyList(),

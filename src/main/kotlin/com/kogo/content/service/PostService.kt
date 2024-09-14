@@ -10,6 +10,7 @@ import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
 import com.kogo.content.service.util.saveFileAndConvertToAttachment
+import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,10 +27,10 @@ class PostService (
 
     fun listPostsByTopicId(topicId: String): List<Post> = repository.findByTopicId(topicId)
 
-    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findByAuthor(authorId)
+    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findByAuthorId(authorId)
 
     @Transactional
-    fun create(topic: Topic, author: String, dto: PostDto): Post {
+    fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {
         val post = transformer.transform(dto)
         post.topic = topic
         post.author = author

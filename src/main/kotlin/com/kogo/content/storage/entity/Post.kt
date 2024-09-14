@@ -16,7 +16,8 @@ data class Post (
     @DBRef
     var topic: Topic,
 
-    var author: String,
+    @DBRef
+    var author: UserDetails,
 
     var content: String = "",
 

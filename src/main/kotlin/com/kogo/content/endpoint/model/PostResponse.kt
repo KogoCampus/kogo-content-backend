@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.model
 
 data class PostResponse(
     var id: String,
-    var authorUsername: String? = null,
+    var authorUserId: String? = null,
     var title: String,
     var content: String,
     var attachments: List<PostAttachment>,

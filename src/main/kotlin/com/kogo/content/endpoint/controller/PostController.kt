@@ -76,7 +76,7 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
-            HttpJsonResponse.successResponse(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUsername(), postDto)))
+            HttpJsonResponse.successResponse(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserContext(), postDto)))
     }
 
     @RequestMapping(
@@ -122,7 +122,7 @@ class PostController @Autowired constructor(
     private fun buildPostResponse(post: Post): PostResponse = with(post) {
         PostResponse(
             id = id!!,
-            authorUsername = author,
+            authorUserId = author.id!!,
             title = title,
             content = content,
             attachments = attachments.map { buildPostAttachmentResponse(it) },

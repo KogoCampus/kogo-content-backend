@@ -60,8 +60,8 @@ class CognitoOAuth2RequestFilter(
             if (!accessToken.isNullOrBlank()) {
                 try {
                     val userInfoJson = obtainUserInfo(accessToken)
-                    val username = userInfoJson.get(COGNITO_USERNAME).toString()
-                    val email = userInfoJson.get(COGNITO_EMAIL).toString()
+                    val username = userInfoJson.get(COGNITO_USERNAME).toString().removeSurrounding("\"") // remove double quotes
+                    val email = userInfoJson.get(COGNITO_EMAIL).toString().removeSurrounding("\"")
                     if (username.isBlank() || email.isBlank())
                         throw HttpClientErrorException(HttpStatus.UNAUTHORIZED, "malformed userinfo received; username: $username, email: $email")
                     createNewUserProfileIfNotExist(username, email)
@@ -82,9 +82,7 @@ class CognitoOAuth2RequestFilter(
     }
 
     private fun createNewUserProfileIfNotExist(username: String, email: String) {
-        log.error { "test out $username, $email" }
         if (!userContextService.existsUserProfileByUsername(username)) {
-            log.error { "test in $username, $email" }
             userContextService.createUserProfile(username, email)
         }
     }

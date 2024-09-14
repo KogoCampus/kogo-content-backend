@@ -66,7 +66,7 @@ class TopicController @Autowired constructor(
     fun createTopic(@Valid topicDto: TopicDto): ResponseEntity<*> = run {
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
-        HttpJsonResponse.successResponse(buildTopicResponse(topicService.create(topicDto, userContextService.getCurrentUsername())))
+        HttpJsonResponse.successResponse(buildTopicResponse(topicService.create(topicDto, userContextService.getCurrentUserContext())))
     }
 
     @RequestMapping(
@@ -103,7 +103,7 @@ class TopicController @Autowired constructor(
     private fun buildTopicResponse(topic: Topic) = with(topic) {
         TopicResponse(
             id = id!!,
-            ownerUsername = owner,
+            ownerUserId = owner.id!!,
             topicName = topicName,
             description = description,
             tags = tags,

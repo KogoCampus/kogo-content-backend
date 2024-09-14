@@ -8,6 +8,7 @@ import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
 import com.kogo.content.service.util.saveFileAndConvertToAttachment
+import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,12 +35,12 @@ class TopicService (
 
     fun findByTopicName(topicName: String): Topic? = repository.findByTopicName(topicName)
 
-    fun findByOwnerId(ownerId: String): List<Topic> = repository.findByOwner(ownerId)
+    fun findByOwnerId(ownerId: String): List<Topic> = repository.findByOwnerId(ownerId)
 
     fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
 
     @Transactional
-    fun create(dto: TopicDto, owner: String): Topic {
+    fun create(dto: TopicDto, owner: UserDetails): Topic {
         val topic = Topic(
             topicName = dto.topicName,
             description = dto.description,

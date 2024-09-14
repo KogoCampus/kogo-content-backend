@@ -1,5 +1,6 @@
 package com.kogo.content.service
 
+import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.UserDetailsRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,15 +13,16 @@ import org.springframework.stereotype.Service
 class UserContextService @Autowired constructor(
     private val userDetailsRepository: UserDetailsRepository
 ) {
-    fun getCurrentUsername(): String {
+    companion object : Logger()
+
+    fun getCurrentUserContext(): UserDetails {
         val context = SecurityContextHolder.getContext().authentication
         val jwt = (context.principal as Jwt).claims
         val username = jwt["username"] as String
-        return username
+        return findUserProfileByUsername(username) ?: throw RuntimeException("Username not found $username")
     }
 
-    fun findUserProfileByUsername(username: String): UserDetails? =
-        userDetailsRepository.findByUsername(username)
+    fun findUserProfileByUsername(username: String) = userDetailsRepository.findByUsername(username)
 
     fun existsUserProfileByUsername(username: String) = userDetailsRepository.existsByUsername(username)
 

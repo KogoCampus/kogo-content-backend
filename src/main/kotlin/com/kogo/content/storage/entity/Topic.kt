@@ -20,7 +20,8 @@ data class Topic (
     @DBRef
     var profileImage: Attachment? = null,
 
-    var owner: String,
+    @DBRef
+    var owner: UserDetails,
 
     var tags: List<String> = emptyList(),
 
