@@ -3,13 +3,13 @@ package com.kogo.content.endpoint.common
 import org.springframework.http.HttpStatus
 
 enum class ErrorCode(val httpStatus: HttpStatus, val message: String) {
-    // 400
+    // 40X
     BAD_REQUEST(HttpStatus.BAD_REQUEST, ""),
-    ENTITY_NOT_FOUND(HttpStatus.BAD_REQUEST, "Entity not found."),
-
-    // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, ""),
-
-    // 403
     ACCESS_DENIED(HttpStatus.FORBIDDEN, ""),
+    NOT_FOUND(HttpStatus.NOT_FOUND, ""),
+    UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ""),
+
+    // 50X
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "")
 }

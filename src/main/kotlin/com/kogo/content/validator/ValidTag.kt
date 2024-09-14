@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 
 @Target(FIELD)
 @Retention(RUNTIME)
-@Constraint(validatedBy = [TagValidator::class])
+@Constraint(validatedBy = [TagValidator::class, TagListValidator::class])
 annotation class ValidTag (
     val message: String = "No special characters allowed.",
     val groups: Array<KClass<Any>> = [],

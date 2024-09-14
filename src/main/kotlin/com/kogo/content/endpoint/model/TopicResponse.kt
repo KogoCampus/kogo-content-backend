@@ -1,10 +1,8 @@
 package com.kogo.content.endpoint.model
 
-import org.springframework.web.multipart.MultipartFile
-
 data class TopicResponse(
     var id: String,
-    var ownerId: String? = null,
+    var ownerUsername: String? = null,
     var topicName: String,
     var description: String,
     var tags: List<String> = emptyList(),

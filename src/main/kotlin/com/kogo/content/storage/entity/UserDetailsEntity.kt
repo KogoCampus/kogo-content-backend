@@ -1,14 +1,13 @@
 package com.kogo.content.storage.entity
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
-import jakarta.validation.constraints.NotBlank
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
-data class StudentUserEntity (
+data class UserDetailsEntity (
     @Id
     var id: String? = null,
 

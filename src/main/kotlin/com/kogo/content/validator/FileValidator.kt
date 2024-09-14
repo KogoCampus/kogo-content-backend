@@ -4,52 +4,71 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import org.springframework.web.multipart.MultipartFile
 
-class FileValidator {
+fun validateFile(file: MultipartFile, sizeMax: Int, sizeMin: Int, acceptedMediaTypes: Array<String>, context: ConstraintValidatorContext?): Boolean {
+    if (sizeMax > 0 && file.size > sizeMax) {
+        context?.buildConstraintViolationWithTemplate("File size exceeds limit of ${sizeMax / 1000000}MB")
+            ?.addConstraintViolation()
+        return false
+    }
+    else if (sizeMin > 0 && file.size > sizeMin) {
+        context?.buildConstraintViolationWithTemplate("File size smaller than minimum limit of ${sizeMin / 1000000}MB")
+            ?.addConstraintViolation()
+        return false
+    }
+    if (acceptedMediaTypes.isNotEmpty() && !acceptedMediaTypes.contains(file.contentType)) {
+        context?.buildConstraintViolationWithTemplate("Unsupported media type: ${file.contentType}")
+            ?.addConstraintViolation()
+        return false
+    }
+    return true;
+}
 
-    private var sizeLimit: Int = 128000000 // 128MB
-    private lateinit var acceptedMediaTypes: Array<String>
+class FileValidator : ConstraintValidator<ValidFile, MultipartFile> {
 
-    inner class Validator : ConstraintValidator<ValidFile, MultipartFile> {
-        override fun initialize(constraintAnnotation: ValidFile) {
-            sizeLimit = constraintAnnotation.sizeLimit
-            acceptedMediaTypes = constraintAnnotation.acceptedMediaTypes
-            super.initialize(constraintAnnotation)
-        }
+    private var sizeMax: Int = 0
+    private var sizeMin: Int = 0
+    private var acceptedMediaTypes: Array<String> = arrayOf()
 
-        override fun isValid(file: MultipartFile?, context: ConstraintValidatorContext?): Boolean {
-            if (file == null) return true
-            return validateFile(file, context)
-        }
+    override fun initialize(constraintAnnotation: ValidFile) {
+        sizeMax = constraintAnnotation.sizeMax
+        sizeMin = constraintAnnotation.sizeMin
+        acceptedMediaTypes = constraintAnnotation.acceptedMediaTypes
+        super.initialize(constraintAnnotation)
     }
 
-    inner class ListValidator : ConstraintValidator<ValidFile, List<MultipartFile>> {
-        override fun initialize(constraintAnnotation: ValidFile) {
-            sizeLimit = constraintAnnotation.sizeLimit
-            acceptedMediaTypes = constraintAnnotation.acceptedMediaTypes
-            super.initialize(constraintAnnotation)
-        }
+    override fun isValid(file: MultipartFile?, context: ConstraintValidatorContext?): Boolean {
+        if (file == null) return true
+        return validateFile(
+            file = file,
+            sizeMax = sizeMax,
+            sizeMin = sizeMin,
+            acceptedMediaTypes = acceptedMediaTypes,
+            context = context
+        )
+    }
+}
 
-        override fun isValid(files: List<MultipartFile>?, context: ConstraintValidatorContext?): Boolean {
-            if (files.isNullOrEmpty()) return true
+class FileListValidator : ConstraintValidator<ValidFile, List<MultipartFile>?> {
 
-            for (file in files)
-                if (!validateFile(file, context)) return false
+    private var sizeMax: Int = 0
+    private var sizeMin: Int = 0
+    private var acceptedMediaTypes: Array<String> = arrayOf()
 
-            return true
-        }
+    override fun initialize(constraintAnnotation: ValidFile) {
+        sizeMax = constraintAnnotation.sizeMax
+        sizeMin = constraintAnnotation.sizeMin
+        acceptedMediaTypes = constraintAnnotation.acceptedMediaTypes
+        super.initialize(constraintAnnotation)
     }
 
-    fun validateFile(file: MultipartFile, context: ConstraintValidatorContext?): Boolean {
-        if (sizeLimit > 0 && file.size > sizeLimit) {
-            context?.buildConstraintViolationWithTemplate("File size exceeds limit of ${sizeLimit / 1000000}MB")
-                ?.addConstraintViolation()
-            return false
-        }
-        if (!acceptedMediaTypes.contains(file.contentType)) {
-            context?.buildConstraintViolationWithTemplate("Unsupported media type: ${file.contentType}")
-                ?.addConstraintViolation()
-            return false
-        }
-        return true;
+    override fun isValid(files: List<MultipartFile>?, context: ConstraintValidatorContext?): Boolean {
+        if (files.isNullOrEmpty()) return true
+        return files.all { validateFile(
+            file = it,
+            sizeMax = sizeMax,
+            sizeMin = sizeMin,
+            acceptedMediaTypes = acceptedMediaTypes,
+            context = context
+        ) }
     }
 }

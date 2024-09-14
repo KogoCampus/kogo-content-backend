@@ -2,23 +2,21 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.PostEntity
-import com.kogo.content.storage.entity.StudentUserEntity
+import com.kogo.content.storage.entity.UserDetailsEntity
 import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
 import com.kogo.content.service.util.saveFileAndConvertToAttachment
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class PostService @Autowired constructor(
+class PostService (
     private val repository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
@@ -29,8 +27,10 @@ class PostService @Autowired constructor(
 
     fun listPostsByTopicId(topicId: String): List<PostEntity> = repository.findByTopicId(topicId)
 
+    fun listPostsByAuthorId(authorId: String): List<PostEntity> = repository.findByAuthor(authorId)
+
     @Transactional
-    fun create(topic: TopicEntity, author: StudentUserEntity, dto: PostDto): PostEntity {
+    fun create(topic: TopicEntity, author: String, dto: PostDto): PostEntity {
         val post = transformer.transform(dto)
         post.topic = topic
         post.author = author

@@ -30,7 +30,7 @@ fun <T : Any> mountClass(
     return constructor.call(*parameters.toTypedArray())
 }
 
-private fun getRandomParameterValue(type: KType): Any {
+private fun getRandomParameterValue(type: KType): Any? {
     val classifier = type.classifier as? KClass<*>
     return when {
         classifier == String::class -> ('a'..'z').map { it }.shuffled().subList(0, 6).joinToString("")
@@ -47,12 +47,10 @@ private fun getRandomParameterValue(type: KType): Any {
                 ?: throw IllegalArgumentException("Cannot process types without type arguments: $type")
             List(1) { getRandomParameterValue(elementType) }
         }
-        classifier?.isData == true -> fixture(classifier)
         classifier?.java?.isEnum == true -> {
             val enumConstants = classifier.java.enumConstants
             enumConstants[Random.nextInt(enumConstants.size)]
         }
-
-        else -> throw IllegalArgumentException("Unsupported type: $classifier")
+        else -> null
     }
 }

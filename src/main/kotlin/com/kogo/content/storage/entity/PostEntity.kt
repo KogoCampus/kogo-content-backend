@@ -14,10 +14,9 @@ data class PostEntity (
     var title: String = "",
 
     @DBRef
-    var topic: TopicEntity?,
+    var topic: TopicEntity,
 
-    @DBRef
-    var author: StudentUserEntity?,
+    var author: String,
 
     var content: String = "",
 

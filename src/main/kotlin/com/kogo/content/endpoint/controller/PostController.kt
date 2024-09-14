@@ -1,21 +1,21 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.endpoint.common.Response
-import com.kogo.content.exception.IllegalPathVariableException
+import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.service.AuthenticatedUserService
+import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.PostEntity
+import com.kogo.content.storage.entity.TopicEntity
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.*
 class PostController @Autowired constructor(
     private val postService : PostService,
     private val topicService : TopicService,
-    private val authenticatedUserService: AuthenticatedUserService,
+    private val userContextService: UserContextService,
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -40,7 +40,7 @@ class PostController @Autowired constructor(
         )])
     fun listPosts(@PathVariable("topicId") topicId: String) = run {
         findTopicByIdOrThrow(topicId)
-        Response.success(postService.listPostsByTopicId(topicId).map { buildPostResponse(it) })
+        HttpJsonResponse.successResponse(postService.listPostsByTopicId(topicId).map { buildPostResponse(it) })
     }
 
     @GetMapping("topics/{topicId}/posts/{postId}")
@@ -55,8 +55,8 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String) = run {
         findTopicByIdOrThrow(topicId)
-        val post = postService.find(postId) ?: throw ResourceNotFoundException("Post not found for id: $postId")
-        Response.success(buildPostResponse(post))
+        val post = postService.find(postId) ?: throwPostNotFound(postId)
+        HttpJsonResponse.successResponse(buildPostResponse(post))
     }
 
     @RequestMapping(
@@ -64,6 +64,7 @@ class PostController @Autowired constructor(
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
+    @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = PostDto::class))])
     @Operation(
         summary = "create a post under the given topic",
         responses = [ApiResponse(
@@ -73,9 +74,9 @@ class PostController @Autowired constructor(
         )])
     fun createPost(
         @PathVariable("topicId") topicId: String,
-        @Valid @RequestBody postDto: PostDto) = run {
+        @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
-            Response.success(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), authenticatedUserService.getCurrentAuthenticatedUser(), postDto)))
+            HttpJsonResponse.successResponse(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUsername(), postDto)))
     }
 
     @RequestMapping(
@@ -83,6 +84,7 @@ class PostController @Autowired constructor(
         method = [RequestMethod.PUT],
         consumes = [org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE]
     )
+    @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = PostUpdate::class))])
     @Operation(
         summary = "update attributes of an existing post",
         responses = [ApiResponse(
@@ -93,9 +95,9 @@ class PostController @Autowired constructor(
     fun updatePost(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
-        @Valid @RequestBody postUpdate: PostUpdate): Response = run {
-        val post = postService.find(postId) ?: throw ResourceNotFoundException("Post not found for id: $postId")
-        Response.success(buildPostResponse(postService.update(post, postUpdate)))
+        @Valid postUpdate: PostUpdate) = run {
+        val post = postService.find(postId) ?: throwPostNotFound(postId)
+        HttpJsonResponse.successResponse(buildPostResponse(postService.update(post, postUpdate)))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -109,16 +111,18 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String) = run {
         findTopicByIdOrThrow(topicId)
-        val post = postService.find(postId) ?: throw ResourceNotFoundException("Post not found for id: $postId")
-        Response.success(postService.delete(post))
+        val post = postService.find(postId) ?: throwPostNotFound(postId)
+        HttpJsonResponse.successResponse(postService.delete(post))
     }
 
-    fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw IllegalPathVariableException("Topic not found for id: $topicId")
+    private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<TopicEntity>(topicId)
 
-    fun buildPostResponse(post: PostEntity): PostResponse = with(post) {
+    private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<PostEntity>(postId)
+
+    private fun buildPostResponse(post: PostEntity): PostResponse = with(post) {
         PostResponse(
             id = id!!,
-            authorId = author?.id,
+            authorUsername = author,
             title = title,
             content = content,
             attachments = attachments.map { buildPostAttachmentResponse(it) },
@@ -130,7 +134,7 @@ class PostController @Autowired constructor(
         )
     }
 
-    fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
+    private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
         PostResponse.PostAttachment(
             attachmentId = id!!,
             fileName = fileName,

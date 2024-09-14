@@ -1,30 +1,32 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.endpoint.common.Response
+import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
-import com.kogo.content.service.AuthenticatedUserService
+import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.TopicEntity
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("media")
 class TopicController @Autowired constructor(
     private val topicService : TopicService,
-    private val authenticatedUserService: AuthenticatedUserService,
+    private val userContextService: UserContextService,
 ) {
     companion object : Logger()
 
@@ -37,8 +39,8 @@ class TopicController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))],
         )])
     fun getTopic(@PathVariable("id") topicId: String) = run {
-        val topic = topicService.find(topicId) ?: throw ResourceNotFoundException("Topic not found for id: $topicId")
-        Response.success(buildTopicResponse(topic))
+        val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
+        HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
 
     // @GetMapping("groups")
@@ -52,24 +54,26 @@ class TopicController @Autowired constructor(
         path = ["topics"],
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = TopicDto::class))])
     @Operation(
         summary = "create a new topic",
+        requestBody = RequestBody(),
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))],
         )])
-    fun createTopic(@Valid @RequestBody topicDto: TopicDto): Response = run {
-        if (topicService.findByTopicName(topicDto.topicName) != null)
-            return Response.error(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
-
-        Response.success(buildTopicResponse(topicService.create(topicDto, authenticatedUserService.getCurrentAuthenticatedUser())))
+    fun createTopic(@Valid topicDto: TopicDto): ResponseEntity<*> = run {
+        if (topicService.existsByTopicName(topicDto.topicName))
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
+        HttpJsonResponse.successResponse(buildTopicResponse(topicService.create(topicDto, userContextService.getCurrentUsername())))
     }
 
     @RequestMapping(
         path = ["topics/{id}"],
         method = [RequestMethod.PUT],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = TopicUpdate::class))])
     @Operation(
         summary = "update topic attributes",
         responses = [ApiResponse(
@@ -79,9 +83,9 @@ class TopicController @Autowired constructor(
         )])
     fun updateGroup(
         @PathVariable("id") topicId: String,
-        @Valid @RequestBody topicUpdate: TopicUpdate): Response = run {
-            val topic = topicService.find(topicId) ?: throw ResourceNotFoundException("Topic not found for id: $topicId")
-            Response.success(buildTopicResponse(topicService.update(topic, topicUpdate)))
+        @Valid topicUpdate: TopicUpdate) = run {
+            val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
+            HttpJsonResponse.successResponse(buildTopicResponse(topicService.update(topic, topicUpdate)))
     }
 
     @DeleteMapping("topics/{id}")
@@ -92,14 +96,14 @@ class TopicController @Autowired constructor(
             description = "ok",
         )])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
-        val topic = topicService.find(topicId) ?: throw ResourceNotFoundException("Topic not found for id: $topicId")
-        Response.success(topicService.delete(topic))
+        val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
+        HttpJsonResponse.successResponse(topicService.delete(topic))
     }
 
     private fun buildTopicResponse(topic: TopicEntity) = with(topic) {
         TopicResponse(
             id = id!!,
-            ownerId = owner?.id,
+            ownerUsername = owner,
             topicName = topicName,
             description = description,
             tags = tags,
@@ -116,4 +120,6 @@ class TopicController @Autowired constructor(
             size = fileSize
         )
     }
+
+    private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<TopicEntity>(topicId)
 }

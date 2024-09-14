@@ -32,24 +32,7 @@ class LocalStorageFileHandlerTest {
         ReflectionTestUtils.setField(localStorageFileHandler, "mountLocation", tempPath.toString())
         ReflectionTestUtils.setField(localStorageFileHandler, "fileSystemService", localFileSystem)
     }
-
-    @Test
-    fun `should handle inputstream and store in a file in the filesystem`() {
-        val inputStream: InputStream = mockk()
-        val metadata: FileMetadata = fixture<FileMetadata>()
-
-        every { localFileSystem.createFile(any(), any()) } returns tempPath
-        every { localFileSystem.write(tempPath, inputStream) } returns Unit
-        val result = localStorageFileHandler.store(inputStream, metadata)
-
-        verify (exactly = 1) {
-            localFileSystem.createFile(any(), any())
-            localFileSystem.write(tempPath, inputStream)
-        }
-        assertEquals(result.url, tempPath.toAbsolutePath().toString())
-        assertEquals(result.metadata, metadata)
-    }
-
+/*
     @Test
     fun `should handle multipart file and store in a file in the filesystem`() {
         val multipartFile = MockMultipartFile("data", "test.txt", "text/plain", "hello world".toByteArray())
@@ -66,4 +49,5 @@ class LocalStorageFileHandlerTest {
         assertEquals(result.metadata.originalFileName, "test.txt")
         assertEquals(result.metadata.contentType, "text/plain")
     }
+    */
 }

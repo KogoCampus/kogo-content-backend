@@ -16,17 +16,14 @@ data class TopicEntity (
     @Indexed(unique = true)
     var topicName: String,
 
-    var userCount: Int = 1,
-
-    @DBRef
-    var profileImage: Attachment?,
-
-    @DBRef
-    @JsonBackReference
-    var owner: StudentUserEntity?,
-
     var description: String = "",
 
-    var tags: List<String> = emptyList()
+    @DBRef
+    var profileImage: Attachment? = null,
 
+    var owner: String,
+
+    var tags: List<String> = emptyList(),
+
+    var userCount: Int = 1,
 )

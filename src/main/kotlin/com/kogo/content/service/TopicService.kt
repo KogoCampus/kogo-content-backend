@@ -3,12 +3,13 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.TopicEntity
 import com.kogo.content.storage.repository.*
 import com.kogo.content.service.util.Transformer
 import com.kogo.content.service.util.deleteAttachment
 import com.kogo.content.service.util.saveFileAndConvertToAttachment
-import com.kogo.content.storage.entity.StudentUserEntity
+import com.kogo.content.storage.entity.UserDetailsEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -35,10 +36,20 @@ class TopicService (
 
     fun findByTopicName(topicName: String): TopicEntity? = repository.findByTopicName(topicName)
 
+    fun findByOwnerId(ownerId: String): List<TopicEntity> = repository.findByOwner(ownerId)
+
+    fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
+
     @Transactional
-    fun create(dto: TopicDto, owner: StudentUserEntity): TopicEntity {
-        val topic = transformer.transform(dto)
-        topic.owner = owner
+    fun create(dto: TopicDto, owner: String): TopicEntity {
+        val topic = TopicEntity(
+            topicName = dto.topicName,
+            description = dto.description,
+            owner = owner,
+            profileImage = dto.profileImage?.let {
+                saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) },
+            tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!
+        )
         // meilisearchService.indexGroup(newGroup)
         return repository.save(topic)
     }

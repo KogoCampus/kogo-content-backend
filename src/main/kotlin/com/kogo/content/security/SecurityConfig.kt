@@ -1,10 +1,10 @@
 package com.kogo.content.security
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -15,17 +15,19 @@ import org.springframework.web.cors.CorsConfiguration
 @Configuration
 class SecurityConfig {
 
-    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    lateinit var oauth2IssuerUri: String
+    companion object {
+        val WHITELIST_PATHS = arrayOf(
+            "/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+        )
+    }
 
     @Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     lateinit var jwkSetUri: String
 
-    private val WHITELIST_PATHS = arrayOf(
-        "/api-docs/**",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-    )
+    @Autowired
+    lateinit var cognitoAuthenticationFilter: CognitoOAuth2RequestFilter
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain = http
@@ -38,7 +40,7 @@ class SecurityConfig {
                 .anyRequest().authenticated()
         }
         .oauth2ResourceServer { it.jwt { it.jwkSetUri(jwkSetUri) } }
-        .addFilterAfter(CognitoOAuth2RequestFilter(oauth2IssuerUri, WHITELIST_PATHS), UsernamePasswordAuthenticationFilter::class.java)
+        .addFilterAfter(cognitoAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
         .build()
 
     @Bean

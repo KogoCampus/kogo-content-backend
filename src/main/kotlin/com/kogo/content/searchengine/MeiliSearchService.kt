@@ -8,8 +8,6 @@ import com.meilisearch.sdk.Config
 import com.meilisearch.sdk.Index
 import com.meilisearch.sdk.model.SearchResult
 import org.springframework.beans.factory.annotation.Value
-import org.json.JSONObject
-import org.json.JSONArray
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 /*

@@ -1,6 +1,7 @@
 package com.kogo.content.filesystem
 
 import com.kogo.content.filehandler.LocalFileSystem
+import okio.IOException
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.mock.web.MockMultipartFile
@@ -33,7 +34,7 @@ class LocalFileSystemTest {
         @Test
         fun `should throw exception if file already exists`() {
             localFileSystem.createFile("dummy.txt", "dummy/file/path")
-            assertThrows<LocalStorageException> {
+            assertThrows<IOException> {
                 localFileSystem.createFile("dummy.txt", "dummy/file/path")
             }
         }
@@ -61,7 +62,7 @@ class LocalFileSystemTest {
         @Test
         fun `should throw exception if folder already exists`() {
             localFileSystem.createFolder("dummy")
-            assertThrows<LocalStorageException> {
+            assertThrows<IOException> {
                 localFileSystem.createFolder("dummy")
             }
         }
