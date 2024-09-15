@@ -45,12 +45,17 @@ jobs:
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: us-west-2
 
-            - name: Set up MongoDB
+            - name: Install MongoDB
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y mongodb-clients
+                  sudo apt-get install -y mongodb
 
-            - name: Run MongoDB Health Check
+            - name: Start MongoDB
+              run: |
+                  sudo systemctl start mongodb
+                  sudo systemctl status mongodb --no-pager
+
+            - name: Wait for MongoDB to start
               run: |
                   until nc -z -v -w30 localhost 27017
                   do
@@ -58,10 +63,10 @@ jobs:
                     sleep 5
                   done
 
-            - name: Build with Gradle
+            - name: Build
               run: ./gradlew build --no-daemon
 
-            - name: Run Unit Tests
+            - name: Run Tests
               run: ./gradlew test --no-daemon
 
 
