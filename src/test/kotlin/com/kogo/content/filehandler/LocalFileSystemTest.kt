@@ -1,6 +1,5 @@
-package com.kogo.content.filesystem
+package com.kogo.content.filehandler
 
-import com.kogo.content.filehandler.LocalFileSystem
 import okio.IOException
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir

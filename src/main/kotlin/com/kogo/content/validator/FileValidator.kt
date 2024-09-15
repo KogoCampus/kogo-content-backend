@@ -10,7 +10,7 @@ fun validateFile(file: MultipartFile, sizeMax: Int, sizeMin: Int, acceptedMediaT
             ?.addConstraintViolation()
         return false
     }
-    else if (sizeMin > 0 && file.size > sizeMin) {
+    else if (sizeMin > 0 && sizeMin > file.size) {
         context?.buildConstraintViolationWithTemplate("File size smaller than minimum limit of ${sizeMin / 1000000}MB")
             ?.addConstraintViolation()
         return false
@@ -63,12 +63,14 @@ class FileListValidator : ConstraintValidator<ValidFile, List<MultipartFile>?> {
 
     override fun isValid(files: List<MultipartFile>?, context: ConstraintValidatorContext?): Boolean {
         if (files.isNullOrEmpty()) return true
-        return files.all { validateFile(
-            file = it,
-            sizeMax = sizeMax,
-            sizeMin = sizeMin,
-            acceptedMediaTypes = acceptedMediaTypes,
-            context = context
-        ) }
+        return files.all {
+            validateFile(
+                file = it,
+                sizeMax = sizeMax,
+                sizeMin = sizeMin,
+                acceptedMediaTypes = acceptedMediaTypes,
+                context = context
+            )
+        }
     }
 }

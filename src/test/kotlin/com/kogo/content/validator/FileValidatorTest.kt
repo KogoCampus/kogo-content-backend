@@ -1,75 +1,81 @@
 package com.kogo.content.validator
-/*
+
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import jakarta.validation.ConstraintValidatorContext
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.web.multipart.MultipartFile
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
 class FileValidatorTest {
 
-    private lateinit var validator: FileValidator
+    private lateinit var fileValidator: FileValidator
+    private lateinit var fileListValidator: FileListValidator
     private lateinit var context: ConstraintValidatorContext
 
     @BeforeEach
-    fun setup() {
-        validator = FileValidator()
-        context = mockk(relaxed = true) // Mocked context (relaxed so it doesn't need stubbing)
+    fun setUp() {
+        MockKAnnotations.init(this)
+        fileValidator = FileValidator()
+        fileListValidator = FileListValidator()
+        context = mockk(relaxed = true)
     }
 
     @Test
-    fun `test valid image file`() {
-        val validFileAnnotation = mockk<ValidFile>()
-        every { validFileAnnotation.sizeLimit } returns 128000000 // 128MB
-        every { validFileAnnotation.acceptedMediaTypes } returns arrayOf("image/png", "image/jpeg")
-
-        validator.initialize(validFileAnnotation)
-
-        // Mock MultipartFile
-        val mockFile = mockk<MultipartFile>()
-        every { mockFile.size } returns 5000000 // 5MB
-        every { mockFile.contentType } returns "image/png"
-
-        assertTrue(validator.isValid(listOf(mockFile), context))
+    fun `should return true for valid file`() {
+        val file = MockMultipartFile("file", "filename.jpg", "image/jpeg", ByteArray(5000000))
+        fileValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg"), message = "Invalid file"))
+        assertTrue { fileValidator.isValid(file, context) }
     }
 
     @Test
-    fun `test invalid image file size`() {
-        val validFileAnnotation = mockk<ValidFile>()
-        every { validFileAnnotation.sizeLimit } returns 1000000 // 1MB size limit
-        every { validFileAnnotation.acceptedMediaTypes } returns arrayOf("image/png", "image/jpeg")
-
-        validator.initialize(validFileAnnotation)
-
-        val mockFile = mockk<MultipartFile>()
-        every { mockFile.size } returns 5000000 // 5MB (exceeds 1MB)
-        every { mockFile.contentType } returns "image/png"
-
-        assertFalse(validator.isValid(listOf(mockFile), context))
+    fun `should return false for file size exceeding max limit`() {
+        val file = MockMultipartFile("file", "filename.jpg", "image/jpeg", ByteArray(15000000))
+        fileValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg"), message = "Invalid file"))
+        assertFalse { fileValidator.isValid(file, context) }
+        verify { context.buildConstraintViolationWithTemplate("File size exceeds limit of 10MB").addConstraintViolation() }
     }
 
     @Test
-    fun `test invalid media type`() {
-        val validFileAnnotation = mockk<ValidFile>()
-        every { validFileAnnotation.sizeLimit } returns 128000000 // 128MB
-        every { validFileAnnotation.acceptedMediaTypes } returns arrayOf("image/png", "image/jpeg")
-
-        validator.initialize(validFileAnnotation)
-
-        val mockFile = mockk<MultipartFile>()
-        every { mockFile.size } returns 5000000 // 5MB
-        every { mockFile.contentType } returns "application/pdf" // Invalid media type
-
-        assertFalse(validator.isValid(listOf(mockFile), context))
+    fun `should return false for file size below min limit`() {
+        val file = MockMultipartFile("file", "filename.jpg", "image/jpeg", ByteArray(500000))
+        fileValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg"), message = "Invalid file"))
+        assertFalse { fileValidator.isValid(file, context) }
+        verify { context.buildConstraintViolationWithTemplate("File size smaller than minimum limit of 1MB").addConstraintViolation() }
     }
 
     @Test
-    fun `test null or empty file list`() {
-        val validFileAnnotation = mockk<ValidFile>()
-        every { validFileAnnotation.sizeLimit } returns 128000000 // 128MB
-        every { validFileAnnotation.acceptedMediaTypes } returns arrayOf("image/png", "image/jpeg")
+    fun `should return false for unsupported media type`() {
+        val file = MockMultipartFile("file", "filename.pdf", "application/pdf", ByteArray(5000000))
+        fileValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg"), message = "Invalid file"))
+        assertFalse { fileValidator.isValid(file, context) }
+        verify { context.buildConstraintViolationWithTemplate("Unsupported media type: application/pdf").addConstraintViolation() }
+    }
 
-        validator.initialize(validFileAnnotation)
+    @Test
+    fun `should return true for valid file list`() {
+        val file1 = MockMultipartFile("file1", "filename1.jpg", "image/jpeg", ByteArray(5000000))
+        val file2 = MockMultipartFile("file2", "filename2.png", "image/png", ByteArray(2000000))
+        fileListValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg", "image/png"), message = "Invalid file"))
+        assertTrue { fileListValidator.isValid(listOf(file1, file2), context) }
+    }
 
-        // Test with null list
-        assertTrue(validator.isValid(null, context))
+    @Test
+    fun `should return false for invalid file list`() {
+        val file1 = MockMultipartFile("file1", "filename1.jpg", "image/jpeg", ByteArray(15000000))
+        val file2 = MockMultipartFile("file2", "filename2.pdf", "application/pdf", ByteArray(5000000))
+        fileListValidator.initialize(ValidFile(sizeMax = 10000000, sizeMin = 1000000, acceptedMediaTypes = arrayOf("image/jpeg"), message = "Invalid file"))
+        assertFalse { fileListValidator.isValid(listOf(file1, file2), context) }
+    }
 
-        // Test with an empty list
-        assertTrue(validator.isValid(emptyList(), context))
+    @Test
+    fun `should return true for empty or null file list`() {
+        assertTrue { fileListValidator.isValid(emptyList(), context) }
+        assertTrue { fileListValidator.isValid(null, context) }
     }
 }
-*/

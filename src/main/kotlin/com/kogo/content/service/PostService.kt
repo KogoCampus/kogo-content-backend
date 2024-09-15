@@ -7,9 +7,6 @@ import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
-import com.kogo.content.service.util.Transformer
-import com.kogo.content.service.util.deleteAttachment
-import com.kogo.content.service.util.saveFileAndConvertToAttachment
 import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -21,8 +18,6 @@ class PostService (
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
 ) {
-    private val transformer: Transformer<PostDto, Post> = object : Transformer<PostDto, Post>(PostDto::class, Post::class) {}
-
     fun find(postId: String): Post? = repository.findByIdOrNull(postId)
 
     fun listPostsByTopicId(topicId: String): List<Post> = repository.findByTopicId(topicId)
@@ -31,13 +26,16 @@ class PostService (
 
     @Transactional
     fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {
-        val post = transformer.transform(dto)
-        post.topic = topic
-        post.author = author
-
-        val attachments = (dto.images!! + dto.videos!!).map {
-            saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
-        post.attachments = attachments
+        val post = Post(
+            title = dto.title,
+            content = dto.content,
+            topic = topic,
+            author = author,
+            attachments = (dto.images!! + dto.videos!!).map {
+                attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository)
+            },
+            comments = emptyList()
+        )
         return repository.save(post)
     }
 
@@ -46,16 +44,16 @@ class PostService (
         postUpdate.title?.let { post.title = it }
         postUpdate.content?.let { post.content = it }
 
-        val attachmentsUpdated: List<Attachment> = post.attachments.filter { attachment -> attachment.id !in postUpdate.attachmentDelete!! }
+        val attachmentMaintainedAfterDeletion: List<Attachment> = post.attachments.filter { attachment -> attachment.id !in postUpdate.attachmentDelete!! }
         val attachmentAdded = (postUpdate.images!! + postUpdate.videos!!).map {
-            saveFileAndConvertToAttachment(it, fileHandler, attachmentRepository) }
-        post.attachments = attachmentsUpdated + attachmentAdded
+            attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) }
+        post.attachments = attachmentMaintainedAfterDeletion + attachmentAdded
         return repository.save(post)
     }
 
     @Transactional
     fun delete(post: Post) {
-        post.attachments.forEach { deleteAttachment(it, attachmentRepository) }
+        post.attachments.forEach { attachmentRepository.delete(it) }
         repository.deleteById(post.id!!)
     }
 }

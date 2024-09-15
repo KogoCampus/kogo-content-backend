@@ -89,7 +89,7 @@ class PostControllerTest @Autowired constructor(
             multipart(buildPostApiUrl(topicId))
                 .part(MockPart("title", post.title.toByteArray()))
                 .part(MockPart("content", post.content.toByteArray()))
-                .file("images", MockMultipartFile("image.png", "image.png", "image/png", "some image".toByteArray()).bytes)
+                .file(MockMultipartFile("images", "image.png", "image/png", "some image".toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it })
             .andExpect(status().isOk)
@@ -120,6 +120,7 @@ class PostControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val postId = post.id!!
         val updatedPost = Post(
+            id = postId,
             title = "updated post title",
             content = "updated post content",
             topic = post.topic,
@@ -147,6 +148,7 @@ class PostControllerTest @Autowired constructor(
         val topicId = topic.id!!
         val postId = "invalid-post-id"
         every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns null
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
                 .part(MockPart("title", "some post title".toByteArray()))
@@ -183,7 +185,7 @@ class PostControllerTest @Autowired constructor(
 
     private fun buildPostApiUrl(topicId: String, vararg paths: String): String {
         val baseUrl = "/media/topics/$topicId/posts"
-        return if (paths.isNotEmpty()) baseUrl + paths.joinToString("/")
+        return if (paths.isNotEmpty()) "${baseUrl}/" + paths.joinToString("/")
             else baseUrl
     }
 

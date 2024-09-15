@@ -2,7 +2,9 @@ package com.kogo.content.storage.entity
 
 import com.fasterxml.jackson.annotation.JsonBackReference
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.filehandler.FileStoreMetadata
+import com.kogo.content.storage.repository.AttachmentRepository
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.Document
