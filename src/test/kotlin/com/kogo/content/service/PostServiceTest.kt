@@ -41,8 +41,8 @@ class PostServiceTest {
         verify {
             attachmentRepository.saveFileAndReturnAttachment(any(), fileHandler, attachmentRepository)
             postRepository.save(withArg {
-                assertThat(it.title).isEqualTo(postDto.title)
-                assertThat(it.content).isEqualTo(postDto.content)
+                assertThat(it.title).isEqualTo("post title")
+                assertThat(it.content).isEqualTo("post content")
                 assertThat(it.author).isEqualTo(author)
                 assertThat(it.topic).isEqualTo(topic)
                 assertThat(it.attachments).containsExactly(attachment, attachment)

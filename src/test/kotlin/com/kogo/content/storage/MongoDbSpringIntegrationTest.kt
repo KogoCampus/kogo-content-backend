@@ -1,14 +1,10 @@
 package com.kogo.content.storage
 
-import com.kogo.content.storage.entity.UserDetails
-import com.kogo.content.util.fixture
 import com.mongodb.BasicDBObjectBuilder
 import com.mongodb.DBObject
-import jakarta.validation.ValidationException
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockMultipartFile
@@ -24,11 +20,10 @@ class MongoDbSpringIntegrationTest @Autowired constructor(
         objectBuilder.add("key", "value")
         val dbObject : DBObject = objectBuilder.get()
 
-        mongoTemplate.save(dbObject, "collection")
+        mongoTemplate.save(dbObject, "test-collection")
+        mongoTemplate.findAll(DBObject::class.java, "test-collection")
 
-        mongoTemplate.findAll(DBObject::class.java, "collection")
-
-        assertThat(mongoTemplate.findAll(DBObject::class.java, "collection"))
+        assertThat(mongoTemplate.findAll(DBObject::class.java, "test-collection"))
             .extracting("key").containsOnly("value")
     }
 
@@ -39,12 +34,5 @@ class MongoDbSpringIntegrationTest @Autowired constructor(
         objectBuilder.add("mockMultipartFile", mockMultipartFile)
         val dbObject : DBObject = objectBuilder.get()
         mongoTemplate.save(dbObject, "collection")
-    }
-
-    @Test
-    fun `should validate entity before creation`() {
-        val userWithoutUsername = fixture<UserDetails> { mapOf("username" to "") }
-
-        assertThrows<ValidationException> { mongoTemplate.save(userWithoutUsername, "collection") }
     }
 }

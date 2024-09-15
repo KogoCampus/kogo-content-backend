@@ -1,6 +1,15 @@
-name: deploy
+name: build and test
 on:
-    workflow_dispatch:
+    push:
+        branches:
+            - main
+        paths:
+            - 'src/**'
+    pull_request:
+        branches:
+            - main
+        paths:
+            - 'src/**'
 
 jobs:
     deploy:
@@ -24,12 +33,10 @@ jobs:
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: us-west-2
 
-            - name: Run tests
-              run: ./gradlew test
+            - name: Build with Gradle
+              run: ./gradlew build --no-daemon
 
-            - name: Gradle Build
-              if: success()
-              run: |
-                  ./gradlew clean build --refresh-dependencies --stacktrace
+            - name: Run Unit Tests
+              run: ./gradlew test --no-daemon
 
 
