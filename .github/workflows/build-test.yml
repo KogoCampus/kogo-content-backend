@@ -15,6 +15,13 @@ jobs:
     deploy:
         runs-on: [ubuntu-latest]
 
+        services:
+            mongodb:
+                image: mongo:latest
+                ports:
+                    - 27017:27017
+                options: --health-cmd "nc -z localhost 27017" --health-interval 10s --health-timeout 5s --health-retries 5
+
         steps:
             - name: Checkout Code
               uses: actions/checkout@v3
@@ -32,6 +39,19 @@ jobs:
                   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: us-west-2
+
+            - name: Set up MongoDB
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y mongodb-clients
+
+            - name: Run MongoDB Health Check
+              run: |
+                  until nc -z -v -w30 localhost 27017
+                  do
+                    echo "Waiting for MongoDB..."
+                    sleep 5
+                  done
 
             - name: Build with Gradle
               run: ./gradlew build --no-daemon
