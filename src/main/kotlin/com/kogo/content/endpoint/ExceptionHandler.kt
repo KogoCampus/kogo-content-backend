@@ -24,39 +24,49 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
     // set the value to which exception we want to catch
     // i.e. IllegalArgumentException(message)
     @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgumentException(ex: IllegalArgumentException) =
-        HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, details = ex.message)
+    fun handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, details = "")
+    }
 
     @ExceptionHandler(ResourceNotFoundException::class)
-    fun handleResourceNotFoundException(ex: ResourceNotFoundException) =
-        HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = ex.message)
+    fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "")
+    }
 
     @ExceptionHandler(UnsupportedMediaTypeException::class)
-    fun handleUnsupportedMediaTypeException(ex: UnsupportedMediaTypeException) =
-        HttpJsonResponse.errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, details = ex.message)
+    fun handleUnsupportedMediaTypeException(ex: UnsupportedMediaTypeException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, details = "")
+    }
 
     override fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,
         headers: HttpHeaders,
         status: HttpStatusCode,
         request: WebRequest
-    ): ResponseEntity<Any> = run {
+    ): ResponseEntity<Any> {
         val errorCode = ErrorCode.BAD_REQUEST
-        ResponseEntity(
+        log.error { ex }
+        return ResponseEntity(
             ErrorResponse(
                 status = errorCode.httpStatus,
                 message = errorCode.message,
-                details = ex.message
+                details = ""
             ), errorCode.httpStatus)
     }
 
     @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthenticationException(ex: AuthenticationException) =
-        HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = ex.message)
+    fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "")
+    }
 
     @ExceptionHandler(Exception::class)
-    fun handleUnhandledException(ex: Exception): ResponseEntity<HttpJsonResponse.ErrorResponse> {
+    fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
         log.error { "Unhandled exception occurred; ${ex.message}" }
-        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = ex.message)
+        log.error { ex.stackTraceToString() }
+        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "")
     }
 }

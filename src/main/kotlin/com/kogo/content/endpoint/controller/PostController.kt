@@ -127,7 +127,7 @@ class PostController @Autowired constructor(
             title = title,
             content = content,
             attachments = attachments.map { buildPostAttachmentResponse(it) },
-            comments = emptyList(),
+            comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
             viewed = viewed,
@@ -137,7 +137,7 @@ class PostController @Autowired constructor(
 
     private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
         PostResponse.PostAttachment(
-            attachmentId = id!!,
+            attachmentId = id,
             fileName = fileName,
             url = savedLocationURL,
             contentType = contentType,

@@ -14,15 +14,15 @@ data class PostResponse(
     val liked: Boolean
 ) {
     data class PostAttachment (
-        val attachmentId: String,
+        val attachmentId: String? = null,
         val fileName: String,
         val size: Long,
         val contentType: String,
         val url: String
     )
     data class PostComment (
-        var commentId: String,
-        var authorId: String,
+        var commentId: String? = null,
+        var authorId: String? = null,
         var replyCount: Int,
     )
 }

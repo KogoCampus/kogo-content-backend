@@ -1,6 +1,5 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
@@ -11,19 +10,21 @@ import com.kogo.content.util.fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
-class PostControllerTest(
+class PostControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
     @MockkBean
@@ -64,15 +65,6 @@ class PostControllerTest(
     }
 
     @Test
-    fun `should return 404 when topic is not found`() {
-        val topicId = "invalid-topic-id"
-        every { topicService.find(topicId) } returns null
-        mockMvc.get(buildPostApiUrl(topicId, "some-post-id"))
-            .andExpect { status { isNotFound() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-    }
-
-    @Test
     fun `should return 404 when post id is not found`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
@@ -102,10 +94,91 @@ class PostControllerTest(
                 .with { it.method = "POST"; it })
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.title").value(post.title))
             .andExpect(jsonPath("$.data.content").value(post.content))
             .andExpect(jsonPath("$.data.topicId").value(topic.id))
+    }
+
+    @Test
+    fun `should return 404 when topic is not found`() {
+        val topicId = "invalid-topic-id"
+        every { topicService.find(topicId) } returns null
+        mockMvc.perform(
+            multipart(buildPostApiUrl(topicId))
+                .part(MockPart("title", "some post title".toByteArray()))
+                .part(MockPart("content", "some post content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it })
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+    }
+
+    @Test
+    fun `should update an existing post`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val post = createPostFixture(topic)
+        val postId = post.id!!
+        val updatedPost = Post(
+            title = "updated post title",
+            content = "updated post content",
+            topic = post.topic,
+            author = post.author
+        )
+        every { topicService.find(postId) } returns topic
+        every { postService.find(postId) } returns post
+        every { postService.update(post, any()) } returns updatedPost
+        mockMvc.perform(
+            multipart(buildPostApiUrl(topicId, postId))
+                .part(MockPart("title", updatedPost.title.toByteArray()))
+                .part(MockPart("content", updatedPost.content.toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "PUT"; it })
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.data.title").value(updatedPost.title))
+            .andExpect(jsonPath("$.data.content").value(updatedPost.content))
+            .andExpect(jsonPath("$.data.topicId").value(topicId))
+    }
+
+    @Test
+    fun `should return 404 when updating non-existing post`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val postId = "invalid-post-id"
+        every { topicService.find(topicId) } returns topic
+        mockMvc.perform(
+            multipart(buildPostApiUrl(topicId, postId))
+                .part(MockPart("title", "some post title".toByteArray()))
+                .part(MockPart("content", "some post content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "PUT"; it })
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+    }
+
+    @Test
+    fun `should delete a post`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val post = createPostFixture(topic)
+        val postId = post.id!!
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { postService.delete(post) } returns Unit
+        mockMvc.delete(buildPostApiUrl(topicId, postId))
+            .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `should return 404 when deleting non-existing post`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val postId = "invalid-post-id"
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns null
+        mockMvc.delete(buildPostApiUrl(topicId, postId))
+            .andExpect { status { isNotFound() } }
     }
 
     private fun buildPostApiUrl(topicId: String, vararg paths: String): String {
@@ -114,10 +187,17 @@ class PostControllerTest(
             else baseUrl
     }
 
-    private fun createTopicFixture() = fixture<Topic>()
+    private fun createTopicFixture() = fixture<Topic> { mapOf(
+        "owner" to createUserFixture()
+    ) }
 
     private fun createPostFixture(topic: Topic) = fixture<Post> {
-        mapOf("topic" to topic)
+        mapOf(
+            "topic" to topic,
+            "author" to createUserFixture(),
+            "comments" to emptyList<Any>(),
+            "attachments" to emptyList<Any>(),
+        )
     }
 
     private fun createUserFixture() = fixture<UserDetails>()

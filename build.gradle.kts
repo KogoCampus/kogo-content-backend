@@ -88,6 +88,7 @@ openApi {
 conventionalCommits {
     val admittedTypes = listOf(
         "feat",
+        "test",
         "fix",
         "chore",
         "ci",
