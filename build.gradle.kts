@@ -61,7 +61,6 @@ dependencies {
     testImplementation("com.ninja-squad:springmockk:4.0.2")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.13.0")
 }
 
 configurations {

@@ -12,11 +12,11 @@ spring:
     name: kogo-content-backend
   data:
     mongodb:
-      database: kogocontent
-      uri: mongodb://localhost:27017/kogocontent
-      username: admin
-      password: password
-      auto-index-creation: true
+        database: kogocontent
+        uri: mongodb://localhost:27017/kogocontent
+        username: admin
+        password: password
+        auto-index-creation: true
   security:
     oauth2:
       resourceserver:
