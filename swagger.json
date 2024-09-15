@@ -338,7 +338,6 @@
     "schemas": {
       "PostAttachment": {
         "required": [
-          "attachmentId",
           "contentType",
           "fileName",
           "size",
@@ -366,8 +365,6 @@
       },
       "PostComment": {
         "required": [
-          "authorId",
-          "commentId",
           "replyCount"
         ],
         "type": "object",
