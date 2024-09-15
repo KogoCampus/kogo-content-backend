@@ -1,4 +1,4 @@
-name: deploy-swagger-docs
+name: deploy swagger docs
 on:
     push:
         branches:
