@@ -13,41 +13,34 @@ on:
     workflow_dispatch:
 
 jobs:
-    deploy:
-        runs-on: [ubuntu-latest]
+    build-and-test:
+        runs-on: ubuntu-latest
 
         steps:
             - name: Checkout Code
               uses: actions/checkout@v3
               with:
-                ref: ${{ github.event.pull_request.head.sha }}
+                  ref: ${{ github.event.pull_request.head.sha }}
 
             - uses: actions/setup-java@v3
               with:
-                distribution: temurin
-                java-version: 21
-
-            - name: Setup AWS CLI
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                  aws-region: us-west-2
+                  distribution: temurin
+                  java-version: 21
 
             - name: Install MongoDB
               run: |
-                  sudo apt-get install gnupg curl
+                  sudo apt-get install -y gnupg curl
                   curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-                    sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg \
-                    --dearmor
-                  echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+                    sudo gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg
+                  echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu jammy mongodb-org/7.0 multiverse" | \
+                    sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
                   sudo apt-get update
                   sudo apt-get install -y mongodb-org
 
             - name: Start MongoDB
               run: |
-                  sudo systemctl start mongodb
-                  sudo systemctl status mongodb --no-pager
+                  sudo systemctl start mongod
+                  sudo systemctl status mongod --no-pager
 
             - name: Wait for MongoDB to start
               run: |
@@ -62,5 +55,3 @@ jobs:
 
             - name: Run Tests
               run: ./gradlew test --no-daemon
-
-
