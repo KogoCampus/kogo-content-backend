@@ -7,7 +7,6 @@ import com.kogo.content.service.UserContextService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import kotlinx.coroutines.launch
 import org.apache.tomcat.websocket.AuthenticationException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
