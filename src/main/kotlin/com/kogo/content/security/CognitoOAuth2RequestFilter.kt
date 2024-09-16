@@ -13,6 +13,8 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher
 import org.springframework.util.StringUtils
@@ -56,15 +58,16 @@ class CognitoOAuth2RequestFilter(
         filterChain: FilterChain
     ) {
         if (isRequestURINotWhitelisted(request.requestURI)) {
-            val accessToken = getAccessTokenFromRequestHeader(request)
-            if (!accessToken.isNullOrBlank()) {
+            val context = SecurityContextHolder.getContext().authentication
+            val jwt = (context.principal as Jwt).claims
+            val username = jwt[COGNITO_USERNAME] as String
+
+            if (!userContextService.existsUserProfileByUsername(username)) {
+                val accessToken = getAccessTokenFromRequestHeader(request)
                 try {
                     val userInfoJson = obtainUserInfo(accessToken)
-                    val username = userInfoJson.get(COGNITO_USERNAME).toString().removeSurrounding("\"") // remove double quotes
                     val email = userInfoJson.get(COGNITO_EMAIL).toString().removeSurrounding("\"")
-                    if (username.isBlank() || email.isBlank())
-                        throw HttpClientErrorException(HttpStatus.UNAUTHORIZED, "malformed userinfo received; username: $username, email: $email")
-                    createNewUserProfileIfNotExist(username, email)
+                    userContextService.createUserProfile(username, email)
                 } catch (e: HttpClientErrorException) {
                     log.error { e }
                 }
@@ -81,18 +84,11 @@ class CognitoOAuth2RequestFilter(
         return objectMapper.readTree(res.body)
     }
 
-    private fun createNewUserProfileIfNotExist(username: String, email: String) {
-        if (!userContextService.existsUserProfileByUsername(username)) {
-            userContextService.createUserProfile(username, email)
-        }
-    }
-
-    private fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String? {
+    private fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String {
         val bearerToken = request.getHeader("Authorization")
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
-            return bearerToken.substring(7)
-        }
-        return null
+        return bearerToken.takeIf { StringUtils.hasText(it) && bearerToken.startsWith("Bearer") }?.let {
+            bearerToken.substring(7)
+        } ?:  throw HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot read access token.")
     }
 
     private fun isRequestURINotWhitelisted(requestURI: String): Boolean {

@@ -15,10 +15,14 @@ class UserContextService @Autowired constructor(
 ) {
     companion object : Logger()
 
-    fun getCurrentUserContext(): UserDetails {
+    fun getCurrentUsername(): String {
         val context = SecurityContextHolder.getContext().authentication
         val jwt = (context.principal as Jwt).claims
-        val username = jwt["username"] as String
+        return jwt["username"] as String
+    }
+
+    fun getCurrentUserDetails(): UserDetails {
+        val username = getCurrentUsername()
         return findUserProfileByUsername(username) ?: throw RuntimeException("Username not found $username")
     }
 

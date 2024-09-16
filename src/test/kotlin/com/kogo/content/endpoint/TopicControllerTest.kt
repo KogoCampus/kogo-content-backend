@@ -1,7 +1,6 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.service.UserContextService
-import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.entity.Topic
@@ -64,7 +63,7 @@ class TopicControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         topic.owner = topicOwner
         every { topicService.existsByTopicName(any()) } returns false
-        every { userService.getCurrentUserContext() } returns topicOwner
+        every { userService.getCurrentUserDetails() } returns topicOwner
         every { topicService.create(any(), topicOwner) } returns topic
         mockMvc.perform(
             multipart(buildTopicApiUrl())

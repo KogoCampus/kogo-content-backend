@@ -83,7 +83,7 @@ class PostControllerTest @Autowired constructor(
         val user = createUserFixture()
         val topicId = topic.id!!
         every { topicService.find(topicId) } returns topic
-        every { userService.getCurrentUserContext() } returns user
+        every { userService.getCurrentUserDetails() } returns user
         every { postService.create(topic, user, any())} returns post
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId))
