@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import kotlinx.coroutines.launch
+import org.apache.tomcat.websocket.AuthenticationException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -58,18 +59,15 @@ class CognitoOAuth2RequestFilter(
         filterChain: FilterChain
     ) {
         if (isRequestURINotWhitelisted(request.requestURI)) {
-            val context = SecurityContextHolder.getContext().authentication
-            val jwt = (context.principal as Jwt).claims
-            val username = jwt[COGNITO_USERNAME] as String
-
+            val username = userContextService.getCurrentUsername()
             if (!userContextService.existsUserProfileByUsername(username)) {
-                val accessToken = getAccessTokenFromRequestHeader(request)
                 try {
+                    val accessToken = getAccessTokenFromRequestHeader(request)
                     val userInfoJson = obtainUserInfo(accessToken)
                     val email = userInfoJson.get(COGNITO_EMAIL).toString().removeSurrounding("\"")
                     userContextService.createUserProfile(username, email)
-                } catch (e: HttpClientErrorException) {
-                    log.error { e }
+                } catch (e: RuntimeException) {
+                    throw AuthenticationException(e.message)
                 }
             }
         }
@@ -88,7 +86,7 @@ class CognitoOAuth2RequestFilter(
         val bearerToken = request.getHeader("Authorization")
         return bearerToken.takeIf { StringUtils.hasText(it) && bearerToken.startsWith("Bearer") }?.let {
             bearerToken.substring(7)
-        } ?:  throw HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot read access token.")
+        } ?:  throw RuntimeException("Cannot read access token.")
     }
 
     private fun isRequestURINotWhitelisted(requestURI: String): Boolean {
