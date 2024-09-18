@@ -10,8 +10,6 @@ data class PostResponse(
     var comments: List<PostComment>,
     val viewcount: Int,
     val likes: Int,
-    val viewed: Boolean,
-    val liked: Boolean
 ) {
     data class PostAttachment (
         val attachmentId: String? = null,

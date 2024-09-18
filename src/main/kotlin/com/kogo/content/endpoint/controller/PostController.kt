@@ -130,8 +130,6 @@ class PostController @Autowired constructor(
             comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
-            viewed = viewed,
-            liked = liked
         )
     }
 
