@@ -1,77 +1,170 @@
 package com.kogo.content.endpoint.controller
-/*
-import com.kogo.content.endpoint.common.Response
-import org.springframework.beans.factory.annotation.Autowired
-import com.kogo.content.service.MeService
-import com.kogo.content.service.AuthenticatedUserService
+
+import com.kogo.content.endpoint.common.HttpJsonResponse
+import com.kogo.content.endpoint.model.PostResponse
+import com.kogo.content.endpoint.model.UserResponse
+import com.kogo.content.endpoint.model.UserUpdate
+import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.service.UserContextService
+import com.kogo.content.storage.entity.Attachment
+import com.kogo.content.endpoint.controller.PostController
+import com.kogo.content.endpoint.model.TopicResponse
+import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.repository.PostRepository
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("media")
 class MeController @Autowired constructor(
-    private val meService : MeService,
-    private val authenticatedUserService: AuthenticatedUserService
+    private val userService : UserContextService
 ) {
-    // TO BE DELETED
-    // START
-    // create a user with a username of "testUser" for testing
-    @RequestMapping(
-        path = ["me"],
-        method = [RequestMethod.POST],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
-    ) fun createUser(
-        @Valid userDto: UserDto
-    ) : Response {
-        val user = authenticatedUserService.createUser(userDto)
-        return Response.success(user)
-    }
-    // END
-
     @GetMapping("me")
-    fun getMe(
-    ): Response {
-        return Response.success(meService.getUser())
+    @Operation(
+        summary = "get my user info",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
+        )])
+    fun getMe() = run {
+        val me = userService.getCurrentUserDetails()
+        HttpJsonResponse.successResponse(buildUserResponse(me))
     }
 
     @RequestMapping(
         path = ["me"],
         method = [RequestMethod.PUT],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
-    ) fun updateMe(
-        @RequestPart("username", required = false) username: String?,
-        @RequestPart("profileImage", required = false) profileImage: MultipartFile?,
-    ) : Response {
-        val attributes = mapOf(
-            "username" to username,
-            "profileImage" to profileImage,
-        ).filterValues { it != null }
-
-        if (attributes.isEmpty())
-            throw IllegalArgumentException("Empty request body")
-
-        return Response.success(meService.updateUserDetails(attributes))
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = UserUpdate::class))])
+    @Operation(
+        summary = "update my user info",
+        requestBody = RequestBody(),
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
+        )]
+    )
+    fun updateMe(
+        @Valid meUpdate: UserUpdate) = run {
+            val me = userService.getCurrentUserDetails()
+            HttpJsonResponse.successResponse(buildUserResponse(userService.updateUserProfile(me, meUpdate)))
     }
 
     @GetMapping("me/ownership/posts")
-    fun getMePosts(
-    ): Response {
-        return Response.success(meService.getUserPosts())
+    @Operation(
+        summary = "get my posts",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))]
+        )])
+    fun getMePosts() = run {
+        val me = userService.getCurrentUserDetails()
+        HttpJsonResponse.successResponse(userService.getUserPosts(me).map { buildPostResponse(it) })
     }
 
-    @GetMapping("me/ownership/groups")
-    fun getMeGroups(
-    ): Response {
-        return Response.success(meService.getUserGroups())
+    @GetMapping("me/ownership/topics")
+    @Operation(
+        summary = "get my topics",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+        )])
+    fun getMeGroups() = run {
+        val me = userService.getCurrentUserDetails()
+        HttpJsonResponse.successResponse(userService.getUserTopics(me).map { buildTopicResponse(it) })
     }
 
     @GetMapping("me/following")
-    fun getMeFollowing(
-    ): Response {
-        return Response.success(meService.getUserFollowing())
+    @Operation(
+        summary = "get my following topics",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+        )])
+    fun getMeFollowing() = run {
+        val me = userService.getCurrentUserDetails()
+        HttpJsonResponse.successResponse(userService.getUserFollowings(me).map { buildTopicResponse(it) })
     }
 
+    private fun buildUserResponse(user: UserDetails) = with(user) {
+        UserResponse(
+            id = id!!,
+            username = username,
+            email = email,
+            schoolId = schoolId,
+            profileImage = profileImage?.let { buildUserProfileImage(it) },
+            followingTopics = followingTopics,
+        )
+    }
+
+    private fun buildUserProfileImage(attachment: Attachment) = with(attachment) {
+        UserResponse.UserProfileImage(
+            attachmentId = id!!,
+            fileName = fileName,
+            url = savedLocationURL,
+            contentType = contentType,
+            size = fileSize
+        )
+    }
+
+    private fun buildTopicResponse(topic: Topic) = with(topic) {
+        TopicResponse(
+            id = id!!,
+            ownerUserId = owner.id!!,
+            topicName = topicName,
+            description = description,
+            tags = tags,
+            profileImage = profileImage?.let { buildTopicProfileImage(it) }
+        )
+    }
+
+    private fun buildTopicProfileImage(attachment: Attachment) = with(attachment) {
+        TopicResponse.TopicProfileImage(
+            attachmentId = id!!,
+            fileName = fileName,
+            url = savedLocationURL,
+            contentType = contentType,
+            size = fileSize
+        )
+    }
+
+    private fun buildPostResponse(post: Post): PostResponse = with(post) {
+        PostResponse(
+            id = id!!,
+            topicId = post.topic.id,
+            authorUserId = author.id!!,
+            title = title,
+            content = content,
+            attachments = attachments.map { buildPostAttachmentResponse(it) },
+            comments = emptyList(), // TODO
+            viewcount = viewcount,
+            likes = likes,
+            viewed = viewed,
+            liked = liked
+        )
+    }
+
+    private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
+        PostResponse.PostAttachment(
+            attachmentId = id,
+            fileName = fileName,
+            url = savedLocationURL,
+            contentType = contentType,
+            size = fileSize
+        )
+    }
 }
-*/
+
