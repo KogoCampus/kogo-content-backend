@@ -231,6 +231,55 @@
         }
       }
     },
+    "/media/me": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my user info",
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "update my user info",
+        "operationId": "updateMe",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/topics": {
       "post": {
         "tags": [
@@ -326,6 +375,69 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/me/ownership/topics": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my topics",
+        "operationId": "getMeGroups",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/me/ownership/posts": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my posts",
+        "operationId": "getMePosts",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/me/following": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my following topics",
+        "operationId": "getMeFollowing",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
                 }
               }
             }
@@ -547,6 +659,168 @@
               "type": "string",
               "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
             }
+          },
+          "profileImage": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "Attachment": {
+        "required": [
+          "contentType",
+          "fileName",
+          "fileSize",
+          "savedLocationURL"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "savedLocationURL": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Topic": {
+        "required": [
+          "description",
+          "owner",
+          "tags",
+          "topicName",
+          "userCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "topicName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserDetails"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "userCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UserDetails": {
+        "required": [
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "schoolId": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "followingTopics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Topic"
+            }
+          }
+        }
+      },
+      "UserProfileImage": {
+        "required": [
+          "attachmentId",
+          "contentType",
+          "fileName",
+          "size",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "attachmentId": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "UserResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "schoolId": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/UserProfileImage"
+          },
+          "followingTopics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Topic"
+            }
+          }
+        }
+      },
+      "UserUpdate": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
           },
           "profileImage": {
             "type": "string",
