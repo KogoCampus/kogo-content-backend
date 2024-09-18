@@ -8,9 +8,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.apache.tomcat.websocket.AuthenticationException
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -23,7 +21,6 @@ import org.springframework.util.StringUtils
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.util.DefaultUriBuilderFactory
-import java.util.Base64
 
 @Component
 class CognitoOAuth2RequestFilter(
@@ -95,17 +92,6 @@ class CognitoOAuth2RequestFilter(
 
     private fun isRequestURINotWhitelisted(requestURI: String): Boolean {
         return ! SecurityConfig.WHITELIST_PATHS.any { pathMatcher.match(it, requestURI) }
-    }
-
-    private fun decodeTokenPayload(jwt: String): String {
-        val parts = jwt.split(".")
-        return try {
-            val charset = charset("UTF-8")
-            val payload = String(Base64.getUrlDecoder().decode(parts[1].toByteArray(charset)), charset)
-            return payload
-        } catch (e: Exception) {
-            "Error parsing JWT: $e"
-        }
     }
 
     private fun jwtDecoder(): JwtDecoder {
