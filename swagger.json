@@ -382,6 +382,97 @@
         }
       }
     },
+    "/media/posts/{postId}/views": {
+      "post": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "create a view under the given post",
+        "operationId": "createView",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/posts/{postId}/likes": {
+      "post": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "create a like under the given post",
+        "operationId": "createLike",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "delete a like under the given post",
+        "operationId": "deleteLike",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/me/ownership/topics": {
       "get": {
         "tags": [
@@ -499,11 +590,9 @@
           "comments",
           "content",
           "id",
-          "liked",
           "likes",
           "title",
-          "viewcount",
-          "viewed"
+          "viewcount"
         ],
         "type": "object",
         "properties": {
@@ -541,12 +630,6 @@
           "likes": {
             "type": "integer",
             "format": "int32"
-          },
-          "viewed": {
-            "type": "boolean"
-          },
-          "liked": {
-            "type": "boolean"
           }
         }
       },
@@ -882,6 +965,42 @@
               "description": "list of video files to add to the post",
               "format": "binary"
             }
+          }
+        }
+      },
+      "View": {
+        "required": [
+          "parentId",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          }
+        }
+      },
+      "Like": {
+        "required": [
+          "parentId",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
           }
         }
       },
