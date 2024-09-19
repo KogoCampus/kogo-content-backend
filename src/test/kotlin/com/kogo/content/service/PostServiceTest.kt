@@ -8,19 +8,20 @@ import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
+import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.PostRepository
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.boot.autoconfigure.security.SecurityProperties.User
 
 class PostServiceTest {
     private val postRepository: PostRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
+    private val likeRepository: LikeRepository = mockk()
     private val fileHandler: FileHandler = mockk()
 
-    private val postService: PostService = PostService(postRepository, attachmentRepository, fileHandler)
+    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, fileHandler)
 
     @Test
     fun `should create a new post`() {
@@ -82,6 +83,30 @@ class PostServiceTest {
                 assertThat(it.content).isEqualTo(postUpdate.content)
                 assertThat(it.attachments).containsExactly(attachmentExisting2, attachmentToAdd, attachmentToAdd)
             })
+        }
+    }
+
+    @Test
+    fun `should create a like under the post`() {
+        //TODO: if more setup is required
+        val postId = "post-id"
+        val userId = "user-id"
+
+        val author = mockk<UserDetails> {
+            every { id } returns userId
+        }
+
+        every { likeRepository.save(any()) } returns mockk()
+        every { postRepository.addLike(any()) } just Runs
+
+        postService.addLike(postId, author)
+
+        verify {
+            likeRepository.save(withArg {
+                assertThat(it.parentId).isEqualTo(postId)
+                assertThat(it.userId).isEqualTo(userId)
+            })
+            postRepository.addLike(postId)
         }
     }
 }

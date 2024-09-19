@@ -12,18 +12,17 @@ class PostRepositoryImpl : PostRepositoryCustom {
     @Autowired
     private lateinit var mongoTemplate: MongoTemplate
 
-    override fun updateLikes(postId: String, alreadyLiked: Boolean) {
+    override fun addLike(postId: String) {
         val query = Query(Criteria.where("_id").`is`(postId))
         val update = Update()
-        println(alreadyLiked)
-        if (alreadyLiked) {
-            println("dercrementing a like")
-            update.inc("likes", -1)  // Decrement if already liked
-        } else {
-            println("incrementing a like")
-            update.inc("likes", 1)   // Increment if not already liked
-        }
+        update.inc("likes", 1)
+        mongoTemplate.updateFirst(query, update, Post::class.java)
+    }
 
+    override fun removeLike(postId: String) {
+        val query = Query(Criteria.where("_id").`is`(postId))
+        val update = Update()
+        update.inc("likes", -1)
         mongoTemplate.updateFirst(query, update, Post::class.java)
     }
 

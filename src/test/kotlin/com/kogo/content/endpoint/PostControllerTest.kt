@@ -9,6 +9,7 @@ import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.util.fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -181,6 +182,102 @@ class PostControllerTest @Autowired constructor(
         every { postService.find(postId) } returns null
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `should create a like under the post`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
+        every { postService.addLike(postId, user) } returns Unit
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/likes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("User's like added successfully to post: $postId"))
+    }
+
+    @Test
+    fun `should return 404 when creating a like under non-existing post`() {
+        val postId = "invalid-post-id"
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns null
+        every { userService.getCurrentUserDetails() } returns user
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/likes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `should return 400 when creating a duplicate like under the same post`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/likes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.details").value("user already liked this post: $postId"))
+    }
+
+    @Test
+    fun `should delete a like under the post`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
+        every { postService.removeLike(postId, user) } returns Unit
+
+        mockMvc.delete("/media/posts/$postId/likes")
+            .andExpect { status { isOk() } }
+            .andExpect{ jsonPath("$.message").value("User's like deleted successfully to post: $postId")}
+    }
+
+    @Test
+    fun `should return 404 when deleting a like under non-existing post`() {
+        val postId = "invalid-post-id"
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns null
+        every { userService.getCurrentUserDetails() } returns user
+
+        mockMvc.delete("/media/posts/$postId/likes")
+            .andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `should return 400 when deleting non-existing like`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
+
+        mockMvc.delete("/media/posts/$postId/likes")
+            .andExpect{ status { isBadRequest()} }
+            .andExpect{ jsonPath("$.details").value("user never liked this post: $postId") }
     }
 
     private fun buildPostApiUrl(topicId: String, vararg paths: String): String {

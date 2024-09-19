@@ -3,11 +3,8 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.*
-import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 class PostService (
     private val repository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
+    private val likeRepository: LikeRepository,
     private val fileHandler: FileHandler,
 ) {
     fun find(postId: String): Post? = repository.findByIdOrNull(postId)
@@ -56,4 +54,26 @@ class PostService (
         post.attachments.forEach { attachmentRepository.delete(it) }
         repository.deleteById(post.id!!)
     }
+
+    @Transactional
+    fun addLike(parentId: String, user: UserDetails) {
+        val userId = user.id!!
+        val like = Like(
+            userId = userId,
+            parentId = parentId,
+        )
+        likeRepository.save(like)
+        repository.addLike(parentId)
+    }
+
+    @Transactional
+    fun removeLike(parentId: String, user: UserDetails) {
+        val userId = user.id!!
+        val like = likeRepository.findByUserIdAndParentId(userId, parentId)
+        likeRepository.deleteById(like!!.id!!)
+        repository.removeLike(parentId)
+    }
+
+    fun findLikeByUserIdAndParentId(userId: String, parentId: String): Like? =
+        likeRepository.findByUserIdAndParentId(userId, parentId)
 }
