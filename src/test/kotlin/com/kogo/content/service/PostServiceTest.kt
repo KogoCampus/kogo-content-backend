@@ -10,6 +10,7 @@ import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.PostRepository
+import com.kogo.content.storage.repository.ViewRepository
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,9 +20,10 @@ class PostServiceTest {
     private val postRepository: PostRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
     private val likeRepository: LikeRepository = mockk()
+    private val viewRepository: ViewRepository = mockk()
     private val fileHandler: FileHandler = mockk()
 
-    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, fileHandler)
+    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler)
 
     @Test
     fun `should create a new post`() {
@@ -88,7 +90,6 @@ class PostServiceTest {
 
     @Test
     fun `should create a like under the post`() {
-        //TODO: if more setup is required
         val postId = "post-id"
         val userId = "user-id"
 
@@ -107,6 +108,29 @@ class PostServiceTest {
                 assertThat(it.userId).isEqualTo(userId)
             })
             postRepository.addLike(postId)
+        }
+    }
+
+    @Test
+    fun `should create a view under the post`() {
+        val postId = "post-id"
+        val userId = "user-id"
+
+        val author = mockk<UserDetails> {
+            every { id } returns userId
+        }
+
+        every { viewRepository.save(any()) } returns mockk()
+        every { postRepository.addView(any()) } just Runs
+
+        postService.addView(postId, author)
+
+        verify {
+            viewRepository.save(withArg {
+                assertThat(it.parentId).isEqualTo(postId)
+                assertThat(it.userId).isEqualTo(userId)
+            })
+            postRepository.addView(postId)
         }
     }
 }

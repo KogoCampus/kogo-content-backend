@@ -280,6 +280,60 @@ class PostControllerTest @Autowired constructor(
             .andExpect{ jsonPath("$.details").value("user never liked this post: $postId") }
     }
 
+    @Test
+    fun `should create a view under the post`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns null
+        every { postService.addView(postId, user) } returns Unit
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/views")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("User's view added successfully to post: $postId"))
+    }
+
+    @Test
+    fun `should return 404 when creating a view under non-existing post`() {
+        val postId = "invalid-post-id"
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns null
+        every { userService.getCurrentUserDetails() } returns user
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/views")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `should return 400 when creating a duplicate view under the same post`() {
+        val post = createPostFixture(createTopicFixture())
+        val postId = post.id!!
+        val user = createUserFixture()
+
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns mockk()
+
+        mockMvc.perform(
+            multipart("/media/posts/$postId/views")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with{ it.method = "POST"; it }
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.details").value("user already viewed this post: $postId"))
+    }
+
     private fun buildPostApiUrl(topicId: String, vararg paths: String): String {
         val baseUrl = "/media/topics/$topicId/posts"
         return if (paths.isNotEmpty()) "${baseUrl}/" + paths.joinToString("/")
