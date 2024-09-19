@@ -29,7 +29,4 @@ data class Post (
 
     var viewcount: Int = 0,
     var likes: Int = 0,
-
-    var viewed: Boolean = false,
-    var liked: Boolean = false,
 )
