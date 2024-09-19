@@ -26,4 +26,11 @@ class PostRepositoryImpl : PostRepositoryCustom {
         mongoTemplate.updateFirst(query, update, Post::class.java)
     }
 
+    override fun addView(postId: String) {
+        val query = Query(Criteria.where("_id").`is`(postId))
+        val update = Update()
+        update.inc("viewcount", 1)
+        mongoTemplate.updateFirst(query, update, Post::class.java)
+    }
+
 }

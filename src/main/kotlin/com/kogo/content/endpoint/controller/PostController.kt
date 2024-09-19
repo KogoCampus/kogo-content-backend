@@ -9,10 +9,7 @@ import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.Like
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
@@ -153,6 +150,26 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user never liked this post: ${postId}")
         postService.removeLike(postId, user)
         HttpJsonResponse.successResponse(buildPostResponse(post), "User's like deleted successfully to post: ${postId}")
+    }
+
+    @RequestMapping(
+        path = ["posts/{postId}/views"],
+        method = [RequestMethod.POST]
+    )
+    @Operation(
+        summary = "create a view under the given post",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(schema = Schema(implementation = View::class))]
+        )])
+    fun createView(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
+        val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val user = userContextService.getCurrentUserDetails()
+        if (postService.findViewByUserIdAndParentId(user.id!!, postId) != null)
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already viewed this post: ${postId}")
+        postService.addView(postId, user)
+        HttpJsonResponse.successResponse(buildPostResponse(post), "User's view added successfully to post: ${postId}")
     }
 
     private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)

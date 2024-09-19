@@ -14,6 +14,7 @@ class PostService (
     private val repository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val likeRepository: LikeRepository,
+    private val viewRepository: ViewRepository,
     private val fileHandler: FileHandler,
 ) {
     fun find(postId: String): Post? = repository.findByIdOrNull(postId)
@@ -74,6 +75,20 @@ class PostService (
         repository.removeLike(parentId)
     }
 
+    @Transactional
+    fun addView(parentId: String, user: UserDetails) {
+        val userId = user.id!!
+        val view = View(
+            userId = userId,
+            parentId = parentId,
+        )
+        viewRepository.save(view)
+        repository.addView(parentId)
+    }
+
     fun findLikeByUserIdAndParentId(userId: String, parentId: String): Like? =
         likeRepository.findByUserIdAndParentId(userId, parentId)
+
+    fun findViewByUserIdAndParentId(userId: String, parentId: String): View? =
+        viewRepository.findByUserIdAndParentId(userId, parentId)
 }
