@@ -7,26 +7,23 @@ import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
 @CompoundIndex(def = "{'author.id': 1}")
-data class Post (
+data class Comment (
     @Id
-    var id : String? = null,
-
-    var title: String = "",
-
-    @DBRef
-    var topic: Topic,
+    var id: String? = null,
 
     @DBRef
     var author: UserDetails,
+    var content: String,
+    var parentId: String,
+    var parentType: CommentParentType,
 
-    var content: String = "",
-
-    @DBRef
-    var attachments: List<Attachment> = emptyList(),
-
-    @DBRef
-    var comments: List<Comment> = emptyList(),
-
-    var viewcount: Int = 0,
     var likes: Int = 0,
+    var liked: Boolean = false,
+
+    var repliesCount: Int = 0
 )
+
+enum class CommentParentType {
+    COMMENT,
+    POST
+}

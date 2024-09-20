@@ -21,24 +21,17 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
 
     companion object : Logger()
 
-    // set the value to which exception we want to catch
-    // i.e. IllegalArgumentException(message)
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<ErrorResponse> {
-        log.error { ex }
-        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, details = "")
-    }
-
+    // i.e. throw ResourceNotFound("Comment", commendId)
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         log.error { ex }
-        return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "")
+        return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "${ex.resourceName} not found for id: ${ex.resourceId}")
     }
 
     @ExceptionHandler(UnsupportedMediaTypeException::class)
     fun handleUnsupportedMediaTypeException(ex: UnsupportedMediaTypeException): ResponseEntity<ErrorResponse> {
         log.error { ex }
-        return HttpJsonResponse.errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, details = "")
+        return HttpJsonResponse.errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, details = "${ex.mediaType} is not supported. Please upload ${ex.acceptedMediaType}.")
     }
 
     override fun handleMethodArgumentNotValid(
@@ -48,25 +41,27 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         request: WebRequest
     ): ResponseEntity<Any> {
         val errorCode = ErrorCode.BAD_REQUEST
-        log.error { ex }
+        log.error { ex.stackTraceToString() }
+        val bindingResult = ex.bindingResult
+        val fieldErrors = bindingResult.fieldErrors
         return ResponseEntity(
             ErrorResponse(
                 status = errorCode.httpStatus,
                 message = errorCode.message,
-                details = ""
+                details = "Error: ${ex.body.detail} in ${ex.objectName}"
             ), errorCode.httpStatus)
     }
 
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
         log.error { ex }
-        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "")
+        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
     }
 
     @ExceptionHandler(Exception::class)
     fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
         log.error { "Unhandled exception occurred; ${ex.message}" }
         log.error { ex.stackTraceToString() }
-        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "")
+        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
     }
 }
