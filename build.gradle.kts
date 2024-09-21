@@ -43,6 +43,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
+    // Spring Cloud
+    implementation("io.awspring.cloud:spring-cloud-starter-aws-secrets-manager-config:2.4.4")
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.0.0")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")

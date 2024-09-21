@@ -1,0 +1,22 @@
+---
+spring:
+    config:
+        import: aws-secretsmanager:/stg/kogo-content-backend/application.properties
+    data:
+        mongodb:
+            database: ${secrets.mongodb.database}
+            uri: ${secrets.mongodb.uri}
+            username: ${secrets.mongodb.username}
+            password: ${secrets.mongodb.password}
+            auto-index-creation: true
+
+filehandler:
+    prefix: files
+
+meilisearch:
+    host: ${secrets.meilisearch.host}
+    apikey: ${secrets.meilisearch.apikey}
+
+aws:
+    s3:
+        bucket: ${secrets.aws.s3.bucket}

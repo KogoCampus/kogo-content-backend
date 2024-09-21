@@ -2,6 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.filehandler.FileStoreKey
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
@@ -42,8 +43,8 @@ class TopicServiceTest {
         )
         val updatedAttachment = Attachment(
             id = "attachment-id",
-            fileName = "file-name",
-            savedLocationURL = "saved-path",
+            name = "file-name",
+            storeKey = FileStoreKey("saved-path"),
             contentType = "image/png",
             fileSize = 1000
         )

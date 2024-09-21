@@ -13,7 +13,7 @@ data class PostResponse(
 ) {
     data class PostAttachment (
         val attachmentId: String? = null,
-        val fileName: String,
+        val name: String,
         val size: Long,
         val contentType: String,
         val url: String

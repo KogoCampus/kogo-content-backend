@@ -7,6 +7,7 @@ import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.PostUpdate
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -21,7 +22,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -32,6 +32,7 @@ class PostController @Autowired constructor(
     private val postService : PostService,
     private val topicService : TopicService,
     private val userContextService: UserContextService,
+    private val fileHandler: FileHandler
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -207,13 +208,10 @@ class PostController @Autowired constructor(
     private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
         PostResponse.PostAttachment(
             attachmentId = id,
-            fileName = fileName,
-            url = savedLocationURL,
+            name = name,
+            url = fileHandler.getFileReadUrl(attachment.storeKey),
             contentType = contentType,
             size = fileSize
         )
     }
-
-    // TODO
-    // fun buildPostCommentResponse(comment)
 }

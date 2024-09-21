@@ -7,11 +7,10 @@ import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.endpoint.controller.PostController
 import com.kogo.content.endpoint.model.TopicResponse
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.repository.PostRepository
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -25,7 +24,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("media")
 class MeController @Autowired constructor(
-    private val userService : UserContextService
+    private val userService : UserContextService,
+    private val fileHandler: FileHandler
 ) {
     @GetMapping("me")
     @Operation(
@@ -113,8 +113,8 @@ class MeController @Autowired constructor(
     private fun buildUserProfileImage(attachment: Attachment) = with(attachment) {
         UserResponse.UserProfileImage(
             attachmentId = id!!,
-            fileName = fileName,
-            url = savedLocationURL,
+            fileName = name,
+            url = fileHandler.getFileReadUrl(attachment.storeKey),
             contentType = contentType,
             size = fileSize
         )
@@ -134,8 +134,8 @@ class MeController @Autowired constructor(
     private fun buildTopicProfileImage(attachment: Attachment) = with(attachment) {
         TopicResponse.TopicProfileImage(
             attachmentId = id!!,
-            fileName = fileName,
-            url = savedLocationURL,
+            name = name,
+            url = fileHandler.getFileReadUrl(attachment.storeKey),
             contentType = contentType,
             size = fileSize
         )
@@ -158,8 +158,8 @@ class MeController @Autowired constructor(
     private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
         PostResponse.PostAttachment(
             attachmentId = id,
-            fileName = fileName,
-            url = savedLocationURL,
+            name = name,
+            url = fileHandler.getFileReadUrl(attachment.storeKey),
             contentType = contentType,
             size = fileSize
         )

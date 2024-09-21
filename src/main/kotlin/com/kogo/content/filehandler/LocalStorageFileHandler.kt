@@ -11,7 +11,7 @@ import java.util.UUID
 @Component
 class LocalStorageFileHandler : FileHandler {
 
-    @Value("\${filehandler.localMountLocation}")
+    @Value("\${filehandler.prefix}")
     lateinit var mountLocation: String
 
     lateinit var localFileSystem: LocalFileSystem
@@ -28,11 +28,11 @@ class LocalStorageFileHandler : FileHandler {
         localFileSystem.write(storePath, content)
         return FileStoreMetadata(
             fileName = fileStoreName,
-            url = storePath.toAbsolutePath().toString(),
-            contentType = content.contentType!!,
-            size = content.size
+            storeKey = FileStoreKey(key = storePath.toAbsolutePath().toString())
         )
     }
+
+    override fun getFileReadUrl(storeKey: FileStoreKey): String = storeKey.toString()
 
     private fun fileStoreLocation(): String {
         val calendar: Calendar = Calendar.getInstance()

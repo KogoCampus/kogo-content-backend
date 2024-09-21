@@ -10,7 +10,7 @@ data class TopicResponse(
 ) {
     data class TopicProfileImage (
         val attachmentId: String,
-        val fileName: String,
+        val name: String,
         val size: Long,
         val contentType: String,
         val url: String

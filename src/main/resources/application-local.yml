@@ -1,0 +1,17 @@
+---
+spring:
+    data:
+        mongodb:
+            database: kogocontent
+            uri: mongodb://localhost:27017/kogocontent
+            username: admin
+            password: password
+            auto-index-creation: true
+
+filehandler:
+    prefix: tmp/files
+
+meilisearch:
+    host: http://localhost:7700
+    masterkey: 'MASTER_KEY'
+    apikey:

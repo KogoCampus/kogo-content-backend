@@ -28,8 +28,8 @@ class MongoDBConfig(
         return MongoTemplate(mongoDatabaseFactory())
     }
 
-    // @Bean
-    // fun mongoCustomConversions(converterScan: ConverterScan): MongoCustomConversions {
-    //     return MongoCustomConversions(converterScan.convertersToRegister)
-    // }
+    @Bean
+    fun mongoCustomConversions(converterScan: ConverterScan): MongoCustomConversions {
+        return MongoCustomConversions(converterScan.convertersToRegister)
+    }
 }

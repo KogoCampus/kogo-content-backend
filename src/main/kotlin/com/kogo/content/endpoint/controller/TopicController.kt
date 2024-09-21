@@ -6,6 +6,7 @@ import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.*
 class TopicController @Autowired constructor(
     private val topicService : TopicService,
     private val userContextService: UserContextService,
+    private val fileHandler: FileHandler
 ) {
     companion object : Logger()
 
@@ -42,13 +44,6 @@ class TopicController @Autowired constructor(
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
-
-    // @GetMapping("groups")
-    // fun searchGroupsByKeyword(
-    //     @RequestParam(name = "q", defaultValue = "") query: String
-    // ): ApiResponse {
-    //     return ApiResponse.success(meiliSearchService.searchGroups(query))
-    // }
 
     @RequestMapping(
         path = ["topics"],
@@ -114,8 +109,8 @@ class TopicController @Autowired constructor(
     private fun buildTopicProfileImage(attachment: Attachment) = with(attachment) {
         TopicResponse.TopicProfileImage(
             attachmentId = id!!,
-            fileName = fileName,
-            url = savedLocationURL,
+            name = name,
+            url = fileHandler.getFileReadUrl(attachment.storeKey),
             contentType = contentType,
             size = fileSize
         )

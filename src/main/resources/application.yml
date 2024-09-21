@@ -8,33 +8,27 @@ springdoc:
         path: /index.html
 
 spring:
-  application:
-    name: kogo-content-backend
-  data:
-    mongodb:
-        database: kogocontent
-        uri: mongodb://localhost:27017/kogocontent
-        username: admin
-        password: password
-        auto-index-creation: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://kogo-dev.auth.us-west-2.amazoncognito.com
-          jwk-set-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj/.well-known/jwks.json
+    application:
+        name: kogo-content-backend
+    profiles:
+        active: "local"
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    issuer-uri: https://kogo-dev.auth.us-west-2.amazoncognito.com
+                    jwk-set-uri: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Onci94rlj/.well-known/jwks.json
+
+cloud:
+    aws:
+        region:
+            static: us-west-2
+        credentials:
+            profile-name: default
 
 management:
-  endpoints:
-    web:
-      base-path: /-
-      exposure:
-        include: health
-
-filehandler:
-  provider: local
-  localMountLocation: tmp/files
-
-meilisearch:
-  host: http://localhost:7700
-  apiKey:
+    endpoints:
+        web:
+            base-path: /-
+            exposure:
+                include: health

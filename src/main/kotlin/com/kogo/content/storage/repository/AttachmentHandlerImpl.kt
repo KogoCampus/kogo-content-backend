@@ -12,10 +12,10 @@ class AttachmentHandlerImpl : AttachmentHandler {
     ): Attachment {
         val metadata = fileHandler.store(file)
         val attachment = Attachment(
-            fileName = metadata.fileName,
-            savedLocationURL = metadata.url,
-            contentType = metadata.contentType,
-            fileSize = metadata.size,
+            name = metadata.fileName,
+            storeKey = metadata.storeKey,
+            contentType = file.contentType!!,
+            fileSize = file.size,
         )
         attachmentRepository.save(attachment)
         return attachment
