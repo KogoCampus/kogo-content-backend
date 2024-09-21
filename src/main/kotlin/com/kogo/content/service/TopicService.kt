@@ -21,7 +21,7 @@ class TopicService (
 
     fun findByTopicName(topicName: String): Topic? = repository.findByTopicName(topicName)
 
-    fun findByOwnerId(ownerId: String): List<Topic> = repository.findByOwnerId(ownerId)
+    fun findByOwnerId(ownerId: String): List<Topic> = repository.findAllByOwnerId(ownerId)
 
     fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
 

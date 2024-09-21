@@ -1,10 +1,15 @@
 package com.kogo.content.service
 
+import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.*
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,9 +24,20 @@ class PostService (
 ) {
     fun find(postId: String): Post? = repository.findByIdOrNull(postId)
 
-    fun listPostsByTopicId(topicId: String): List<Post> = repository.findByTopicId(topicId)
+    fun listPostsByTopicId(topicId: String, paginationRequest: PaginationRequest): PaginationResponse<Post> {
+        val limit = paginationRequest.limit
+        val page = paginationRequest.page
+        val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
+        val posts = if (page != null) {
+            repository.findAllByTopicIdAndIdLessThan(topicId, page, pageable)
+        } else {
+            repository.findAllByTopicId(topicId, pageable)
+        }
+        val nextPageToken = posts.lastOrNull()?.id
+        return PaginationResponse(posts, nextPageToken)
+    }
 
-    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findByAuthorId(authorId)
+    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findAllByAuthorId(authorId)
 
     @Transactional
     fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {
