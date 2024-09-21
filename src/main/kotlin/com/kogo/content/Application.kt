@@ -26,6 +26,6 @@ class SpringContext : ApplicationContextAware {
     }
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
-        SpringContext.context = applicationContext
+        context = applicationContext
     }
 }
