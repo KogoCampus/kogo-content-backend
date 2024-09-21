@@ -438,12 +438,35 @@
           "post-controller"
         ],
         "summary": "return a list of posts in the given topic",
-        "operationId": "listPosts",
+        "operationId": "listPostsInTopic",
         "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
           {
             "name": "topicId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -452,6 +475,14 @@
         "responses": {
           "200": {
             "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1419,6 +1450,21 @@
         "type": "object",
         "properties": {
           "content": {
+            "type": "string"
+          }
+        }
+      },
+      "PaginationRequest": {
+        "required": [
+          "limit"
+        ],
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
             "type": "string"
           }
         }
