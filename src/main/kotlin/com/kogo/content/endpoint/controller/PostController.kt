@@ -51,11 +51,9 @@ class PostController @Autowired constructor(
         findTopicByIdOrThrow(topicId)
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
-        val header = HttpHeaders()
-        header.set("next_page", paginationResponse.nextPage)
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { buildPostResponse(it) },
-            headers = header
+            headers = paginationResponse.toHeaders()
         )
     }
 

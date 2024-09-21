@@ -56,6 +56,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
             .andExpect { header { string("next_page", "sample-next-page-token") } }
+            .andExpect { header { string("item_count", "${paginationRequest.limit}") } }
         val capturedPaginationRequest = paginationRequestSlot.captured
         assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
         assertThat(capturedPaginationRequest.page).isEqualTo(paginationRequest.page)
