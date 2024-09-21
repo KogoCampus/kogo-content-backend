@@ -33,7 +33,7 @@ management:
 
 filehandler:
   provider: local
-  localMountLocation: local
+  localMountLocation: tmp/files
 
 meilisearch:
   host: http://localhost:7700

@@ -32,11 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-### Local static file ###
-/local
+### temporary files ###
+/tmp
 
 ### .gradle ###
 .gradle
-
-### bin
-bin/meili_data
