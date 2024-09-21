@@ -931,7 +931,7 @@
       "PostAttachment": {
         "required": [
           "contentType",
-          "fileName",
+          "name",
           "size",
           "url"
         ],
@@ -940,7 +940,7 @@
           "attachmentId": {
             "type": "string"
           },
-          "fileName": {
+          "name": {
             "type": "string"
           },
           "size": {
@@ -1060,7 +1060,7 @@
         "required": [
           "attachmentId",
           "contentType",
-          "fileName",
+          "name",
           "size",
           "url"
         ],
@@ -1069,7 +1069,7 @@
           "attachmentId": {
             "type": "string"
           },
-          "fileName": {
+          "name": {
             "type": "string"
           },
           "size": {
@@ -1191,20 +1191,20 @@
       "Attachment": {
         "required": [
           "contentType",
-          "fileName",
           "fileSize",
-          "savedLocationURL"
+          "name",
+          "storeKey"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "fileName": {
+          "name": {
             "type": "string"
           },
-          "savedLocationURL": {
-            "type": "string"
+          "storeKey": {
+            "$ref": "#/components/schemas/FileStoreKey"
           },
           "contentType": {
             "type": "string"
@@ -1212,6 +1212,17 @@
           "fileSize": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "FileStoreKey": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
           }
         }
       },
