@@ -1,5 +1,7 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
@@ -10,6 +12,8 @@ import com.kogo.content.util.fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -38,16 +42,24 @@ class PostControllerTest @Autowired constructor(
     lateinit var userService: UserContextService
 
     @Test
-    fun `should return a list of posts by topic id`() {
+    fun `should return a paginated list of posts by topic id`() {
         val topic = createTopicFixture()
         val posts = listOf(createPostFixture(topic), createPostFixture(topic))
         val topicId = topic.id!!
+        val paginationRequest = PaginationRequest(limit = 2, page = null)
+        val paginationResponse = PaginationResponse(posts, "sample-next-page-token")
+        val paginationRequestSlot = slot<PaginationRequest>()
         every { topicService.find(topicId) } returns topic
-        every { postService.listPostsByTopicId(topicId) } returns posts
-        mockMvc.get(buildPostApiUrl(topicId))
+        every { postService.listPostsByTopicId(topicId, capture(paginationRequestSlot)) } returns paginationResponse
+        mockMvc.get(buildPostApiUrl(topicId = topicId, params = mapOf("limit" to "${paginationRequest.limit}")))
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
+            .andExpect { header { string("next_page", "sample-next-page-token") } }
+            .andExpect { header { string("item_count", "${paginationRequest.limit}") } }
+        val capturedPaginationRequest = paginationRequestSlot.captured
+        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
+        assertThat(capturedPaginationRequest.page).isEqualTo(paginationRequest.page)
     }
 
     @Test
@@ -193,12 +205,10 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addLike(postId, user) } returns Unit
-
         mockMvc.perform(
             multipart("/media/posts/$postId/likes")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.message").value("User's like added successfully to post: $postId"))
     }
@@ -207,15 +217,12 @@ class PostControllerTest @Autowired constructor(
     fun `should return 404 when creating a like under non-existing post`() {
         val postId = "invalid-post-id"
         val user = createUserFixture()
-
         every { postService.find(postId) } returns null
         every { userService.getCurrentUserDetails() } returns user
-
         mockMvc.perform(
             multipart("/media/posts/$postId/likes")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isNotFound)
     }
 
@@ -224,16 +231,13 @@ class PostControllerTest @Autowired constructor(
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
-
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
-
         mockMvc.perform(
             multipart("/media/posts/$postId/likes")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.details").value("user already liked this post: $postId"))
     }
@@ -247,7 +251,6 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
         every { postService.removeLike(postId, user) } returns Unit
-
         mockMvc.delete("/media/posts/$postId/likes")
             .andExpect { status { isOk() } }
             .andExpect{ jsonPath("$.message").value("User's like deleted successfully to post: $postId")}
@@ -257,10 +260,8 @@ class PostControllerTest @Autowired constructor(
     fun `should return 404 when deleting a like under non-existing post`() {
         val postId = "invalid-post-id"
         val user = createUserFixture()
-
         every { postService.find(postId) } returns null
         every { userService.getCurrentUserDetails() } returns user
-
         mockMvc.delete("/media/posts/$postId/likes")
             .andExpect { status { isNotFound() } }
     }
@@ -270,11 +271,9 @@ class PostControllerTest @Autowired constructor(
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
-
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
-
         mockMvc.delete("/media/posts/$postId/likes")
             .andExpect{ status { isBadRequest()} }
             .andExpect{ jsonPath("$.details").value("user never liked this post: $postId") }
@@ -289,12 +288,10 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addView(postId, user) } returns Unit
-
         mockMvc.perform(
             multipart("/media/posts/$postId/views")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.message").value("User's view added successfully to post: $postId"))
     }
@@ -303,15 +300,12 @@ class PostControllerTest @Autowired constructor(
     fun `should return 404 when creating a view under non-existing post`() {
         val postId = "invalid-post-id"
         val user = createUserFixture()
-
         every { postService.find(postId) } returns null
         every { userService.getCurrentUserDetails() } returns user
-
         mockMvc.perform(
             multipart("/media/posts/$postId/views")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isNotFound)
     }
 
@@ -320,24 +314,23 @@ class PostControllerTest @Autowired constructor(
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
-
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns mockk()
-
         mockMvc.perform(
             multipart("/media/posts/$postId/views")
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
-        )
+                .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.details").value("user already viewed this post: $postId"))
     }
 
-    private fun buildPostApiUrl(topicId: String, vararg paths: String): String {
+    private fun buildPostApiUrl(topicId: String, vararg paths: String, params: Map<String, String> = emptyMap() ): String {
         val baseUrl = "/media/topics/$topicId/posts"
-        return if (paths.isNotEmpty()) "${baseUrl}/" + paths.joinToString("/")
-            else baseUrl
+        val url = if (paths.isNotEmpty()) "${baseUrl}/" + paths.joinToString("/") else baseUrl
+        val paramBuilder = StringBuilder()
+        params.forEach { paramBuilder.append(it.key, "=", it.value, "&") }
+        return "$url?$paramBuilder"
     }
 
     private fun createTopicFixture() = fixture<Topic> { mapOf(

@@ -2,6 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
+import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
@@ -11,6 +12,8 @@ import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -18,6 +21,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -32,15 +36,25 @@ class PostController @Autowired constructor(
     @GetMapping("topics/{topicId}/posts")
     @Operation(
         summary = "return a list of posts in the given topic",
+        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
+            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = PostResponse::class)))],
         )])
-    fun listPosts(@PathVariable("topicId") topicId: String) = run {
+    fun listPostsInTopic(
+        @PathVariable("topicId") topicId: String,
+        @RequestParam("limit") limit: Int?,
+        @RequestParam("page") page: String?) = run {
         findTopicByIdOrThrow(topicId)
-        HttpJsonResponse.successResponse(postService.listPostsByTopicId(topicId).map { buildPostResponse(it) })
+        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+        val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { buildPostResponse(it) },
+            headers = paginationResponse.toHeaders()
+        )
     }
 
     @GetMapping("topics/{topicId}/posts/{postId}")

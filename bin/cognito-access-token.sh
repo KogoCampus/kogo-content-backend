@@ -53,6 +53,7 @@ sleep 3
 echo "Please enter the authorization code from the callback URL: "
 open "${AUTH_URL}?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${CALLBACK_URL}"
 
+echo "Please copy the authorization code in the browser URL and paste it below."
 read -p "Authorization Code: " AUTH_CODE
 
 echo "Requesting access token..."

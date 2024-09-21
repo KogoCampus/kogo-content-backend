@@ -1,5 +1,6 @@
 package com.kogo.content.service
 
+import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
@@ -15,6 +16,7 @@ import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User
+import org.springframework.data.domain.PageRequest
 
 class PostServiceTest {
     private val postRepository: PostRepository = mockk()
@@ -24,6 +26,32 @@ class PostServiceTest {
     private val fileHandler: FileHandler = mockk()
 
     private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler)
+
+    @Test
+    fun `should return first page of posts in topic when page token param is not given`() {
+        val createMockPost = { postId: String -> mockk<Post> { every { id } returns postId } }
+        val topicId = "sample-topic-id"
+        val paginationRequest = PaginationRequest(limit = 3, page = null)
+        val postList = listOf(createMockPost("1"), createMockPost("2"), createMockPost("3"))
+        every { postRepository.findAllByTopicId(topicId, any()) } returns postList
+        val result = postService.listPostsByTopicId(topicId, paginationRequest)
+        assertThat(result.items).isEqualTo(postList)
+        assertThat(result.nextPage).isEqualTo(postList.lastOrNull()?.id)
+        verify { postRepository.findAllByTopicId(topicId, any()) }
+    }
+
+    @Test
+    fun `should return subsequent page of posts when page token is given`() {
+        val createMockPost = { postId: String -> mockk<Post> { every { id } returns postId } }
+        val topicId = "sample-topic-id"
+        val paginationRequest = PaginationRequest(limit = 2, page = "somePageToken")
+        val postList = listOf(createMockPost("1"), createMockPost("2"))
+        every { postRepository.findAllByTopicIdAndIdLessThan(topicId, "somePageToken", any()) } returns postList
+        val result = postService.listPostsByTopicId(topicId, paginationRequest)
+        assertThat(result.items).isEqualTo(postList)
+        assertThat(result.nextPage).isEqualTo(postList.lastOrNull()?.id)
+        verify { postRepository.findAllByTopicIdAndIdLessThan(topicId, "somePageToken", any()) }
+    }
 
     @Test
     fun `should create a new post`() {
