@@ -8,7 +8,6 @@ import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.endpoint.model.TopicResponse
-import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import io.swagger.v3.oas.annotations.Operation
@@ -24,8 +23,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("media")
 class MeController @Autowired constructor(
-    private val userService : UserContextService,
-    private val fileHandler: FileHandler
+    private val userService : UserContextService
 ) {
     @GetMapping("me")
     @Operation(
@@ -114,7 +112,7 @@ class MeController @Autowired constructor(
         UserResponse.UserProfileImage(
             attachmentId = id!!,
             fileName = name,
-            url = fileHandler.getFileReadUrl(attachment.storeKey),
+            url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
         )
@@ -135,7 +133,7 @@ class MeController @Autowired constructor(
         TopicResponse.TopicProfileImage(
             attachmentId = id!!,
             name = name,
-            url = fileHandler.getFileReadUrl(attachment.storeKey),
+            url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
         )
@@ -159,7 +157,7 @@ class MeController @Autowired constructor(
         PostResponse.PostAttachment(
             attachmentId = id,
             name = name,
-            url = fileHandler.getFileReadUrl(attachment.storeKey),
+            url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
         )

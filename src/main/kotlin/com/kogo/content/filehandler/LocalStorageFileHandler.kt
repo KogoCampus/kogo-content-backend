@@ -32,7 +32,7 @@ class LocalStorageFileHandler : FileHandler {
         )
     }
 
-    override fun getFileReadUrl(storeKey: FileStoreKey): String = storeKey.toString()
+    override fun issueFilePublicSourceUrl(storeKey: FileStoreKey): String = storeKey.toString()
 
     private fun fileStoreLocation(): String {
         val calendar: Calendar = Calendar.getInstance()

@@ -7,7 +7,6 @@ import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -31,8 +30,7 @@ import org.springframework.web.bind.annotation.*
 class PostController @Autowired constructor(
     private val postService : PostService,
     private val topicService : TopicService,
-    private val userContextService: UserContextService,
-    private val fileHandler: FileHandler
+    private val userContextService: UserContextService
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -209,7 +207,7 @@ class PostController @Autowired constructor(
         PostResponse.PostAttachment(
             attachmentId = id,
             name = name,
-            url = fileHandler.getFileReadUrl(attachment.storeKey),
+            url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
         )
