@@ -31,6 +31,7 @@ repositories {
 
 dependencies {
     val log4jVersion = "2.17.1"
+    val springCloudAwsVersion = "3.0.0"
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -44,8 +45,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
     // Spring Cloud
-    implementation("io.awspring.cloud:spring-cloud-starter-aws-secrets-manager-config:2.4.4")
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.0.0")
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:$springCloudAwsVersion")
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager:$springCloudAwsVersion")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
