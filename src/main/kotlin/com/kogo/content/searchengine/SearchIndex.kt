@@ -1,4 +1,6 @@
-package com.kogo.content.endpoint.common
+package com.kogo.content.searchengine
 
-class SearchIndex {
+enum class SearchIndex(val indexName: String) {
+    TOPICS("topics"),
+    POSTS("posts")
 }
