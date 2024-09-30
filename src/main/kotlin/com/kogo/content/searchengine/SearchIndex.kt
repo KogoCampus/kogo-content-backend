@@ -1,6 +1,10 @@
 package com.kogo.content.searchengine
 
-enum class SearchIndex(val indexName: String) {
+import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
+
+enum class SearchIndex(val indexId: String) {
+    POSTS("posts"),
     TOPICS("topics"),
-    POSTS("posts")
+    COMMENTS("comments")
 }

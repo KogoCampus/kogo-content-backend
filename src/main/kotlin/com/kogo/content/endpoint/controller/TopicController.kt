@@ -7,6 +7,9 @@ import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
+import com.kogo.content.searchengine.DocumentBody
+import com.kogo.content.searchengine.SearchIndex
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
@@ -26,7 +29,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("media")
 class TopicController @Autowired constructor(
     private val topicService : TopicService,
-    private val userContextService: UserContextService
+    private val userContextService: UserContextService,
+    private val searchIndexService: SearchIndexService
 ) {
     companion object : Logger()
 
@@ -59,7 +63,10 @@ class TopicController @Autowired constructor(
     fun createTopic(@Valid topicDto: TopicDto): ResponseEntity<*> = run {
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
-        HttpJsonResponse.successResponse(buildTopicResponse(topicService.create(topicDto, userContextService.getCurrentUserDetails())))
+        val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
+        val topicDocument = DocumentBody.TopicIndexDocumentBody(topic)
+        searchIndexService.addDocument(SearchIndex.TOPICS, topicDocument)
+        HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
 
     @RequestMapping(

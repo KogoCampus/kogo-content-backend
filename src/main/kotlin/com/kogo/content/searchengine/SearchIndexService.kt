@@ -1,15 +1,14 @@
-package com.kogo.content.service
+package com.kogo.content.searchengine
 
-import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.storage.repository.AttachmentRepository
-import com.kogo.content.storage.repository.TopicRepository
-import org.springframework.stereotype.Service
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.http.ResponseEntity
+import org.springframework.stereotype.Component
 
-@Service
-class SearchIndexService (
-    private val repository: TopicRepository,
-    private val attachmentRepository: AttachmentRepository,
-    private val fileHandler: FileHandler
-) {
-
+@Component
+interface SearchIndexService {
+    fun addDocument(index: SearchIndex, document: DocumentBody)
+//    fun deleteDocument()
+//    fun updateDocument()
+    fun searchPosts(indexes: List<SearchIndex>, queryOptions: String): List<String>
 }

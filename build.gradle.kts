@@ -37,6 +37,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    // Meilisearch
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+    implementation("org.apache.httpcomponents:httpcore:4.4.16")
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
@@ -56,8 +60,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
     implementation("org.apache.logging.log4j:log4j-spring-boot:$log4jVersion")
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
-    // Meilisearch
-    implementation ("com.meilisearch.sdk:meilisearch-java:0.14.0")
     // Testing
     implementation("com.google.code.gson:gson")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

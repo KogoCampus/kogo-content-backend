@@ -6,6 +6,9 @@ import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentResponse
 import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.searchengine.DocumentBody
+import com.kogo.content.searchengine.SearchIndex
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserContextService
@@ -27,6 +30,7 @@ class CommentController @Autowired constructor(
     private val commentService: CommentService,
     private val postService: PostService,
     private val userContextService: UserContextService,
+    private val searchIndexService: SearchIndexService
 ) {
     @GetMapping("posts/{postId}/comments")
     @Operation(
@@ -104,6 +108,8 @@ class CommentController @Autowired constructor(
         findPost(postId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(postId, CommentParentType.POST, author, commentDto)
+        val commentDocument = DocumentBody.CommentIndexDocumentBody(newComment)
+        searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
@@ -129,6 +135,8 @@ class CommentController @Autowired constructor(
         findComment(commentId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(commentId, CommentParentType.COMMENT, author, commentDto)
+        val commentDocument = DocumentBody.CommentIndexDocumentBody(newComment)
+        searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
