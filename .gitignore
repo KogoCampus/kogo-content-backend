@@ -35,6 +35,7 @@ build/
 ### temporary files ###
 /tmp
 /bin/tmp
+/local
 
 ### .gradle ###
 .gradle
