@@ -37,8 +37,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    // Meilisearch
-    implementation("org.apache.httpcomponents:httpcore:4.4.16")
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
