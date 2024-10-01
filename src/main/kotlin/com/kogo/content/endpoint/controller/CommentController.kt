@@ -32,13 +32,6 @@ class CommentController @Autowired constructor(
     private val topicService: TopicService,
     private val s3Client: S3Client
 ) {
-    @GetMapping("test")
-    fun test() : List<String>{
-        return s3Client.listBuckets().buckets()
-            .mapIndexed { index, bucket ->
-                "Bucket $index"
-            }
-    }
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(
         summary = "Get all comments from the post",
