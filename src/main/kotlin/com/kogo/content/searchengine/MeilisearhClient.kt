@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.web.client.RestTemplate
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.kogo.content.storage.entity.Post
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -28,64 +29,28 @@ class MeilisearhClient: SearchIndexService {
         return if (apiKey.isNotEmpty()) apiKey else masterKey
     }
 
-    private fun sendToMeilisearch(path: String, method: HttpMethod, body: JsonNode): List<String> {
-        val url = "$meilisearchHost$path"
+    override fun addDocument(index: SearchIndex, document: Document){
+        val jsonNode = document.toJsonNode()
+
+        val path = "$meilisearchHost/indexes/${index.indexId}/documents"
 
         val headers = HttpHeaders()
         headers.set("Authorization", "Bearer ${getAuthToken()}")
 
-        val entity = HttpEntity(body, headers)
-
-        return if (body.has("queries")) {
-            val multiSearchResponse: ResponseEntity<String> = restTemplate.exchange(url, HttpMethod.POST, entity, String::class.java)
-            if (multiSearchResponse.statusCode.is2xxSuccessful) {
-                val objectMapper = ObjectMapper()
-                val responseNode = objectMapper.readTree(multiSearchResponse.body)
-
-                val postResults = responseNode.get("results").find { it.get("indexUid").asText() == "posts" }
-                val commentResults = responseNode.get("results").find { it.get("indexUid").asText() == "comments" }
-
-                val postIdsFromComments = mutableListOf<String>()
-                commentResults?.get("hits")?.forEach { hit ->
-                    hit.get("parentId")?.asText()?.let { parentId ->
-                        postIdsFromComments.add(parentId)
-                    }
-                }
-
-                val postIdsFromPosts = mutableListOf<String>()
-                postResults?.get("hits")?.forEach { hit ->
-                    hit.get("id")?.asText()?.let { postId ->
-                        postIdsFromPosts.add(postId)
-                    }
-                }
-
-                val finalPosts = (postIdsFromComments + postIdsFromPosts).distinct()
-                println("Searched posts: $finalPosts")
-                finalPosts
-            } else {
-                throw RuntimeException("Meilisearch multi-search request failed: ${multiSearchResponse.statusCode}")
-            }
+        val entity = HttpEntity(jsonNode, headers)
+        val documentResponse: ResponseEntity<String> = restTemplate.exchange(path, HttpMethod.POST, entity, String::class.java)
+        if (documentResponse.statusCode.is2xxSuccessful) {
+            println("Successfully added document: $documentResponse.body")
         } else {
-            // Add or update document
-            val documentResponse: ResponseEntity<String> = restTemplate.exchange(url, method, entity, String::class.java)
-            if (documentResponse.statusCode.is2xxSuccessful) {
-                println("Successfully added document: $documentResponse.body")
-                emptyList()
-            } else {
-                throw RuntimeException("Meilisearch document request failed: ${documentResponse.statusCode}")
-            }
+            throw RuntimeException("Meilisearch document request failed: ${documentResponse.statusCode}")
         }
     }
 
-    override fun addDocument(index: SearchIndex, document: DocumentBody){
-        val jsonNode = document.toJsonNode()
+    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String): Map<SearchIndex, List<Document>> {
+        val path = "$meilisearchHost/multi-search"
 
-        val path = "/indexes/${index.indexId}/documents"
-        sendToMeilisearch(path, HttpMethod.POST, jsonNode)
-    }
-
-    override fun searchPosts(indexes: List<SearchIndex>, queryOptions: String): List<String> {
-        val path = "/multi-search"
+        val headers = HttpHeaders()
+        headers.set("Authorization", "Bearer ${getAuthToken()}")
 
         val objectMapper = ObjectMapper()
         val searchQueries = indexes.map { index ->
@@ -102,7 +67,55 @@ class MeilisearhClient: SearchIndexService {
             set<ArrayNode>("queries", objectMapper.valueToTree(searchQueries))
         }
 
-        val postIds = sendToMeilisearch(path, HttpMethod.POST, bodyNode)
-        return postIds
+        val entity = HttpEntity(bodyNode, headers)
+
+        val multiSearchResponse: ResponseEntity<String> = restTemplate.exchange(path, HttpMethod.POST, entity, String::class.java)
+        if (!multiSearchResponse.statusCode.is2xxSuccessful) {
+            throw RuntimeException("Meilisearch document request failed: ${multiSearchResponse.statusCode}")
+        }
+
+        val responseNode = objectMapper.readTree(multiSearchResponse.body)
+        val resultsNode = responseNode.get("results")
+
+        val resultMap = mutableMapOf<SearchIndex, MutableList<Document>>()
+
+        indexes.forEach { index ->
+            val indexResults = resultsNode.find { it.get("indexUid").asText() == index.indexId }?.get("hits")
+            val documents = mutableListOf<Document>()
+
+            indexResults?.forEach { hit ->
+                val documentId = hit.get("id").asText()
+                val document = when (index.indexId) {
+                    "posts" -> {
+                        Document(documentId).apply {
+                            put("title", hit.get("title").asText())
+                            put("content", hit.get("content").asText())
+                            put("authorId", hit.get("authorId").asText())
+                            put("topicId", hit.get("topicId").asText())
+                        }
+                    }
+                    "comments" -> {
+                        Document(documentId).apply {
+                            put("parentId", hit.get("parentId").asText())
+                            put("parentType", hit.get("parentType").asText())
+                            put("content", hit.get("content").asText())
+                            put("authorId", hit.get("authorId").asText())
+                        }
+                    }
+                    "topics" -> {
+                        Document(documentId).apply {
+                            put("topicName", hit.get("topicName").asText())
+                            put("description", hit.get("description").asText())
+                            put("ownerId", hit.get("ownerId").asText())
+                            put("tags", hit.get("tags").map { it.asText() })
+                        }
+                    }
+                    else -> throw IllegalArgumentException("Unknown index: ${index.indexId}")
+                }
+                documents.add(document)
+            }
+            resultMap[index] = documents
+        }
+        return resultMap
     }
 }

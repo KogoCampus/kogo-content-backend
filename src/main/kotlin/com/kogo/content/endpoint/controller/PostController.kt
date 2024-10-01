@@ -7,7 +7,7 @@ import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.searchengine.DocumentBody
+import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
@@ -54,7 +54,6 @@ class PostController @Autowired constructor(
         findTopicByIdOrThrow(topicId)
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
-        searchIndexService.searchPosts(listOf(SearchIndex.POSTS, SearchIndex.COMMENTS), "3")
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { buildPostResponse(it) },
             headers = paginationResponse.toHeaders()
@@ -95,7 +94,7 @@ class PostController @Autowired constructor(
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
             val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
-            val postDocument = DocumentBody.PostIndexDocumentBody(post)
+            val postDocument = Document.createPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post))
     }

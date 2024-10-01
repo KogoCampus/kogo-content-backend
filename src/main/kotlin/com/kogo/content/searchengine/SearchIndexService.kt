@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component
 
 @Component
 interface SearchIndexService {
-    fun addDocument(index: SearchIndex, document: DocumentBody)
+    fun addDocument(index: SearchIndex, document: Document)
 //    fun deleteDocument()
 //    fun updateDocument()
-    fun searchPosts(indexes: List<SearchIndex>, queryOptions: String): List<String>
+    fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String): Map<SearchIndex, List<Document>>
 }

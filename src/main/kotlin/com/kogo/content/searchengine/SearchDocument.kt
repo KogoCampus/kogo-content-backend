@@ -6,51 +6,54 @@ import com.kogo.content.storage.entity.Comment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 
-abstract class DocumentBody() {
+class Document(val documentId: String) {
 
-    abstract fun toJsonNode(): JsonNode
-
-    class PostIndexDocumentBody(val post: Post) : DocumentBody() {
-        private val objectMapper = ObjectMapper()
-
-        override fun toJsonNode(): JsonNode {
-            val rootNode = objectMapper.createObjectNode()
-            rootNode.put("id", post.id)
-            rootNode.put("title", post.title)
-            rootNode.put("content", post.content)
-            rootNode.put("authorId", post.author.id)
-            rootNode.put("topicId", post.topic.id)
-            return rootNode
-        }
+    val objectMapper = ObjectMapper()
+    val rootNode = objectMapper.createObjectNode()
+    init {
+        rootNode.put("id", documentId)
     }
 
-    class CommentIndexDocumentBody(val comment: Comment) : DocumentBody() {
-        private val objectMapper = ObjectMapper()
-        override fun toJsonNode(): JsonNode {
-            val rootNode = objectMapper.createObjectNode()
-            rootNode.put("id", comment.id)
-            rootNode.put("parentId", comment.parentId)
-            rootNode.put("parentType", comment.parentType.name)
-            rootNode.put("content", comment.content)
-            rootNode.put("authorId", comment.author.id)
-            return rootNode
-        }
+    fun toJsonNode(): JsonNode = rootNode
+
+    fun put(fieldName: String, value: String): Document {
+        rootNode.put(fieldName, value)
+        return this
     }
 
-    class TopicIndexDocumentBody(val topic: Topic) : DocumentBody() {
-        private val objectMapper = ObjectMapper()
-        override fun toJsonNode(): JsonNode {
-            val rootNode = objectMapper.createObjectNode()
-            rootNode.put("id", topic.id)
-            rootNode.put("topicName", topic.topicName)
-            rootNode.put("description", topic.description)
-            rootNode.put("ownerId", topic.owner.id)
-            val tagsArrayNode = objectMapper.createArrayNode()
-            topic.tags.forEach { tag ->
-                tagsArrayNode.add(tag)
+    fun put(fieldName: String, values: List<String>): Document {
+        val arrayNode = objectMapper.createArrayNode()
+        values.forEach { arrayNode.add(it) }
+        rootNode.set<JsonNode>(fieldName, arrayNode)
+        return this
+    }
+
+    companion object {
+        fun createPostIndexDocument(post: Post): Document {
+            return Document(post.id!!).apply {
+                put("title", post.title)
+                put("content", post.content)
+                put("authorId", post.author.id!!)
+                put("topicId", post.topic.id!!)
             }
-            rootNode.set<JsonNode>("tags", tagsArrayNode)
-            return rootNode
+        }
+
+        fun createCommentIndexDocument(comment: Comment): Document {
+            return Document(comment.id!!).apply {
+                put("parentId", comment.parentId)
+                put("parentType", comment.parentType.name)
+                put("content", comment.content)
+                put("authorId", comment.author.id!!)
+            }
+        }
+
+        fun createTopicIndexDocument(topic: Topic): Document {
+            return Document(topic.id!!).apply {
+                put("topicName", topic.topicName)
+                put("description", topic.description)
+                put("ownerId", topic.owner.id!!)
+                put("tags", topic.tags)
+            }
         }
     }
 }

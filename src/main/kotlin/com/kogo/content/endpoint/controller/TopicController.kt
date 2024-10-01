@@ -7,7 +7,7 @@ import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
-import com.kogo.content.searchengine.DocumentBody
+import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
@@ -64,7 +64,7 @@ class TopicController @Autowired constructor(
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
         val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
-        val topicDocument = DocumentBody.TopicIndexDocumentBody(topic)
+        val topicDocument = Document.createTopicIndexDocument(topic)
         searchIndexService.addDocument(SearchIndex.TOPICS, topicDocument)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
