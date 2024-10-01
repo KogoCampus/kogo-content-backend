@@ -64,7 +64,7 @@ class TopicController @Autowired constructor(
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
         val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
-        val topicDocument = Document.createTopicIndexDocument(topic)
+        val topicDocument = buildTopicIndexDocument(topic)
         searchIndexService.addDocument(SearchIndex.TOPICS, topicDocument)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
@@ -119,6 +119,15 @@ class TopicController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
+    }
+
+    private fun buildTopicIndexDocument(topic: Topic): Document {
+        return Document(topic.id!!).apply {
+            put("topicName", topic.topicName)
+            put("description", topic.description)
+            put("ownerId", topic.owner.id!!)
+            put("tags", topic.tags)
+        }
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)

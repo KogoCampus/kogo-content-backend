@@ -108,7 +108,7 @@ class CommentController @Autowired constructor(
         findPost(postId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(postId, CommentParentType.POST, author, commentDto)
-        val commentDocument = Document.createCommentIndexDocument(newComment)
+        val commentDocument = funCommentIndexDocument(newComment)
         searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
@@ -135,7 +135,7 @@ class CommentController @Autowired constructor(
         findComment(commentId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(commentId, CommentParentType.COMMENT, author, commentDto)
-        val commentDocument = Document.createCommentIndexDocument(newComment)
+        val commentDocument = funCommentIndexDocument(newComment)
         searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
@@ -255,4 +255,12 @@ class CommentController @Autowired constructor(
         )
     }
 
+    fun funCommentIndexDocument(comment: Comment): Document {
+        return Document(comment.id!!).apply {
+            put("parentId", comment.parentId)
+            put("parentType", comment.parentType.name)
+            put("content", comment.content)
+            put("authorId", comment.author.id!!)
+        }
+    }
 }

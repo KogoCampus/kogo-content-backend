@@ -94,7 +94,7 @@ class PostController @Autowired constructor(
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
             val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
-            val postDocument = Document.createPostIndexDocument(post)
+            val postDocument = buildPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post))
     }
@@ -218,5 +218,14 @@ class PostController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
+    }
+
+    private fun buildPostIndexDocument(post: Post): Document{
+        return Document(post.id!!).apply {
+            put("title", post.title)
+            put("content", post.content)
+            put("authorId", post.author.id!!)
+            put("topicId", post.topic.id!!)
+        }
     }
 }

@@ -38,8 +38,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     // Meilisearch
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-    implementation("org.apache.httpcomponents:httpclient:4.5.13")
     implementation("org.apache.httpcomponents:httpcore:4.4.16")
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
