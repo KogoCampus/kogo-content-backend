@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentResponse
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
@@ -108,7 +109,7 @@ class CommentController @Autowired constructor(
         findPost(postId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(postId, CommentParentType.POST, author, commentDto)
-        val commentDocument = funCommentIndexDocument(newComment)
+        val commentDocument = buildCommentIndexDocument(newComment)
         searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
@@ -135,7 +136,7 @@ class CommentController @Autowired constructor(
         findComment(commentId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(commentId, CommentParentType.COMMENT, author, commentDto)
-        val commentDocument = funCommentIndexDocument(newComment)
+        val commentDocument = buildCommentIndexDocument(newComment)
         searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
@@ -157,7 +158,9 @@ class CommentController @Autowired constructor(
     ) = run {
         findPost(postId)
         findComment(commentId)
-        HttpJsonResponse.successResponse(commentService.delete(commentId))
+        val deletedComment = commentService.delete(commentId)
+        searchIndexService.deleteDocument(SearchIndex.COMMENTS, commentId)
+        HttpJsonResponse.successResponse(deletedComment)
     }
 
     @RequestMapping(
@@ -183,6 +186,8 @@ class CommentController @Autowired constructor(
         val comment = findComment(commentId)
 
         val newComment = commentService.update(comment, commentUpdate)
+        val updateCommentDocument = buildCommentIndexDocumentUpdate(commentId, commentUpdate)
+        searchIndexService.updateDocument(SearchIndex.COMMENTS, updateCommentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
@@ -255,12 +260,18 @@ class CommentController @Autowired constructor(
         )
     }
 
-    fun funCommentIndexDocument(comment: Comment): Document {
+    fun buildCommentIndexDocument(comment: Comment): Document {
         return Document(comment.id!!).apply {
             put("parentId", comment.parentId)
             put("parentType", comment.parentType.name)
             put("content", comment.content)
             put("authorId", comment.author.id!!)
+        }
+    }
+
+    private fun buildCommentIndexDocumentUpdate(commentId: String, commentUpdate: CommentUpdate): Document{
+        return Document(commentId).apply {
+            put("content", commentUpdate.content)
         }
     }
 }

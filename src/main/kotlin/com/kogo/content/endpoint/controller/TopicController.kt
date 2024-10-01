@@ -85,7 +85,10 @@ class TopicController @Autowired constructor(
         @PathVariable("id") topicId: String,
         @Valid topicUpdate: TopicUpdate) = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-            HttpJsonResponse.successResponse(buildTopicResponse(topicService.update(topic, topicUpdate)))
+            val updatedTopic = topicService.update(topic, topicUpdate)
+            val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
+            searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)
+            HttpJsonResponse.successResponse(buildTopicResponse(updatedTopic))
     }
 
     @DeleteMapping("topics/{id}")
@@ -97,7 +100,9 @@ class TopicController @Autowired constructor(
         )])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-        HttpJsonResponse.successResponse(topicService.delete(topic))
+        val deletedTopic = topicService.delete(topic)
+        searchIndexService.deleteDocument(SearchIndex.TOPICS, topicId)
+        HttpJsonResponse.successResponse(deletedTopic)
     }
 
     private fun buildTopicResponse(topic: Topic) = with(topic) {
@@ -127,6 +132,14 @@ class TopicController @Autowired constructor(
             put("description", topic.description)
             put("ownerId", topic.owner.id!!)
             put("tags", topic.tags)
+        }
+    }
+
+    private fun buildTopicIndexDocumentUpdate(topicId: String, topicUpdate: TopicUpdate): Document{
+        return Document(topicId).apply {
+            topicUpdate.topicName?.let { put("topicName", it) }
+            topicUpdate.description?.let { put("description", it) }
+            topicUpdate.tags?.let { put("tags", it) }
         }
     }
 

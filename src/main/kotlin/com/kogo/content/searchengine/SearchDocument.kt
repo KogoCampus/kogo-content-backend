@@ -2,9 +2,6 @@ package com.kogo.content.searchengine
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.kogo.content.storage.entity.Comment
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
 
 class Document(val documentId: String) {
 

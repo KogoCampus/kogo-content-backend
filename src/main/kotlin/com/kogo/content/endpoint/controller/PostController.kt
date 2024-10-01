@@ -94,6 +94,7 @@ class PostController @Autowired constructor(
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
             val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
+            println(post)
             val postDocument = buildPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post))
@@ -117,7 +118,10 @@ class PostController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @Valid postUpdate: PostUpdate) = run {
         val post = postService.find(postId) ?: throwPostNotFound(postId)
-        HttpJsonResponse.successResponse(buildPostResponse(postService.update(post, postUpdate)))
+        val updatedPost = postService.update(post, postUpdate)
+        val updatedPostDocument = buildPostIndexDocumentUpdate(postId, postUpdate)
+        searchIndexService.updateDocument(SearchIndex.POSTS, updatedPostDocument)
+        HttpJsonResponse.successResponse(buildPostResponse(updatedPost))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -132,7 +136,9 @@ class PostController @Autowired constructor(
         @PathVariable("postId") postId: String) = run {
         findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
-        HttpJsonResponse.successResponse(postService.delete(post))
+        val deletedPost = postService.delete(post)
+        searchIndexService.deleteDocument(SearchIndex.POSTS, postId)
+        HttpJsonResponse.successResponse(deletedPost)
     }
 
     @RequestMapping(
@@ -226,6 +232,13 @@ class PostController @Autowired constructor(
             put("content", post.content)
             put("authorId", post.author.id!!)
             put("topicId", post.topic.id!!)
+        }
+    }
+
+    private fun buildPostIndexDocumentUpdate(postId: String, postUpdate: PostUpdate): Document{
+        return Document(postId).apply {
+            postUpdate.title?.let { put("title", it) }
+            postUpdate.content?.let { put("content", it) }
         }
     }
 }
