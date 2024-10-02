@@ -17,7 +17,15 @@ class MeilisearchClientTest {
 
     @BeforeEach
     fun setUp() {
-        meilisearchClient = spyk(MeilisearchClient(restTemplate))  // Inject the mock RestTemplate
+        meilisearchClient = spyk(MeilisearchClient())  // Inject the mock RestTemplate
+
+        meilisearchClient.apply {
+            this::class.java.getDeclaredField("restTemplate").apply {
+                isAccessible = true
+                set(meilisearchClient, restTemplate)
+            }
+        }
+
         meilisearchClient.meilisearchHost = "http://localhost:7700"
         meilisearchClient.masterKey = "masterKey"
         meilisearchClient.apiKey = ""
