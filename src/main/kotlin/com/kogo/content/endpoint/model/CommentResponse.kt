@@ -2,7 +2,6 @@ package com.kogo.content.endpoint.model
 
 import com.kogo.content.storage.entity.CommentParentType
 import java.time.Instant
-import java.time.LocalDateTime
 
 data class CommentResponse (
     var id: String,

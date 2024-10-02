@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
@@ -50,6 +51,7 @@ class TopicControllerTest @Autowired constructor(
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.id") { value(topicId) } }
             .andExpect { jsonPath("$.data.topicName") { value(topic.topicName) } }
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
     @Test
@@ -82,6 +84,7 @@ class TopicControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.topicName").value(topic.topicName))
             .andExpect(jsonPath("$.data.description").value(topic.description))
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
     @Test
@@ -106,7 +109,8 @@ class TopicControllerTest @Autowired constructor(
             id = topicId,
             topicName = "updated topic name",
             description = "updated description",
-            owner = topic.owner
+            owner = topic.owner,
+            createdAt = topic.createdAt
         )
         every { topicService.find(topicId) } returns topic
         every { topicService.update(topic, any()) } returns updatedTopic
@@ -122,6 +126,7 @@ class TopicControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.topicName").value(updatedTopic.topicName))
             .andExpect(jsonPath("$.data.description").value(updatedTopic.description))
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
     @Test
@@ -162,7 +167,8 @@ class TopicControllerTest @Autowired constructor(
         else TOPIC_API_BASE_URL
 
     private fun createTopicFixture() = fixture<Topic> { mapOf(
-        "owner" to createUserFixture()
+        "owner" to createUserFixture(),
+        "createdAt" to Instant.now()
     ) }
 
     private fun createUserFixture() = fixture<UserDetails>()

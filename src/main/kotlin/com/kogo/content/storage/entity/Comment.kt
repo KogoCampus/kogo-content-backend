@@ -20,7 +20,7 @@ data class Comment (
 
     var likes: Int = 0,
     var liked: Boolean = false,
-    var createdAt: Instant = Instant.now(),
+    var createdAt: Instant?=null,
 
     var repliesCount: Int = 0
 )

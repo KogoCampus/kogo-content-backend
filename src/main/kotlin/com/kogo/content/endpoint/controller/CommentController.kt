@@ -275,16 +275,19 @@ class CommentController @Autowired constructor(
             parentType = parentType,
             likes = likes,
             liked = liked,
-            createdAt = createdAt,
+            createdAt = createdAt!!,
         )
     }
 
     fun buildCommentIndexDocument(comment: Comment): Document {
-        val timestamp: Long
-        if (comment.parentType == CommentParentType.POST){
-            timestamp = postRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond!!
+        val timestamp: Long? = if (comment.parentType == CommentParentType.POST) {
+            postRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond
         } else {
-            timestamp = commentRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond!!
+            commentRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond
+        }
+
+        if (timestamp == null) {
+            throw IllegalStateException("Cannot find parent entity with ID: ${comment.parentId}")
         }
         return Document(comment.id!!).apply {
             put("parentId", comment.parentId)

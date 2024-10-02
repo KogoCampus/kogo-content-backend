@@ -114,7 +114,7 @@ class TopicController @Autowired constructor(
             description = description,
             tags = tags,
             profileImage = profileImage?.let { buildTopicProfileImage(it) },
-            createdAt = createdAt
+            createdAt = createdAt!!
         )
     }
 
@@ -129,13 +129,13 @@ class TopicController @Autowired constructor(
     }
 
     private fun buildTopicIndexDocument(topic: Topic): Document {
-        val timestamp = topic.createdAt.epochSecond
+        val timestamp = topic.createdAt?.epochSecond
         return Document(topic.id!!).apply {
             put("topicName", topic.topicName)
             put("description", topic.description)
             put("ownerId", topic.owner.id!!)
             put("tags", topic.tags)
-            put("createdAt", timestamp)
+            put("createdAt", timestamp!!)
         }
     }
 

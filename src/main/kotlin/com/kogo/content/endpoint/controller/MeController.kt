@@ -126,7 +126,7 @@ class MeController @Autowired constructor(
             description = description,
             tags = tags,
             profileImage = profileImage?.let { buildTopicProfileImage(it) },
-            createdAt = createdAt,
+            createdAt = createdAt!!,
         )
     }
 
@@ -151,7 +151,7 @@ class MeController @Autowired constructor(
             comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
-            createdAt = createdAt
+            createdAt = createdAt!!
         )
     }
 

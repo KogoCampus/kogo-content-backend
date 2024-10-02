@@ -236,7 +236,7 @@ class PostController @Autowired constructor(
             comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
-            createdAt = createdAt,
+            createdAt = createdAt!!,
         )
     }
 
@@ -251,13 +251,13 @@ class PostController @Autowired constructor(
     }
 
     private fun buildPostIndexDocument(post: Post): Document{
-        val timestamp = post.createdAt.epochSecond
+        val timestamp = post.createdAt?.epochSecond
         return Document(post.id!!).apply {
             put("title", post.title)
             put("content", post.content)
             put("authorId", post.author.id!!)
             put("topicId", post.topic.id!!)
-            put("createdAt", timestamp)
+            put("createdAt", timestamp!!)
         }
     }
 

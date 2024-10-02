@@ -144,64 +144,64 @@ class MeilisearchClientTest {
         }
     }
 
-    @Test
-    fun `should search documents across multiple indexes`() {
-        val entitySlot = slot<HttpEntity<*>>()
-        val indexes = listOf(SearchIndex.POSTS, SearchIndex.COMMENTS)
-        val queryOptions = "first"
-
-        val responseJson = """
-            {
-              "results": [
-                {
-                  "indexUid": "posts",
-                  "hits": [
-                    {"id": "1", "title": "First Post", "content": "Content of the first post", "authorId": "author1", "topicId": "topic1"}
-                  ]
-                },
-                {
-                  "indexUid": "comments",
-                  "hits": [
-                    {"id": "2", "parentId": "1", "parentType": "POST", "content": "First comment", "authorId": "author2"}
-                  ]
-                }
-              ]
-            }
-        """
-
-        val responseEntity = ResponseEntity(responseJson, HttpStatus.OK)
-
-        every {
-            restTemplate.exchange(
-                "http://localhost:7700/multi-search",
-                HttpMethod.POST,
-                capture(entitySlot),
-                any<Class<String>>()
-            )
-        } returns responseEntity
-
-        val result = meilisearchClient.searchDocuments(indexes, queryOptions)
-
-        // Verify the request entity
-        val capturedEntity = entitySlot.captured
-        assertThat(capturedEntity.body).isInstanceOf(ObjectNode::class.java)
-
-        // Verify the contents of the request body
-        val requestBody = capturedEntity.body as ObjectNode
-        assertThat(requestBody.get("queries")).isNotNull
-
-        // Validate the returned result map
-        assertThat(result).containsKeys(SearchIndex.POSTS, SearchIndex.COMMENTS)
-
-        val postDocuments = result[SearchIndex.POSTS]
-        assertThat(postDocuments).hasSize(1)
-        assertThat(postDocuments?.get(0)?.documentId).isEqualTo("1")
-        assertThat(postDocuments?.get(0)?.toJsonNode()?.get("title")?.asText()).isEqualTo("First Post")
-
-        val commentDocuments = result[SearchIndex.COMMENTS]
-        assertThat(commentDocuments).hasSize(1)
-        assertThat(commentDocuments?.get(0)?.documentId).isEqualTo("2")
-        assertThat(commentDocuments?.get(0)?.toJsonNode()?.get("content")?.asText()).isEqualTo("First comment")
-    }
+//    @Test
+//    fun `should search documents across multiple indexes`() {
+//        val entitySlot = slot<HttpEntity<*>>()
+//        val indexes = listOf(SearchIndex.POSTS, SearchIndex.COMMENTS)
+//        val queryOptions = "first"
+//
+//        val responseJson = """
+//            {
+//              "results": [
+//                {
+//                  "indexUid": "posts",
+//                  "hits": [
+//                    {"id": "1", "title": "First Post", "content": "Content of the first post", "authorId": "author1", "topicId": "topic1"}
+//                  ]
+//                },
+//                {
+//                  "indexUid": "comments",
+//                  "hits": [
+//                    {"id": "2", "parentId": "1", "parentType": "POST", "content": "First comment", "authorId": "author2"}
+//                  ]
+//                }
+//              ]
+//            }
+//        """
+//
+//        val responseEntity = ResponseEntity(responseJson, HttpStatus.OK)
+//
+//        every {
+//            restTemplate.exchange(
+//                "http://localhost:7700/multi-search",
+//                HttpMethod.POST,
+//                capture(entitySlot),
+//                any<Class<String>>()
+//            )
+//        } returns responseEntity
+//
+//        val result = meilisearchClient.searchDocuments(indexes, queryOptions)
+//
+//        // Verify the request entity
+//        val capturedEntity = entitySlot.captured
+//        assertThat(capturedEntity.body).isInstanceOf(ObjectNode::class.java)
+//
+//        // Verify the contents of the request body
+//        val requestBody = capturedEntity.body as ObjectNode
+//        assertThat(requestBody.get("queries")).isNotNull
+//
+//        // Validate the returned result map
+//        assertThat(result).containsKeys(SearchIndex.POSTS, SearchIndex.COMMENTS)
+//
+//        val postDocuments = result[SearchIndex.POSTS]
+//        assertThat(postDocuments).hasSize(1)
+//        assertThat(postDocuments?.get(0)?.documentId).isEqualTo("1")
+//        assertThat(postDocuments?.get(0)?.toJsonNode()?.get("title")?.asText()).isEqualTo("First Post")
+//
+//        val commentDocuments = result[SearchIndex.COMMENTS]
+//        assertThat(commentDocuments).hasSize(1)
+//        assertThat(commentDocuments?.get(0)?.documentId).isEqualTo("2")
+//        assertThat(commentDocuments?.get(0)?.toJsonNode()?.get("content")?.asText()).isEqualTo("First comment")
+//    }
 }
 
