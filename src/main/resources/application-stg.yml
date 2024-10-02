@@ -16,7 +16,6 @@ filehandler:
 meilisearch:
     host: ${secrets.meilisearch.host}
     apikey: ${secrets.meilisearch.apikey}
-    masterKey:
 
 aws:
     s3:

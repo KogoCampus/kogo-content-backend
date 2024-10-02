@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.client.RestTemplate
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import jakarta.annotation.PostConstruct
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -12,19 +13,30 @@ import org.springframework.stereotype.Component
 
 @Component
 class MeilisearchClient: SearchIndexService {
+    private val restTemplate: RestTemplate = RestTemplate()
+
     @Value("\${meilisearch.host}")
     lateinit var meilisearchHost: String
 
-    @Value("\${meilisearch.masterkey}")
+    @Value("\${meilisearch.masterkey:}")
     lateinit var masterKey: String
 
     @Value("\${meilisearch.apikey:}")
     lateinit var apiKey: String
 
-    private val restTemplate: RestTemplate = RestTemplate()
+    private lateinit var authToken: String
+
+    @PostConstruct
+    fun init() {
+        authToken = when {
+            masterKey.isNotBlank() -> masterKey
+            apiKey.isNotBlank() -> apiKey
+            else -> throw IllegalStateException("Both masterKey and apiKey are missing. Please configure at least one.")
+        }
+    }
 
     private fun getAuthToken(): String {
-        return if (apiKey.isNotEmpty()) apiKey else masterKey
+        return "$authToken"
     }
 
     override fun addDocument(index: SearchIndex, document: Document){

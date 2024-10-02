@@ -30,6 +30,8 @@ class MeilisearchClientTest {
         meilisearchClient.masterKey = "masterKey"
         meilisearchClient.apiKey = ""
 
+        meilisearchClient.init()
+
         // Mocking the exchange method of restTemplate
         every { restTemplate.exchange(any<String>(), any(), any(), any<Class<String>>()) } returns mockk()
     }
