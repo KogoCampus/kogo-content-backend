@@ -25,4 +25,9 @@ class Document(val documentId: String) {
         return this
     }
 
+    fun put(fieldName: String, value: Long): Document {
+        rootNode.put(fieldName, value)
+        return this
+    }
+
 }

@@ -9,6 +9,7 @@ import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 
 @Service
@@ -33,9 +34,9 @@ class TopicService (
             owner = owner,
             profileImage = dto.profileImage?.let {
                 attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) },
-            tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!
+            tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!,
+            createdAt = Instant.now()
         )
-        // meilisearchService.indexGroup(newGroup)
         return repository.save(topic)
     }
 

@@ -1,6 +1,8 @@
 package com.kogo.content.endpoint.model
 
 import com.kogo.content.storage.entity.CommentParentType
+import java.time.Instant
+import java.time.LocalDateTime
 
 data class CommentResponse (
     var id: String,
@@ -10,4 +12,5 @@ data class CommentResponse (
     var parentType: CommentParentType,
     val likes: Int,
     val liked: Boolean,
+    var createdAt: Instant
 ) {}

@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
+import java.time.Instant
 
 @Document
 @CompoundIndex(def = "{'owner.id': 1}")
@@ -24,6 +25,8 @@ data class Topic (
     var owner: UserDetails,
 
     var tags: List<String> = emptyList(),
+
+    var createdAt: Instant = Instant.now(),
 
     var userCount: Int = 1,
 )

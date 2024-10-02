@@ -5,7 +5,6 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentResponse
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
@@ -15,6 +14,8 @@ import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.repository.CommentRepository
+import com.kogo.content.storage.repository.PostRepository
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
@@ -24,8 +25,10 @@ import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.ResponseEntity
-import software.amazon.awssdk.services.s3.S3Client
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("media")
@@ -35,6 +38,8 @@ class CommentController @Autowired constructor(
     private val userContextService: UserContextService,
     private val searchIndexService: SearchIndexService,
     private val topicService: TopicService,
+    private val postRepository: PostRepository,
+    private val commentRepository: CommentRepository,
 ) {
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(
@@ -270,13 +275,21 @@ class CommentController @Autowired constructor(
             parentType = parentType,
             likes = likes,
             liked = liked,
+            createdAt = createdAt,
         )
     }
 
     fun buildCommentIndexDocument(comment: Comment): Document {
+        val timestamp: Long
+        if (comment.parentType == CommentParentType.POST){
+            timestamp = postRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond!!
+        } else {
+            timestamp = commentRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond!!
+        }
         return Document(comment.id!!).apply {
             put("parentId", comment.parentId)
             put("parentType", comment.parentType.name)
+            put("parentCreatedAt", timestamp)
             put("content", comment.content)
             put("authorId", comment.author.id!!)
         }

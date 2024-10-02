@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.client.RestTemplate
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import jakarta.annotation.PostConstruct
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class MeilisearchClient: SearchIndexService {
@@ -113,23 +115,34 @@ class MeilisearchClient: SearchIndexService {
         return hitsNode[0].get("id").asText()
     }
 
-    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?): Map<SearchIndex, List<Document>> {
+    private fun postSearchQueries(indexes: List<SearchIndex>, queryOptions: String, pageTimestamp: Long?, limit: Int?): List<ObjectNode>{
+        val objectMapper = ObjectMapper()
+        val searchQueries = indexes.map { index ->
+            objectMapper.createObjectNode().apply {
+                put("indexUid", index.indexId)
+                if(limit != null) put("limit", limit)
+                if (queryOptions != null) {
+                    put("q", queryOptions)
+                }
+                if(index.indexId == "posts"){
+                    if(pageTimestamp != null){put("filter", "createdAt < '$pageTimestamp'")}
+                }
+                if(index.indexId == "comments"){
+                    if(pageTimestamp != null){put("filter", "parentType= 'POST' AND parentCreatedAt < '$pageTimestamp'")}
+                    else{put("filter", "parentType= 'POST'")}
+                }
+            }
+        }
+        return searchQueries
+    }
+
+    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?, pageTimestamp: Long?, limit: Int?): Map<SearchIndex, List<Document>> {
         val path = "$meilisearchHost/multi-search"
         val headers = HttpHeaders()
         headers.set("Authorization", "Bearer ${getAuthToken()}")
 
         val objectMapper = ObjectMapper()
-        val searchQueries = indexes.map { index ->
-            objectMapper.createObjectNode().apply {
-                put("indexUid", index.indexId)
-                if (queryOptions != null) {
-                    put("q", queryOptions)
-                }
-                if(index.indexId == "comments"){
-                    put("filter", "parentType= 'POST'")
-                }
-            }
-        }
+        val searchQueries = postSearchQueries(indexes, queryOptions!!, pageTimestamp, limit)
 
         val bodyNode = objectMapper.createObjectNode().apply {
             set<ArrayNode>("queries", objectMapper.valueToTree(searchQueries))
