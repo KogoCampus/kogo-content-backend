@@ -2,6 +2,7 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
+import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
 import com.ninjasquad.springmockk.MockkBean
@@ -26,6 +27,9 @@ class CommentControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
     @MockkBean
+    lateinit var topicService: TopicService
+
+    @MockkBean
     lateinit var commentService: CommentService
 
     @MockkBean
@@ -34,13 +38,13 @@ class CommentControllerTest @Autowired constructor(
     @MockkBean
     lateinit var userService: UserContextService
 
-    private fun buildCommentApiUrl(postId: String, vararg paths: String): String {
-        val baseUrl = "/media/posts/$postId/comments"
+    private fun buildCommentApiUrl(topicId: String, postId: String, vararg paths: String): String {
+        val baseUrl = "/media/topics/$topicId/posts/$postId/comments"
         return if (paths.isNotEmpty()) "$baseUrl/" + paths.joinToString("/") else baseUrl
     }
 
-    private fun buildReplyApiUrl(postId: String, commentId: String, vararg paths: String): String {
-        val baseUrl = "/media/posts/$postId/comments/$commentId"
+    private fun buildReplyApiUrl(topicId: String, postId: String, commentId: String, vararg paths: String): String {
+        val baseUrl = "/media/topics/$topicId/posts/$postId/comments/$commentId"
         return if (paths.isNotEmpty()) "$baseUrl/" + paths.joinToString("/") else baseUrl
     }
 
@@ -83,9 +87,11 @@ class CommentControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val comments = listOf(createCommentFixture(post), createCommentFixture(post))
         val postId = post.id!!
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.findCommentsByParentId(postId) } returns comments
-        mockMvc.get(buildCommentApiUrl(postId))
+        mockMvc.get(buildCommentApiUrl(topic.id!!, postId))
             .andExpect { status { isOk() }}
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
@@ -100,10 +106,11 @@ class CommentControllerTest @Autowired constructor(
         val parentCommentId = parentComment.id!!
         val postId = post.id!!
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.find(parentCommentId) } returns parentComment
         every { commentService.findCommentsByParentId(parentCommentId) } returns comments
-        mockMvc.get(buildReplyApiUrl(postId, parentCommentId, "replies"))
+        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, parentCommentId, "replies"))
             .andExpect { status { isOk() }}
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
@@ -115,9 +122,11 @@ class CommentControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val postId = post.id!!
         val commentId = "invalid"
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.find(commentId) } returns null
-        mockMvc.get(buildReplyApiUrl(postId, commentId))
+        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, commentId))
             .andExpect { status { isNotFound() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
     }
@@ -129,11 +138,12 @@ class CommentControllerTest @Autowired constructor(
         val postId = post.id!!
         val user = createUserFixture()
         val comment = createCommentFixture(post)
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(postId, CommentParentType.POST, user, any()) } returns comment
         mockMvc.perform(
-            multipart(buildCommentApiUrl(postId))
+            multipart(buildCommentApiUrl(topic.id!!, postId))
                 .part(MockPart("content", comment.content.toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with{ it.method = "POST"; it })
@@ -151,12 +161,14 @@ class CommentControllerTest @Autowired constructor(
         val user = createUserFixture()
         val parentComment = createCommentFixture(post)
         val reply = createReplyFixture(parentComment)
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.find(parentComment.id!!)} returns parentComment
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(parentComment.id!!, CommentParentType.COMMENT, user, any()) } returns reply
         mockMvc.perform(
-            multipart(buildReplyApiUrl(postId, parentComment.id!!, "replies"))
+            multipart(buildReplyApiUrl(topic.id!!, postId, parentComment.id!!, "replies"))
                 .part(MockPart("content", reply.content.toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with{ it.method = "POST"; it })
@@ -168,10 +180,13 @@ class CommentControllerTest @Autowired constructor(
 
     @Test
     fun `should return 404 if post is not found`() {
+        val topic = createTopicFixture()
         val postId = "invalid"
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns null
         mockMvc.perform(
-            multipart(buildCommentApiUrl(postId))
+            multipart(buildCommentApiUrl(topic.id!!, postId))
                 .part(MockPart("content", "testing".toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it }
@@ -185,10 +200,12 @@ class CommentControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val commentId = "invalid"
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(commentId) } returns null
         mockMvc.perform(
-            multipart(buildReplyApiUrl(post.id!!, commentId, "replies"))
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, commentId, "replies"))
                 .part(MockPart("content", "testing".toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it }
@@ -203,10 +220,11 @@ class CommentControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val comment = createCommentFixture(post)
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.delete(comment.id!!) } returns Unit
-        mockMvc.delete(buildReplyApiUrl(post.id!!, comment.id!!))
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
             .andExpect { status { isOk() } }
     }
 
@@ -216,9 +234,10 @@ class CommentControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val commentId = "invalid"
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(commentId) } returns null
-        mockMvc.delete(buildReplyApiUrl(post.id!!, commentId))
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, commentId))
             .andExpect { status().isNotFound }
     }
 
@@ -234,11 +253,13 @@ class CommentControllerTest @Autowired constructor(
             parentType = comment.parentType,
             parentId = comment.parentId,
         )
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.update(comment, any()) } returns newComment
         mockMvc.perform(
-            multipart(buildReplyApiUrl(post.id!!, comment.id!!))
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
                 .part(MockPart("content", newComment.content.toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "PUT"; it }
@@ -254,10 +275,12 @@ class CommentControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val commentId = "invalid"
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(commentId) } returns null
         mockMvc.perform(
-            multipart(buildReplyApiUrl(post.id!!, commentId))
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, commentId))
                 .part(MockPart("content", "testing".toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "PUT"; it }
@@ -273,9 +296,11 @@ class CommentControllerTest @Autowired constructor(
         val comment = createCommentFixture(post)
         val user = createUserFixture()
 
+        val topicId = topic.id!!
         val postId = post.id!!
         val commentId = comment.id!!
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { userService.getCurrentUserDetails() } returns user
@@ -283,7 +308,7 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.addLike(comment.id!!, user) } returns Unit
 
         mockMvc.perform(
-            multipart("/media/posts/$postId/comments/$commentId/likes")
+            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it }
         )
@@ -293,13 +318,17 @@ class CommentControllerTest @Autowired constructor(
 
     @Test
     fun `should return 404 if creating a like under non-existing comment`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val commentId = "invalid"
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(commentId) } returns null
         mockMvc.perform(
-            multipart("/media/posts/$postId/comments/$commentId/likes")
+            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "POST"; it }
         )
@@ -309,19 +338,22 @@ class CommentControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when creating a duplicate like under the same comment`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
         val comment = createCommentFixture(post)
         val commentId = comment.id!!
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.findLikeByUserIdAndParentId(user.id!!, commentId) } returns mockk()
 
         mockMvc.perform(
-            multipart("/media/posts/$postId/comments/$commentId/likes")
+            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it }
         )
@@ -331,47 +363,57 @@ class CommentControllerTest @Autowired constructor(
 
     @Test
     fun `should remove a like from the comment`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
         val comment = createCommentFixture(post)
         val commentId = comment.id!!
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
-        mockMvc.delete("/media/posts/$postId/comments/$commentId/likes")
+        mockMvc.delete("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
             .andExpect { status().isOk }
             .andExpect { jsonPath("$.message").value("User's like removed successfully to comment $commentId.") }
     }
 
     @Test
     fun `should return 404 when removing a like under non-existing comment`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
         val post = createPostFixture(createTopicFixture())
         val commentId = "invalid"
         val postId = post.id!!
+
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(commentId) } returns null
 
-        mockMvc.delete("/media/posts/$postId/comments/$commentId/likes")
+        mockMvc.delete("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
             .andExpect { status().isNotFound }
 
     }
 
     @Test
     fun `should return 400 if removing a non-existing like`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
         val post = createPostFixture(createTopicFixture())
         val postId = post.id!!
         val user = createUserFixture()
         val comment = createCommentFixture(post)
         val commentId = comment.id!!
 
+        every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
 
-        mockMvc.delete("/media/posts/$postId/likes")
+        mockMvc.delete("/media/topics/$topicId/posts/$postId/likes")
             .andExpect { status().isBadRequest }
             .andExpect { jsonPath("$.message").value("user haven't liked this comment $commentId.") }
     }

@@ -8,6 +8,7 @@ import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
+import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
+import software.amazon.awssdk.services.s3.S3Client
 
 @RestController
 @RequestMapping("media")
@@ -27,8 +29,10 @@ class CommentController @Autowired constructor(
     private val commentService: CommentService,
     private val postService: PostService,
     private val userContextService: UserContextService,
+    private val topicService: TopicService,
+    private val s3Client: S3Client
 ) {
-    @GetMapping("posts/{postId}/comments")
+    @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(
         summary = "Get all comments from the post",
         responses = [ApiResponse(
@@ -40,13 +44,14 @@ class CommentController @Autowired constructor(
         )]
     )
     fun getComments(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         HttpJsonResponse.successResponse(commentService.findCommentsByParentId(postId).map{ buildCommentResponse(it) })
     }
 
-    @GetMapping("posts/{postId}/comments/{commentId}/replies")
+    @GetMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/replies")
     @Operation(
         summary = "Get all replies of the comment",
         responses = [ApiResponse(
@@ -57,16 +62,17 @@ class CommentController @Autowired constructor(
         )]
     )
     fun getReplies(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         findComment(commentId)
         val replies = commentService.findCommentsByParentId(commentId)
         HttpJsonResponse.successResponse(replies.map{ buildCommentResponse(it) })
     }
 
-    @GetMapping("posts/{postId}/comments/{commentId}")
+    @GetMapping("topics/{topicId}/posts/{postId}/comments/{commentId}")
     @Operation(
         summary = "Get a comment from the post or comment",
         responses = [ApiResponse(
@@ -76,16 +82,17 @@ class CommentController @Autowired constructor(
         )]
     )
     fun getComment(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         val comment = commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
         HttpJsonResponse.successResponse(buildCommentResponse(comment))
     }
 
     @RequestMapping(
-        path = ["posts/{postId}/comments"],
+        path = ["topics/{topicId}/posts/{postId}/comments"],
         method = [RequestMethod.POST],
     )
     @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentDto::class))])
@@ -98,17 +105,18 @@ class CommentController @Autowired constructor(
         )]
     )
     fun createComment(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @Valid commentDto: CommentDto,
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(postId, CommentParentType.POST, author, commentDto)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
     @RequestMapping(
-        path = ["posts/{postId}/comments/{commentId}/replies"],
+        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}/replies"],
         method = [RequestMethod.POST],
     )
     @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentDto::class))])
@@ -121,11 +129,12 @@ class CommentController @Autowired constructor(
         )]
     )
     fun createReply(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
         @Valid commentDto: CommentDto,
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         findComment(commentId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(commentId, CommentParentType.COMMENT, author, commentDto)
@@ -133,7 +142,7 @@ class CommentController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["posts/{postId}/comments/{commentId}"],
+        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}"],
         method = [RequestMethod.DELETE],
     )
     @Operation(
@@ -144,16 +153,17 @@ class CommentController @Autowired constructor(
         )]
     )
     fun deleteComment(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("commentId") commentId: String,
         @PathVariable("postId") postId: String,
     ) = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         findComment(commentId)
         HttpJsonResponse.successResponse(commentService.delete(commentId))
     }
 
     @RequestMapping(
-        path = ["posts/{postId}/comments/{commentId}"],
+        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}"],
         method = [RequestMethod.PUT],
     )
     @Operation(
@@ -166,12 +176,13 @@ class CommentController @Autowired constructor(
     )
     @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentUpdate::class))])
     fun updateComment(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
         @Valid commentUpdate: CommentUpdate,
     ) = run {
         // check comment exist
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         val comment = findComment(commentId)
 
         val newComment = commentService.update(comment, commentUpdate)
@@ -179,7 +190,7 @@ class CommentController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["posts/{postId}/comments/{commentId}/likes"],
+        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}/likes"],
         method = [RequestMethod.POST],
     )
     @Operation(
@@ -191,20 +202,21 @@ class CommentController @Autowired constructor(
         )]
     )
     fun createLike(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ) : ResponseEntity<*> = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         findComment(commentId)
         val user = userContextService.getCurrentUserDetails()
         if (commentService.findLikeByUserIdAndParentId(user.id!!, commentId) != null) {
-                return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this comment $commentId.")
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this comment $commentId.")
         }
         commentService.addLike(commentId, user)
         HttpJsonResponse.successResponse(buildCommentResponse(findComment(commentId)), "User's like added successfully to comment $commentId.")
     }
 
-    @DeleteMapping("posts/{postId}/comments/{commentId}/likes")
+    @DeleteMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/likes")
     @Operation(
         summary = "Delete a like under the comment",
         responses = [ApiResponse(
@@ -214,10 +226,11 @@ class CommentController @Autowired constructor(
         )]
     )
     fun deleteLike(
+        @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ): ResponseEntity<*> = run {
-        findPost(postId)
+        findTopicAndPost(topicId, postId)
         val user = userContextService.getCurrentUserDetails()
         findComment(commentId)
         if (commentService.findLikeByUserIdAndParentId(user.id!!, commentId) == null) {
@@ -227,7 +240,8 @@ class CommentController @Autowired constructor(
         HttpJsonResponse.successResponse(buildCommentResponse(findComment(commentId)), "User's like removed successfully to comment $commentId.")
     }
 
-    fun findPost(postId: String) = run {
+    fun findTopicAndPost(topicId: String, postId: String) = run {
+        topicService.find(topicId) ?: throw ResourceNotFoundException(resourceName = "Topic", resourceId = topicId)
         postService.find(postId) ?: throw ResourceNotFoundException("Post", postId)
     }
 

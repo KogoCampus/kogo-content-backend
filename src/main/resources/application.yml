@@ -11,7 +11,7 @@ spring:
     application:
         name: kogo-content-backend
     profiles:
-        active: "local"
+        active: "stg"
     security:
         oauth2:
             resourceserver:
