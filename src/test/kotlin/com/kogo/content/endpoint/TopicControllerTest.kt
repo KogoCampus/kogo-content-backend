@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.UserDetails
@@ -31,6 +32,9 @@ class TopicControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserContextService
+
+    @MockkBean
+    lateinit var searchIndexService: SearchIndexService
 
     companion object {
         private const val TOPIC_API_BASE_URL = "/media/topics"
@@ -65,6 +69,7 @@ class TopicControllerTest @Autowired constructor(
         every { topicService.existsByTopicName(any()) } returns false
         every { userService.getCurrentUserDetails() } returns topicOwner
         every { topicService.create(any(), topicOwner) } returns topic
+        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildTopicApiUrl())
                 .part(MockPart("topicName", topic.topicName.toByteArray()))
@@ -105,6 +110,7 @@ class TopicControllerTest @Autowired constructor(
         )
         every { topicService.find(topicId) } returns topic
         every { topicService.update(topic, any()) } returns updatedTopic
+        every { searchIndexService.updateDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId))
                 .part(MockPart("topicName", updatedTopic.topicName.toByteArray()))
@@ -138,6 +144,7 @@ class TopicControllerTest @Autowired constructor(
         val topicId = topic.id!!
         every { topicService.find(topicId) } returns topic
         every { topicService.delete(topic) } returns Unit
+        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
         mockMvc.delete(buildTopicApiUrl(topicId))
             .andExpect { status { isOk() } }
     }

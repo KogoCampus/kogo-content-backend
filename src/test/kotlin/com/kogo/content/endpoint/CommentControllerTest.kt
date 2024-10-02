@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -38,8 +39,12 @@ class CommentControllerTest @Autowired constructor(
     @MockkBean
     lateinit var userService: UserContextService
 
+    @MockkBean
+    lateinit var searchIndexService: SearchIndexService
+
     private fun buildCommentApiUrl(topicId: String, postId: String, vararg paths: String): String {
         val baseUrl = "/media/topics/$topicId/posts/$postId/comments"
+
         return if (paths.isNotEmpty()) "$baseUrl/" + paths.joinToString("/") else baseUrl
     }
 
@@ -142,6 +147,7 @@ class CommentControllerTest @Autowired constructor(
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(postId, CommentParentType.POST, user, any()) } returns comment
+        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildCommentApiUrl(topic.id!!, postId))
                 .part(MockPart("content", comment.content.toByteArray()))
@@ -167,6 +173,7 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.find(parentComment.id!!)} returns parentComment
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(parentComment.id!!, CommentParentType.COMMENT, user, any()) } returns reply
+        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, postId, parentComment.id!!, "replies"))
                 .part(MockPart("content", reply.content.toByteArray()))
@@ -224,6 +231,7 @@ class CommentControllerTest @Autowired constructor(
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.delete(comment.id!!) } returns Unit
+        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
         mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
             .andExpect { status { isOk() } }
     }
@@ -258,6 +266,7 @@ class CommentControllerTest @Autowired constructor(
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.update(comment, any()) } returns newComment
+        every { searchIndexService.updateDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
                 .part(MockPart("content", newComment.content.toByteArray()))

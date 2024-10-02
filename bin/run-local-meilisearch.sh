@@ -16,8 +16,14 @@ mount_path=$(pwd)
 sudo mkdir -p mount_path
 sudo chmod 755 mount_path
 
-docker run -it --rm \
+container_id=$(docker run -d --rm \
   -p 7700:7700 \
-  -e MEILI_MASTER_KEY='MASTER_KEY'\
-  -v $mount_path/tmp/meili_data:/meili_data \
-  getmeili/meilisearch:v1.10
+  -e MEILI_MASTER_KEY='MASTER_KEY' \
+  -v "$mount_path/tmp/meili_data:/meili_data" \
+  getmeili/meilisearch:v1.10)
+
+# Give the container a few seconds to start
+sleep 5
+
+chmod +x ./add-meilisearch-index.sh
+./add-meilisearch-index.sh "MASTER_KEY"

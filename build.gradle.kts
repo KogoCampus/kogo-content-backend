@@ -57,8 +57,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
     implementation("org.apache.logging.log4j:log4j-spring-boot:$log4jVersion")
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
-    // Meilisearch
-    implementation ("com.meilisearch.sdk:meilisearch-java:0.14.0")
     // Testing
     implementation("com.google.code.gson:gson")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -2,6 +2,7 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PaginationResponse
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
@@ -40,6 +41,9 @@ class PostControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserContextService
+
+    @MockkBean
+    lateinit var searchIndexService: SearchIndexService
 
     @Test
     fun `should return a paginated list of posts by topic id`() {
@@ -98,6 +102,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.create(topic, user, any())} returns post
+        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId))
                 .part(MockPart("title", post.title.toByteArray()))
@@ -142,6 +147,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(postId) } returns topic
         every { postService.find(postId) } returns post
         every { postService.update(post, any()) } returns updatedPost
+        every { searchIndexService.updateDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
                 .part(MockPart("title", updatedPost.title.toByteArray()))
@@ -181,6 +187,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { postService.delete(post) } returns Unit
+        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect { status { isOk() } }
     }

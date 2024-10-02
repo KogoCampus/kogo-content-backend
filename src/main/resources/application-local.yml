@@ -14,4 +14,3 @@ filehandler:
 meilisearch:
     host: http://localhost:7700
     masterkey: 'MASTER_KEY'
-    apikey:

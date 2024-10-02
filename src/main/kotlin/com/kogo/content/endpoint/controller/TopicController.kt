@@ -7,6 +7,9 @@ import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
+import com.kogo.content.searchengine.Document
+import com.kogo.content.searchengine.SearchIndex
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
@@ -26,7 +29,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("media")
 class TopicController @Autowired constructor(
     private val topicService : TopicService,
-    private val userContextService: UserContextService
+    private val userContextService: UserContextService,
+    private val searchIndexService: SearchIndexService
 ) {
     companion object : Logger()
 
@@ -59,7 +63,10 @@ class TopicController @Autowired constructor(
     fun createTopic(@Valid topicDto: TopicDto): ResponseEntity<*> = run {
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
-        HttpJsonResponse.successResponse(buildTopicResponse(topicService.create(topicDto, userContextService.getCurrentUserDetails())))
+        val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
+        val topicDocument = buildTopicIndexDocument(topic)
+        searchIndexService.addDocument(SearchIndex.TOPICS, topicDocument)
+        HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
 
     @RequestMapping(
@@ -78,7 +85,10 @@ class TopicController @Autowired constructor(
         @PathVariable("id") topicId: String,
         @Valid topicUpdate: TopicUpdate) = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-            HttpJsonResponse.successResponse(buildTopicResponse(topicService.update(topic, topicUpdate)))
+            val updatedTopic = topicService.update(topic, topicUpdate)
+            val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
+            searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)
+            HttpJsonResponse.successResponse(buildTopicResponse(updatedTopic))
     }
 
     @DeleteMapping("topics/{id}")
@@ -90,7 +100,9 @@ class TopicController @Autowired constructor(
         )])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-        HttpJsonResponse.successResponse(topicService.delete(topic))
+        val deletedTopic = topicService.delete(topic)
+        searchIndexService.deleteDocument(SearchIndex.TOPICS, topicId)
+        HttpJsonResponse.successResponse(deletedTopic)
     }
 
     private fun buildTopicResponse(topic: Topic) = with(topic) {
@@ -112,6 +124,23 @@ class TopicController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
+    }
+
+    private fun buildTopicIndexDocument(topic: Topic): Document {
+        return Document(topic.id!!).apply {
+            put("topicName", topic.topicName)
+            put("description", topic.description)
+            put("ownerId", topic.owner.id!!)
+            put("tags", topic.tags)
+        }
+    }
+
+    private fun buildTopicIndexDocumentUpdate(topicId: String, topicUpdate: TopicUpdate): Document{
+        return Document(topicId).apply {
+            topicUpdate.topicName?.let { put("topicName", it) }
+            topicUpdate.description?.let { put("description", it) }
+            topicUpdate.tags?.let { put("tags", it) }
+        }
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)

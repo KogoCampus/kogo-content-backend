@@ -7,6 +7,9 @@ import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.PostUpdate
+import com.kogo.content.searchengine.Document
+import com.kogo.content.searchengine.SearchIndex
+import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -30,7 +33,8 @@ import org.springframework.web.bind.annotation.*
 class PostController @Autowired constructor(
     private val postService : PostService,
     private val topicService : TopicService,
-    private val userContextService: UserContextService
+    private val userContextService: UserContextService,
+    private val searchIndexService: SearchIndexService
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -89,7 +93,11 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
-            HttpJsonResponse.successResponse(buildPostResponse(postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)))
+            val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
+            println(post)
+            val postDocument = buildPostIndexDocument(post)
+            searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
+            HttpJsonResponse.successResponse(buildPostResponse(post))
     }
 
     @RequestMapping(
@@ -110,7 +118,10 @@ class PostController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @Valid postUpdate: PostUpdate) = run {
         val post = postService.find(postId) ?: throwPostNotFound(postId)
-        HttpJsonResponse.successResponse(buildPostResponse(postService.update(post, postUpdate)))
+        val updatedPost = postService.update(post, postUpdate)
+        val updatedPostDocument = buildPostIndexDocumentUpdate(postId, postUpdate)
+        searchIndexService.updateDocument(SearchIndex.POSTS, updatedPostDocument)
+        HttpJsonResponse.successResponse(buildPostResponse(updatedPost))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -125,7 +136,9 @@ class PostController @Autowired constructor(
         @PathVariable("postId") postId: String) = run {
         findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
-        HttpJsonResponse.successResponse(postService.delete(post))
+        val deletedPost = postService.delete(post)
+        searchIndexService.deleteDocument(SearchIndex.POSTS, postId)
+        HttpJsonResponse.successResponse(deletedPost)
     }
 
     @RequestMapping(
@@ -211,5 +224,21 @@ class PostController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
+    }
+
+    private fun buildPostIndexDocument(post: Post): Document{
+        return Document(post.id!!).apply {
+            put("title", post.title)
+            put("content", post.content)
+            put("authorId", post.author.id!!)
+            put("topicId", post.topic.id!!)
+        }
+    }
+
+    private fun buildPostIndexDocumentUpdate(postId: String, postUpdate: PostUpdate): Document{
+        return Document(postId).apply {
+            postUpdate.title?.let { put("title", it) }
+            postUpdate.content?.let { put("content", it) }
+        }
     }
 }

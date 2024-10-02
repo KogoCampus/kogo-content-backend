@@ -1,6 +1,6 @@
 package com.kogo.content.filehandler
 
-import okio.IOException
+import java.io.IOException
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.mock.web.MockMultipartFile
