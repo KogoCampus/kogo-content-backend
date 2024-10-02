@@ -33,7 +33,7 @@ class CommentController @Autowired constructor(
     private val commentService: CommentService,
     private val postService: PostService,
     private val userContextService: UserContextService,
-    private val searchIndexService: SearchIndexService
+    private val searchIndexService: SearchIndexService,
     private val topicService: TopicService,
 ) {
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
