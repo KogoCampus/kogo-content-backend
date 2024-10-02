@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 
 @Component
-class MeilisearhClient: SearchIndexService {
+class MeilisearchClient(
+    private val restTemplate: RestTemplate = RestTemplate()
+): SearchIndexService {
     @Value("\${meilisearch.host}")
     lateinit var meilisearchHost: String
 
@@ -20,8 +22,6 @@ class MeilisearhClient: SearchIndexService {
 
     @Value("\${meilisearch.apikey:}")
     lateinit var apiKey: String
-
-    private val restTemplate = RestTemplate()
 
     private fun getAuthToken(): String {
         return if (apiKey.isNotEmpty()) apiKey else masterKey
