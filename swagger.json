@@ -934,6 +934,71 @@
         }
       }
     },
+    "/media/posts/search": {
+      "get": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "search posts containing the keyword",
+        "operationId": "searchPosts",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/me/ownership/topics": {
       "get": {
         "tags": [
@@ -996,6 +1061,120 @@
           }
         }
       }
+    },
+    "/media/feeds/trending": {
+      "get": {
+        "tags": [
+          "feed-controller"
+        ],
+        "summary": "return a list of trending posts",
+        "operationId": "listTrendingPosts",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/feeds/latest": {
+      "get": {
+        "tags": [
+          "feed-controller"
+        ],
+        "summary": "return a list of latest posts",
+        "operationId": "listLatestPosts",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1048,8 +1227,10 @@
       "PostResponse": {
         "required": [
           "attachments",
+          "commentCount",
           "comments",
           "content",
+          "createdAt",
           "id",
           "likes",
           "title",
@@ -1083,6 +1264,14 @@
             "items": {
               "$ref": "#/components/schemas/PostComment"
             }
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           },
           "viewcount": {
             "type": "integer",
@@ -1131,6 +1320,7 @@
       "CommentResponse": {
         "required": [
           "content",
+          "createdAt",
           "id",
           "liked",
           "likes",
@@ -1164,6 +1354,10 @@
           },
           "liked": {
             "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -1208,6 +1402,7 @@
       },
       "TopicResponse": {
         "required": [
+          "createdAt",
           "description",
           "id",
           "tags",
@@ -1235,6 +1430,10 @@
           },
           "profileImage": {
             "$ref": "#/components/schemas/TopicProfileImage"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -1328,6 +1527,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           },
           "userCount": {
             "type": "integer",
