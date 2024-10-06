@@ -115,34 +115,41 @@ class MeilisearchClient: SearchIndexService {
         return hitsNode[0].get("id").asText()
     }
 
-    private fun postSearchQueries(indexes: List<SearchIndex>, queryOptions: String, pageTimestamp: Long?, limit: Int?): List<ObjectNode>{
+    private fun createSearchQueries(indexes: List<SearchIndex>, queryOptions: QueryOptions): List<ObjectNode>{
         val objectMapper = ObjectMapper()
         val searchQueries = indexes.map { index ->
+            val filter = when (index.indexId) {
+                "posts" -> PostFilter(queryOptions.filters.find { it is PostFilter }?.let { (it as PostFilter).timestamp })
+                "comments" -> CommentFilter(queryOptions.filters.find { it is CommentFilter }?.let { (it as CommentFilter).timestamp })
+                else -> null
+            }
             objectMapper.createObjectNode().apply {
                 put("indexUid", index.indexId)
-                if(limit != null) put("limit", limit)
-                if (queryOptions != null) {
-                    put("q", queryOptions)
+                if (queryOptions.queryString != null) {
+                    put("q", queryOptions.queryString)
                 }
-                if(index.indexId == "posts"){
-                    if(pageTimestamp != null){put("filter", "createdAt < '$pageTimestamp'")}
-                }
-                if(index.indexId == "comments"){
-                    if(pageTimestamp != null){put("filter", "parentType= 'POST' AND parentCreatedAt < '$pageTimestamp'")}
-                    else{put("filter", "parentType= 'POST'")}
+                filter?.let {
+                    val filterString = it.build()
+                    if (filterString.isNotBlank()) {
+                        put("filter", filterString)
+                    }
                 }
             }
         }
         return searchQueries
     }
 
-    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?, pageTimestamp: Long?, limit: Int?): Map<SearchIndex, List<Document>> {
+    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: QueryOptions): Map<SearchIndex, List<Document>> {
         val path = "$meilisearchHost/multi-search"
         val headers = HttpHeaders()
         headers.set("Authorization", "Bearer ${getAuthToken()}")
 
         val objectMapper = ObjectMapper()
-        val searchQueries = postSearchQueries(indexes, queryOptions!!, pageTimestamp, limit)
+        val searchQueries = createSearchQueries(indexes, queryOptions)
+
+        searchQueries.forEach { query ->
+            println(objectMapper.writeValueAsString(query))
+        }
 
         val bodyNode = objectMapper.createObjectNode().apply {
             set<ArrayNode>("queries", objectMapper.valueToTree(searchQueries))

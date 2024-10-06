@@ -25,9 +25,22 @@ do
     FILTERABLE_ATTRIBUTES='["id", "createdAt"]'
     SORTABLE_ATTRIBUTES='["id"]'
 
+    if [ "$INDEX" = "topics" ]; then
+            FILTERABLE_ATTRIBUTES='["id", "createdAt"]'
+            SORTABLE_ATTRIBUTES='["id"]'
+            SEARCHABLE_ATTRIBUTES='["topicName", "description", "tags"]'
+        fi
+
+    if [ "$INDEX" = "posts" ]; then
+            FILTERABLE_ATTRIBUTES='["id", "createdAt"]'
+            SORTABLE_ATTRIBUTES='["id"]'
+            SEARCHABLE_ATTRIBUTES='["title", "content"]'
+        fi
+
     if [ "$INDEX" = "comments" ]; then
-            FILTERABLE_ATTRIBUTES='["id", "parentType", "parentCreatedAt"]'
+            FILTERABLE_ATTRIBUTES='["id", "parentType", "parentCreatedAt", "createdAt"]'
             SORTABLE_ATTRIBUTES='["id", "parentId"]'
+            SEARCHABLE_ATTRIBUTES='["content"]'
         fi
 
     echo "\n Setting filterable/sortable attributes for: $INDEX"
@@ -36,7 +49,8 @@ do
     -H "Authorization: Bearer $MASTER_KEY" \
     --data-binary "{
         \"filterableAttributes\": $FILTERABLE_ATTRIBUTES,
-        \"sortableAttributes\": $SORTABLE_ATTRIBUTES
+        \"sortableAttributes\": $SORTABLE_ATTRIBUTES,
+        \"searchableAttributes\": $SEARCHABLE_ATTRIBUTES
     }"
 
     echo "\n"

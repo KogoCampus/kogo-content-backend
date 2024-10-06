@@ -12,5 +12,5 @@ interface SearchIndexService {
     fun deleteDocument(index: SearchIndex, documentId: String)
     fun updateDocument(index: SearchIndex, updatedDocument: Document)
     fun searchDocument(index: SearchIndex, entityId: String): String
-    fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?, pageTimestamp: Long?, limit: Int?): Map<SearchIndex, List<Document>>
+    fun searchDocuments(indexes: List<SearchIndex>, queryOptions: QueryOptions): Map<SearchIndex, List<Document>>
 }

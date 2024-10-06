@@ -6,9 +6,7 @@ import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.searchengine.Document
-import com.kogo.content.searchengine.SearchIndex
-import com.kogo.content.searchengine.SearchIndexService
+import com.kogo.content.searchengine.*
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.*
 import org.springframework.data.domain.PageRequest
@@ -48,18 +46,27 @@ class PostService (
         val limit = paginationRequest.limit
         val page = paginationRequest.page
         val indexes = listOf(SearchIndex.POSTS, SearchIndex.COMMENTS)
-        val pageCreatedAt = page?.let { repository.findByIdOrNull(it)?.createdAt?.epochSecond }
-        val documents = searchIndexService.searchDocuments(indexes, keyword, pageCreatedAt, limit)
-        val postIds = aggregatePostsComments(documents).reversed()
+
+        val pageTimestamp = page?.let { repository.findByIdOrNull(it)?.createdAt?.epochSecond }
+        val postFilter = PostFilter(pageTimestamp)
+        val commentFilter = CommentFilter(pageTimestamp)
+        val queryOptions = QueryOptions(
+            queryString = keyword,
+            filters = listOf(postFilter, commentFilter)
+        )
+        val documents = searchIndexService.searchDocuments(indexes, queryOptions)
+        val postIds = aggregatePostAndCommentSearchResults(documents)
+
         val posts = mutableListOf<Post>()
         postIds.forEach { id ->
             posts.add(find(id)!!)
         }
-        val nextPageToken = posts.lastOrNull()?.id
-        return PaginationResponse(posts, nextPageToken)
+        val limitedPosts = posts.take(limit)
+        val nextPageToken = limitedPosts.lastOrNull()?.id
+        return PaginationResponse(limitedPosts, nextPageToken)
     }
 
-    fun aggregatePostsComments(documents: Map<SearchIndex, List<Document>>): List<String>{
+    private fun aggregatePostAndCommentSearchResults(documents: Map<SearchIndex, List<Document>>): List<String>{
         val ids = mutableSetOf<String>()
         documents.forEach { (index, documentList) ->
             documentList.forEach { document ->
@@ -68,6 +75,8 @@ class PostService (
                 } else {
                     document.toJsonNode().get("id").asText()
                 }
+                println(index.indexId)
+                println(id)
                 ids.add(id)
             }
         }
