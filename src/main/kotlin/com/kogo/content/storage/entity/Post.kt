@@ -28,6 +28,7 @@ data class Post (
     @DBRef
     var comments: List<Comment> = emptyList(),
 
+    var commentCount: Int = 0,
     var createdAt: Instant?=null,
 
     var viewcount: Int = 0,

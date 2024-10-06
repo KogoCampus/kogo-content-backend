@@ -151,7 +151,8 @@ class MeController @Autowired constructor(
             comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
-            createdAt = createdAt!!
+            createdAt = createdAt!!,
+            commentCount = commentCount
         )
     }
 

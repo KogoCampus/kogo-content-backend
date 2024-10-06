@@ -11,6 +11,7 @@ data class PostResponse(
     var content: String,
     var attachments: List<PostAttachment>,
     var comments: List<PostComment>,
+    var commentCount: Int,
     var createdAt: Instant,
     val viewcount: Int,
     val likes: Int,
