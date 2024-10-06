@@ -6,6 +6,8 @@ import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.repository.CommentRepository
+import com.kogo.content.storage.repository.PostRepository
 import com.ninjasquad.springmockk.MockkBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,13 +16,16 @@ import org.junit.jupiter.api.Test
 import com.kogo.content.util.fixture
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.BeforeEach
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -41,6 +46,23 @@ class CommentControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var searchIndexService: SearchIndexService
+
+    @MockkBean
+    lateinit var postRepository: PostRepository
+
+    @MockkBean
+    lateinit var commentRepository: CommentRepository
+
+    @BeforeEach
+    fun setUp() {
+        every { postRepository.findByIdOrNull(any()) } returns createPostFixture(createTopicFixture()).apply {
+            createdAt = Instant.now()
+        }
+
+        every { commentRepository.findByIdOrNull(any()) } returns createCommentFixture(createPostFixture(createTopicFixture())).apply {
+            createdAt = Instant.now()
+        }
+    }
 
     private fun buildCommentApiUrl(topicId: String, postId: String, vararg paths: String): String {
         val baseUrl = "/media/topics/$topicId/posts/$postId/comments"
@@ -72,6 +94,7 @@ class CommentControllerTest @Autowired constructor(
         mapOf(
             "parentId" to post.id,
             "author" to createUserFixture(),
+            "createdAt" to Instant.now()
         )
     }
 
@@ -79,6 +102,7 @@ class CommentControllerTest @Autowired constructor(
         mapOf(
             "parentId" to comment.id,
             "author" to createUserFixture(),
+            "createdAt" to Instant.now()
         )
     }
 
@@ -100,6 +124,7 @@ class CommentControllerTest @Autowired constructor(
             .andExpect { status { isOk() }}
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
+            .andExpect { jsonPath("$.data[0].createdAt") { exists() } }
     }
 
     @Test
@@ -119,6 +144,7 @@ class CommentControllerTest @Autowired constructor(
             .andExpect { status { isOk() }}
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
+            .andExpect { jsonPath("$.data[0].createdAt") { exists() } }
     }
 
     @Test
@@ -147,6 +173,7 @@ class CommentControllerTest @Autowired constructor(
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(postId, CommentParentType.POST, user, any()) } returns comment
+        every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
         every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildCommentApiUrl(topic.id!!, postId))
@@ -157,6 +184,7 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.content").value(comment.content))
             .andExpect(jsonPath("$.data.parentId").value(post.id))
+            .andExpect(jsonPath("$.data.createdAt").exists())
     }
 
     @Test
@@ -173,6 +201,7 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.find(parentComment.id!!)} returns parentComment
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(parentComment.id!!, CommentParentType.COMMENT, user, any()) } returns reply
+        every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
         every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, postId, parentComment.id!!, "replies"))
@@ -183,6 +212,7 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.content").value(reply.content))
             .andExpect(jsonPath("$.data.parentId").value(parentComment.id))
+            .andExpect(jsonPath("$.data.createdAt").exists())
     }
 
     @Test
@@ -260,6 +290,7 @@ class CommentControllerTest @Autowired constructor(
             author = comment.author,
             parentType = comment.parentType,
             parentId = comment.parentId,
+            createdAt = comment.createdAt
         )
 
         every { topicService.find(topic.id!!) } returns topic
@@ -277,6 +308,7 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.content").value(newComment.content))
             .andExpect(jsonPath("$.data.parentId").value(comment.parentId))
+            .andExpect(jsonPath("$.data.createdAt").exists())
     }
 
     @Test

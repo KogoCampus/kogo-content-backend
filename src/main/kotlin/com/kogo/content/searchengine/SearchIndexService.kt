@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 interface SearchIndexService {
@@ -11,5 +12,5 @@ interface SearchIndexService {
     fun deleteDocument(index: SearchIndex, documentId: String)
     fun updateDocument(index: SearchIndex, updatedDocument: Document)
     fun searchDocument(index: SearchIndex, entityId: String): String
-    fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?): Map<SearchIndex, List<Document>>
+    fun searchDocuments(indexes: List<SearchIndex>, queryOptions: QueryOptions): Map<SearchIndex, List<Document>>
 }

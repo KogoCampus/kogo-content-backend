@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("media")
@@ -112,7 +113,8 @@ class TopicController @Autowired constructor(
             topicName = topicName,
             description = description,
             tags = tags,
-            profileImage = profileImage?.let { buildTopicProfileImage(it) }
+            profileImage = profileImage?.let { buildTopicProfileImage(it) },
+            createdAt = createdAt!!
         )
     }
 
@@ -127,11 +129,13 @@ class TopicController @Autowired constructor(
     }
 
     private fun buildTopicIndexDocument(topic: Topic): Document {
+        val timestamp = topic.createdAt?.epochSecond
         return Document(topic.id!!).apply {
             put("topicName", topic.topicName)
             put("description", topic.description)
             put("ownerId", topic.owner.id!!)
             put("tags", topic.tags)
+            put("createdAt", timestamp!!)
         }
     }
 

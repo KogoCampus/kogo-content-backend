@@ -94,7 +94,6 @@ class PostController @Autowired constructor(
         @Valid postDto: PostDto) = run {
             findTopicByIdOrThrow(topicId)
             val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
-            println(post)
             val postDocument = buildPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post))
@@ -198,6 +197,29 @@ class PostController @Autowired constructor(
         HttpJsonResponse.successResponse(buildPostResponse(post), "User's view added successfully to post: ${postId}")
     }
 
+    @GetMapping("posts/search")
+    @Operation(
+        summary = "search posts containing the keyword",
+        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = PostResponse::class)))],
+        )])
+    fun searchPosts(
+        @RequestParam("q") keyword: String,
+        @RequestParam("limit") limit: Int?,
+        @RequestParam("page") page: String?) = run {
+        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+        val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { buildPostResponse(it) },
+            headers = paginationResponse.toHeaders()
+        )
+    }
+
     private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
     private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<Post>(postId)
@@ -213,6 +235,8 @@ class PostController @Autowired constructor(
             comments = emptyList(), // TODO
             viewcount = viewcount,
             likes = likes,
+            createdAt = createdAt!!,
+            commentCount = commentCount,
         )
     }
 
@@ -227,11 +251,13 @@ class PostController @Autowired constructor(
     }
 
     private fun buildPostIndexDocument(post: Post): Document{
+        val timestamp = post.createdAt?.epochSecond
         return Document(post.id!!).apply {
             put("title", post.title)
             put("content", post.content)
             put("authorId", post.author.id!!)
             put("topicId", post.topic.id!!)
+            put("createdAt", timestamp!!)
         }
     }
 

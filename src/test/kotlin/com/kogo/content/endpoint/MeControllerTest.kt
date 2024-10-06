@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 
 @SpringBootTest
@@ -44,6 +45,7 @@ class MeControllerTest  @Autowired constructor(
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.id") { value(user.id) } }
             .andExpect { jsonPath("$.data.username") { value(user.username) } }
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
 //    @Test
@@ -96,6 +98,7 @@ class MeControllerTest  @Autowired constructor(
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data[0].id") { value(topics[0].id) } }
+            .andExpect { jsonPath("$.data[0].createdAt").exists() }
     }
 
     @Test
@@ -109,6 +112,7 @@ class MeControllerTest  @Autowired constructor(
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data[0].id") { value(topics[0].id) } }
+            .andExpect { jsonPath("$.data[0].createdAt").exists() }
     }
 
     private fun buildMeApiUrl(vararg paths: String) =
@@ -118,10 +122,16 @@ class MeControllerTest  @Autowired constructor(
     private fun createUserFixture() = fixture<UserDetails>()
 
     private fun createPostFixture() = fixture<Post> {
-        mapOf("author" to createUserFixture())
+        mapOf(
+            "author" to createUserFixture(),
+            "createdAt" to Instant.now()
+        )
     }
 
     private fun createTopicFixture() = fixture<Topic> {
-        mapOf("owner" to createUserFixture())
+        mapOf(
+            "owner" to createUserFixture(),
+            "createdAt" to Instant.now()
+        )
     }
 }

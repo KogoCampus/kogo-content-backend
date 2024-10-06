@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
@@ -79,6 +80,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.id") { value(postId) } }
             .andExpect { jsonPath("$.data.title") { value(post.title) } }
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
     @Test
@@ -115,6 +117,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.title").value(post.title))
             .andExpect(jsonPath("$.data.content").value(post.content))
             .andExpect(jsonPath("$.data.topicId").value(topic.id))
+            .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
     @Test
@@ -142,7 +145,8 @@ class PostControllerTest @Autowired constructor(
             title = "updated post title",
             content = "updated post content",
             topic = post.topic,
-            author = post.author
+            author = post.author,
+            createdAt = Instant.now()
         )
         every { topicService.find(postId) } returns topic
         every { postService.find(postId) } returns post
@@ -159,6 +163,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.title").value(updatedPost.title))
             .andExpect(jsonPath("$.data.content").value(updatedPost.content))
             .andExpect(jsonPath("$.data.topicId").value(topicId))
+            .andExpect(jsonPath("$.data.createdAt").exists())
     }
 
     @Test
@@ -350,6 +355,7 @@ class PostControllerTest @Autowired constructor(
             "author" to createUserFixture(),
             "comments" to emptyList<Any>(),
             "attachments" to emptyList<Any>(),
+            "createdAt" to Instant.now()
         )
     }
 

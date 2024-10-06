@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
+import java.time.Instant
 
 @Document
 @CompoundIndex(def = "{'author.id': 1}")
@@ -26,6 +27,9 @@ data class Post (
 
     @DBRef
     var comments: List<Comment> = emptyList(),
+
+    var commentCount: Int = 0,
+    var createdAt: Instant?=null,
 
     var viewcount: Int = 0,
     var likes: Int = 0,

@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.client.RestTemplate
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import jakarta.annotation.PostConstruct
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class MeilisearchClient: SearchIndexService {
@@ -113,22 +115,40 @@ class MeilisearchClient: SearchIndexService {
         return hitsNode[0].get("id").asText()
     }
 
-    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: String?): Map<SearchIndex, List<Document>> {
+    private fun createSearchQueries(indexes: List<SearchIndex>, queryOptions: QueryOptions): List<ObjectNode>{
+        val objectMapper = ObjectMapper()
+        val searchQueries = indexes.map { index ->
+            val filter = when (index.indexId) {
+                "posts" -> PostFilter(queryOptions.filters.find { it is PostFilter }?.let { (it as PostFilter).timestamp })
+                "comments" -> CommentFilter(queryOptions.filters.find { it is CommentFilter }?.let { (it as CommentFilter).timestamp })
+                else -> null
+            }
+            objectMapper.createObjectNode().apply {
+                put("indexUid", index.indexId)
+                if (queryOptions.queryString != null) {
+                    put("q", queryOptions.queryString)
+                }
+                filter?.let {
+                    val filterString = it.build()
+                    if (filterString.isNotBlank()) {
+                        put("filter", filterString)
+                    }
+                }
+            }
+        }
+        return searchQueries
+    }
+
+    override fun searchDocuments(indexes: List<SearchIndex>, queryOptions: QueryOptions): Map<SearchIndex, List<Document>> {
         val path = "$meilisearchHost/multi-search"
         val headers = HttpHeaders()
         headers.set("Authorization", "Bearer ${getAuthToken()}")
 
         val objectMapper = ObjectMapper()
-        val searchQueries = indexes.map { index ->
-            objectMapper.createObjectNode().apply {
-                put("indexUid", index.indexId)
-                if (queryOptions != null) {
-                    put("q", queryOptions)
-                }
-                if(index.indexId == "comments"){
-                    put("filter", "parentType= 'POST'")
-                }
-            }
+        val searchQueries = createSearchQueries(indexes, queryOptions)
+
+        searchQueries.forEach { query ->
+            println(objectMapper.writeValueAsString(query))
         }
 
         val bodyNode = objectMapper.createObjectNode().apply {
