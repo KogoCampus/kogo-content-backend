@@ -1,4 +1,5 @@
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "2.0.0"
@@ -13,7 +14,7 @@ plugins {
 }
 
 group = "com.kogo"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 description = "kogo-content-backend"
 
 java {
@@ -49,14 +50,14 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager:$springCloudAwsVersion")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure:2.6.8")
     // Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
     // Logging
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
     implementation("org.apache.logging.log4j:log4j-spring-boot:$log4jVersion")
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
+    // Meilisearch
+    implementation ("com.meilisearch.sdk:meilisearch-java:0.14.0")
     // Testing
     implementation("com.google.code.gson:gson")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -105,6 +106,10 @@ conventionalCommits {
         e.g.
         git commit -m 'chore: upgrade convetional commit plugin version to 3.1.3'
     """.trimIndent()
+}
+
+tasks.named<BootJar>("bootJar") {
+    archiveFileName.set("kcback-${version}.jar")
 }
 
 tasks.withType<Test> {

@@ -1,7 +1,9 @@
 ---
+compileVersionKey: ${secrets.compileVersionKey}
+
 spring:
     config:
-        import: aws-secretsmanager:/stg/kogo-content-backend/application.properties
+        import: aws-secretsmanager:/staging/kogo-content-backend/application.properties
     data:
         mongodb:
             database: ${secrets.mongodb.database}
@@ -9,6 +11,10 @@ spring:
             username: ${secrets.mongodb.username}
             password: ${secrets.mongodb.password}
             auto-index-creation: true
+
+external:
+    auth:
+        url: "https://api.staging.kogocampus.com/student"
 
 filehandler:
     prefix: files

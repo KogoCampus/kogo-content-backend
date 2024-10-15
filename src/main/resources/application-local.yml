@@ -1,12 +1,18 @@
 ---
+compileVersionKey: "1.0.0"
+
 spring:
     data:
         mongodb:
-            database: kogocontent
+            database: kogo_content_backend
             uri: mongodb://localhost:27017/kogocontent
             username: admin
             password: password
             auto-index-creation: true
+
+external:
+    auth:
+        url: "https://api.staging.kogocampus.com/student"
 
 filehandler:
     prefix: tmp/files

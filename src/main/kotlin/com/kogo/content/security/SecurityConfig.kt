@@ -1,7 +1,6 @@
 package com.kogo.content.security
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -24,11 +23,8 @@ class SecurityConfig {
         )
     }
 
-    @Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
-    lateinit var jwkSetUri: String
-
     @Autowired
-    lateinit var cognitoAuthenticationFilter: CognitoOAuth2RequestFilter
+    lateinit var externalAuthRequestFilter: ExternalAuthRequestFilter
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain = http
@@ -40,8 +36,7 @@ class SecurityConfig {
             it.requestMatchers(*WHITELIST_PATHS).permitAll()
                 .anyRequest().authenticated()
         }
-        .oauth2ResourceServer { it.jwt { it.jwkSetUri(jwkSetUri) } }
-        .addFilterAfter(cognitoAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+        .addFilterBefore(externalAuthRequestFilter, UsernamePasswordAuthenticationFilter::class.java)
         .build()
 
     @Bean

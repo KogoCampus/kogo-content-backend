@@ -33,7 +33,7 @@ class MeControllerTest  @Autowired constructor(
     lateinit var userService: UserContextService
 
     companion object {
-        private const val ME_API_BASE_URL = "/media/me"
+        private const val ME_API_BASE_URL = "/me"
     }
 
     @Test

@@ -21,7 +21,6 @@ import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("media")
 class MeController @Autowired constructor(
     private val userService : UserContextService
 ) {
@@ -102,7 +101,8 @@ class MeController @Autowired constructor(
             id = id!!,
             username = username,
             email = email,
-            schoolId = schoolId,
+            schoolName = schoolName,
+            schoolShortenedName = schoolShortenedName,
             profileImage = profileImage?.let { buildUserProfileImage(it) },
             followingTopics = followingTopics,
         )
