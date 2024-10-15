@@ -377,7 +377,7 @@
         }
       }
     },
-    "/media/me": {
+    "/me": {
       "get": {
         "tags": [
           "me-controller"
@@ -999,69 +999,6 @@
         }
       }
     },
-    "/media/me/ownership/topics": {
-      "get": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "get my topics",
-        "operationId": "getMeGroups",
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/me/ownership/posts": {
-      "get": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "get my posts",
-        "operationId": "getMePosts",
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/me/following": {
-      "get": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "get my following topics",
-        "operationId": "getMeFollowing",
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/feeds/trending": {
       "get": {
         "tags": [
@@ -1169,6 +1106,69 @@
                   "items": {
                     "$ref": "#/components/schemas/PostResponse"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/ownership/topics": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my topics",
+        "operationId": "getMeGroups",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/ownership/posts": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my posts",
+        "operationId": "getMePosts",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/following": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my following topics",
+        "operationId": "getMeFollowing",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
                 }
               }
             }
@@ -1553,7 +1553,10 @@
           "email": {
             "type": "string"
           },
-          "schoolId": {
+          "schoolName": {
+            "type": "string"
+          },
+          "schoolShortenedName": {
             "type": "string"
           },
           "profileImage": {
@@ -1610,7 +1613,10 @@
           "email": {
             "type": "string"
           },
-          "schoolId": {
+          "schoolName": {
+            "type": "string"
+          },
+          "schoolShortenedName": {
             "type": "string"
           },
           "profileImage": {
