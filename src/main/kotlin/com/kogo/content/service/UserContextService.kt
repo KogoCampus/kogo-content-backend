@@ -12,7 +12,6 @@ import com.kogo.content.storage.repository.TopicRepository
 import com.kogo.content.storage.repository.UserDetailsRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -28,9 +27,8 @@ class UserContextService @Autowired constructor(
     companion object : Logger()
 
     fun getCurrentUsername(): String {
-        val context = SecurityContextHolder.getContext().authentication
-        val jwt = (context.principal as Jwt).claims
-        return jwt["username"] as String
+        val authentication = SecurityContextHolder.getContext().authentication
+        return authentication.principal as String
     }
 
     fun getCurrentUserDetails(): UserDetails {
@@ -40,12 +38,12 @@ class UserContextService @Autowired constructor(
 
     fun findUserProfileByUsername(username: String) = userDetailsRepository.findByUsername(username)
 
-    fun existsUserProfileByUsername(username: String) = userDetailsRepository.existsByUsername(username)
-
-    fun createUserProfile(username: String, email: String): UserDetails =
+    fun createUserProfile(username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): UserDetails =
         userDetailsRepository.save(UserDetails(
             username = username,
-            email = email
+            email = email,
+            schoolName = schoolName,
+            schoolShortenedName = schoolShortenedName
         ))
 
     @Transactional

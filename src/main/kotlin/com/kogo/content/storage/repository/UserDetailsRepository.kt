@@ -5,6 +5,4 @@ import org.springframework.data.mongodb.repository.MongoRepository
 
 interface UserDetailsRepository : MongoRepository<UserDetails, String> {
     fun findByUsername(username: String): UserDetails?
-
-    fun existsByUsername(username: String): Boolean
 }

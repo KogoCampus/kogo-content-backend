@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import software.amazon.awssdk.services.s3.S3Client
 
 @RestController
 @RequestMapping("media")
@@ -29,8 +28,7 @@ class CommentController @Autowired constructor(
     private val commentService: CommentService,
     private val postService: PostService,
     private val userContextService: UserContextService,
-    private val topicService: TopicService,
-    private val s3Client: S3Client
+    private val topicService: TopicService
 ) {
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(

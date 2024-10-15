@@ -16,7 +16,9 @@ data class UserDetails (
 
     var email: String? = null,
 
-    var schoolId: String? = null,
+    var schoolName: String? = null,
+
+    var schoolShortenedName: String? = null,
 
     @DBRef
     var profileImage: Attachment? = null,

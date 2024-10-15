@@ -12,8 +12,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileOutputStream
 import java.util.*
 import java.time.Duration
 
@@ -23,8 +21,8 @@ data class S3Object (
     val content: MultipartFile
 )
 
-@Profile("stg")
 @Component
+@Profile("!local")
 class S3FileHandler() : FileHandler{
 
     @Autowired

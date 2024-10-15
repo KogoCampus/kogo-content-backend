@@ -1,4 +1,5 @@
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "2.0.0"
@@ -13,7 +14,7 @@ plugins {
 }
 
 group = "com.kogo"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 description = "kogo-content-backend"
 
 java {
@@ -45,12 +46,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
     // Spring Cloud
+    // Only include S3 and Secrets Manager if the local flag is not set
     implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:$springCloudAwsVersion")
     implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager:$springCloudAwsVersion")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure:2.6.8")
     // Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
     // Logging
@@ -107,6 +107,10 @@ conventionalCommits {
         e.g.
         git commit -m 'chore: upgrade convetional commit plugin version to 3.1.3'
     """.trimIndent()
+}
+
+tasks.named<BootJar>("bootJar") {
+    archiveFileName.set("kcback-${version}.jar")
 }
 
 tasks.withType<Test> {
