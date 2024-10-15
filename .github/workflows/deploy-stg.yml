@@ -14,7 +14,7 @@ env:
     ENVIRONMENT: stg
 
 jobs:
-    deploy-docs:
+    deploy-staging:
         runs-on: ubuntu-latest
 
         steps:
@@ -54,10 +54,9 @@ jobs:
             - name: Build Docker image
               run: |
                   COMMIT_HASH=${{ github.sha }}
-                  docker build -t ${ECR_REPOSITORY}:latest -t ${ECR_REPOSITORY}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} .
+                  docker build -t ${{ env.ECR_REPOSITORY }}:latest -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} .
 
             # Push both tags to Amazon ECR
             - name: Push Docker images to ECR
               run: |
-                  docker push ${ECR_REPOSITORY}:latest
-                  docker push ${ECR_REPOSITORY}:${{ env.TIMESTAMP }}
+                  docker push ${{ env.ECR_REPOSITORY }} --all-tags
