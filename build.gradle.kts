@@ -24,15 +24,21 @@ java {
 }
 
 repositories {
+    mavenCentral()
     mavenLocal()
-    maven {
-        url = uri("https://repo.maven.apache.org/maven2/")
+}
+
+extra["springCloudVersion"] = "2022.0.3"
+extra["springCloudAwsVersion"] = "3.0.1"
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
     }
 }
 
 dependencies {
     val log4jVersion = "2.17.1"
-    val springCloudAwsVersion = "3.0.0"
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -45,9 +51,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
-    // Spring Cloud
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:$springCloudAwsVersion")
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager:$springCloudAwsVersion")
+    // Spring Cloud AWS
+    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:${property("springCloudAwsVersion")}"))
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3")
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
     // Swagger
@@ -120,4 +127,12 @@ tasks.named<BootBuildImage>("bootBuildImage") {
     // For multi arch (Apple Silicon) support
     builder.set("paketobuildpacks/builder-jammy-buildpackless-tiny")
     buildpacks.set(listOf("paketobuildpacks/java"))
+}
+
+tasks.withType<JavaExec> {
+    if (project.hasProperty("activeProfile")) {
+        val activeProfile = project.property("activeProfile") ?: ""
+        println("Active profile selected: $activeProfile")
+        systemProperty("spring.profiles.active", activeProfile)
+    }
 }

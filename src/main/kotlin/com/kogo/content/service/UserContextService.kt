@@ -38,8 +38,9 @@ class UserContextService @Autowired constructor(
 
     fun findUserProfileByUsername(username: String) = userDetailsRepository.findByUsername(username)
 
-    fun createUserProfile(username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): UserDetails =
+    fun createUserProfile(userId: String, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): UserDetails =
         userDetailsRepository.save(UserDetails(
+            id = userId,
             username = username,
             email = email,
             schoolName = schoolName,

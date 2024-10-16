@@ -5,7 +5,7 @@ spring:
     data:
         mongodb:
             database: kogo_content_backend
-            uri: mongodb://localhost:27017/kogocontent
+            uri: mongodb://localhost:27017/kogo-content-backend
             username: admin
             password: password
             auto-index-creation: true

@@ -11,14 +11,7 @@ spring:
     application:
         name: kogo-content-backend
     profiles:
-        active: "local"
-
-cloud:
-    aws:
-        region:
-            static: us-west-2
-        credentials:
-            profile-name: default
+        default: "stg"
 
 management:
     endpoints:

@@ -11,7 +11,7 @@ on:
 env:
     AWS_REGION: us-west-2
     ECR_REPOSITORY: 992382730467.dkr.ecr.us-west-2.amazonaws.com/staging-kogo-content-backend
-    ENVIRONMENT: stg
+    SPRING_PROFILES_ACTIVE: stg
 
 jobs:
     deploy-staging:
@@ -42,7 +42,7 @@ jobs:
               run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
             - name: Build with Gradle (stg profile)
-              run: ./gradlew clean build -Dspring.profiles.active=${{ env.ENVIRONMENT }}
+              run: ./gradlew clean build -x test -PactiveProfile=${{ env.SPRING_PROFILES_ACTIVE }}
 
             - name: Build Docker image
               run: |

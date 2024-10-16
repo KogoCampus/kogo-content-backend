@@ -15,9 +15,11 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 
 
 @Configuration
-class MongoDBConfig(
-    @Value("\${spring.data.mongodb.uri}") val connectionString: String
-) {
+class MongoDBConfig {
+
+    @Value("\${spring.data.mongodb.uri}")
+    lateinit var connectionString: String
+
     @Bean
     fun mongoDatabaseFactory(): MongoDatabaseFactory {
         return SimpleMongoClientDatabaseFactory(connectionString)
