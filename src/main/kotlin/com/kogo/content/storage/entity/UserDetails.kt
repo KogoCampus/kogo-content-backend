@@ -12,6 +12,9 @@ data class UserDetails (
     var id: String? = null,
 
     @Indexed(unique = true)
+    var idToken: UserIdToken? = null,
+
+    @Indexed(unique = true)
     var username: String,
 
     var email: String? = null,

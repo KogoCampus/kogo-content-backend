@@ -6,6 +6,7 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.storage.entity.UserIdToken
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.PostRepository
 import com.kogo.content.storage.repository.TopicRepository
@@ -38,9 +39,9 @@ class UserContextService @Autowired constructor(
 
     fun findUserProfileByUsername(username: String) = userDetailsRepository.findByUsername(username)
 
-    fun createUserProfile(userId: String, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): UserDetails =
+    fun createUserProfile(idToken: UserIdToken, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): UserDetails =
         userDetailsRepository.save(UserDetails(
-            id = userId,
+            idToken = idToken,
             username = username,
             email = email,
             schoolName = schoolName,

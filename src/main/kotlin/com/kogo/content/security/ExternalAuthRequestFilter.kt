@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserContextService
+import com.kogo.content.storage.entity.UserIdToken
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -66,7 +67,7 @@ class ExternalAuthRequestFilter (
                 val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
 
                 userContextService.createUserProfile(
-                    userId = username,
+                    idToken = UserIdToken(username, email),
                     username = username,
                     email = email,
                     schoolName = schoolName,

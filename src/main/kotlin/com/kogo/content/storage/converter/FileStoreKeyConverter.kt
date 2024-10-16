@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component
 import org.springframework.core.convert.converter.Converter
 
 @Component
-class MultipartFileConverter: MongodbConverter<FileStoreKey, String> {
+class FileStoreKeyConverter: MongodbConverter<FileStoreKey, String> {
     override fun readConverter(): Converter<String, FileStoreKey> {
         return object : Converter<String, FileStoreKey> {
             override fun convert(source: String): FileStoreKey = FileStoreKey(source)
