@@ -10,9 +10,8 @@ spring:
             password: password
             auto-index-creation: true
 
-external:
-    auth:
-        url: "https://api.staging.kogocampus.com/student"
+kogo-api:
+    base-url: "https://api.staging.kogocampus.com"
 
 filehandler:
     prefix: tmp/files
