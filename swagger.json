@@ -1547,6 +1547,9 @@
           "id": {
             "type": "string"
           },
+          "idToken": {
+            "$ref": "#/components/schemas/UserIdToken"
+          },
           "username": {
             "type": "string"
           },
@@ -1567,6 +1570,21 @@
             "items": {
               "$ref": "#/components/schemas/Topic"
             }
+          }
+        }
+      },
+      "UserIdToken": {
+        "required": [
+          "email",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
           }
         }
       },
