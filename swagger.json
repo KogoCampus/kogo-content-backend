@@ -1154,32 +1154,11 @@
           }
         }
       }
-    },
-    "/me/following": {
-      "get": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "get my following topics",
-        "operationId": "getMeFollowing",
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
-      "PostAttachment": {
+      "AttachmentResponse": {
         "required": [
           "contentType",
           "name",
@@ -1206,8 +1185,29 @@
           }
         }
       },
+      "OwnerInfoResponse": {
+        "required": [
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "ownerId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/AttachmentResponse"
+          },
+          "schoolShortenedName": {
+            "type": "string"
+          }
+        }
+      },
       "PostComment": {
         "required": [
+          "ownerId",
           "replyCount"
         ],
         "type": "object",
@@ -1215,8 +1215,8 @@
           "commentId": {
             "type": "string"
           },
-          "authorId": {
-            "type": "string"
+          "ownerId": {
+            "$ref": "#/components/schemas/OwnerInfoResponse"
           },
           "replyCount": {
             "type": "integer",
@@ -1233,6 +1233,7 @@
           "createdAt",
           "id",
           "likes",
+          "owner",
           "title",
           "viewcount"
         ],
@@ -1241,8 +1242,8 @@
           "id": {
             "type": "string"
           },
-          "authorUserId": {
-            "type": "string"
+          "owner": {
+            "$ref": "#/components/schemas/OwnerInfoResponse"
           },
           "topicId": {
             "type": "string"
@@ -1256,7 +1257,7 @@
           "attachments": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PostAttachment"
+              "$ref": "#/components/schemas/AttachmentResponse"
             }
           },
           "comments": {
@@ -1324,6 +1325,7 @@
           "id",
           "liked",
           "likes",
+          "owner",
           "parentId",
           "parentType"
         ],
@@ -1332,8 +1334,8 @@
           "id": {
             "type": "string"
           },
-          "authorId": {
-            "type": "string"
+          "owner": {
+            "$ref": "#/components/schemas/OwnerInfoResponse"
           },
           "content": {
             "type": "string"
@@ -1372,39 +1374,12 @@
           }
         }
       },
-      "TopicProfileImage": {
-        "required": [
-          "attachmentId",
-          "contentType",
-          "name",
-          "size",
-          "url"
-        ],
-        "type": "object",
-        "properties": {
-          "attachmentId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "contentType": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        }
-      },
       "TopicResponse": {
         "required": [
           "createdAt",
           "description",
           "id",
+          "owner",
           "tags",
           "topicName"
         ],
@@ -1413,8 +1388,8 @@
           "id": {
             "type": "string"
           },
-          "ownerUserId": {
-            "type": "string"
+          "owner": {
+            "$ref": "#/components/schemas/OwnerInfoResponse"
           },
           "topicName": {
             "type": "string"
@@ -1429,7 +1404,7 @@
             }
           },
           "profileImage": {
-            "$ref": "#/components/schemas/TopicProfileImage"
+            "$ref": "#/components/schemas/AttachmentResponse"
           },
           "createdAt": {
             "type": "string",
@@ -1459,163 +1434,6 @@
           }
         }
       },
-      "Attachment": {
-        "required": [
-          "contentType",
-          "fileSize",
-          "name",
-          "storeKey"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "storeKey": {
-            "$ref": "#/components/schemas/FileStoreKey"
-          },
-          "contentType": {
-            "type": "string"
-          },
-          "fileSize": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "FileStoreKey": {
-        "required": [
-          "key"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          }
-        }
-      },
-      "Topic": {
-        "required": [
-          "description",
-          "owner",
-          "tags",
-          "topicName",
-          "userCount"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "topicName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/Attachment"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserDetails"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "userCount": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "UserDetails": {
-        "required": [
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "idToken": {
-            "$ref": "#/components/schemas/UserIdToken"
-          },
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "schoolName": {
-            "type": "string"
-          },
-          "schoolShortenedName": {
-            "type": "string"
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/Attachment"
-          },
-          "followingTopics": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Topic"
-            }
-          }
-        }
-      },
-      "UserIdToken": {
-        "required": [
-          "email",
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          }
-        }
-      },
-      "UserProfileImage": {
-        "required": [
-          "attachmentId",
-          "contentType",
-          "fileName",
-          "size",
-          "url"
-        ],
-        "type": "object",
-        "properties": {
-          "attachmentId": {
-            "type": "string"
-          },
-          "fileName": {
-            "type": "string"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "contentType": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        }
-      },
       "UserResponse": {
         "required": [
           "id"
@@ -1638,13 +1456,7 @@
             "type": "string"
           },
           "profileImage": {
-            "$ref": "#/components/schemas/UserProfileImage"
-          },
-          "followingTopics": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Topic"
-            }
+            "$ref": "#/components/schemas/AttachmentResponse"
           }
         }
       },
