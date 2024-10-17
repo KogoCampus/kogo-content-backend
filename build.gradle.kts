@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.kogo"
-version = "1.0.0-SNAPSHOT"
+version = "1.0.1-SNAPSHOT"
 description = "kogo-content-backend"
 
 java {
@@ -117,6 +117,7 @@ conventionalCommits {
 
 tasks.named<BootJar>("bootJar") {
     archiveFileName.set("kcback-${version}.jar")
+    destinationDirectory.set(file("target"))
 }
 
 tasks.withType<Test> {
@@ -127,12 +128,4 @@ tasks.named<BootBuildImage>("bootBuildImage") {
     // For multi arch (Apple Silicon) support
     builder.set("paketobuildpacks/builder-jammy-buildpackless-tiny")
     buildpacks.set(listOf("paketobuildpacks/java"))
-}
-
-tasks.withType<JavaExec> {
-    if (project.hasProperty("activeProfile")) {
-        val activeProfile = project.property("activeProfile") ?: ""
-        println("Active profile selected: $activeProfile")
-        systemProperty("spring.profiles.active", activeProfile)
-    }
 }

@@ -41,13 +41,20 @@ jobs:
               id: timestamp
               run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
+            - name: Extract KCB_VERSION from build.gradle.kts
+              id: extract_version
+              run: |
+                  VERSION=$(grep "^version" build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
+                  echo "KCB_VERSION=$VERSION" >> $GITHUB_ENV
+
             - name: Build with Gradle (stg profile)
-              run: ./gradlew clean build -x test -PactiveProfile=${{ env.ACTIVE_PROFILE }}
+              run: ./gradlew clean build -x test
 
             - name: Build Docker image
               run: |
                   COMMIT_HASH=${{ github.sha }}
                   docker build \
+                    --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
                     --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
                     -t ${{ env.ECR_REPOSITORY }}:latest \
                     -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} \
