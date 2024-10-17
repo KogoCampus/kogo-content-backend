@@ -17,6 +17,7 @@ class SecurityConfig {
 
     companion object {
         val WHITELIST_PATHS = arrayOf(
+            "/-/**",
             "/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
