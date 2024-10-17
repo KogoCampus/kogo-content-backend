@@ -63,3 +63,6 @@ jobs:
             - name: Push Docker images to ECR
               run: |
                   docker push ${{ env.ECR_REPOSITORY }} --all-tags
+
+            - name: Run App Runner Deployment
+              run: ./bin/deploy-apprunner.sh --auto
