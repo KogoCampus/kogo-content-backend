@@ -10,7 +10,6 @@ on:
             - main
         paths:
             - 'src/**'
-    workflow_dispatch:
 
 jobs:
     build-and-test:
@@ -40,6 +39,3 @@ jobs:
 
             - name: Build and Test
               run: ./gradlew build --no-daemon
-
-        outputs:
-            build_result: ${{ steps['Build and Test'].conclusion }}
