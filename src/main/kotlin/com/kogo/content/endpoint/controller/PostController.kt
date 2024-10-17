@@ -2,11 +2,8 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
-import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.endpoint.model.PostDto
-import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
@@ -228,11 +225,11 @@ class PostController @Autowired constructor(
         PostResponse(
             id = id!!,
             topicId = post.topic.id,
-            authorUserId = author.id!!,
+            owner = buildOwnerInfoResponse(owner),
             title = title,
             content = content,
-            attachments = attachments.map { buildPostAttachmentResponse(it) },
-            comments = emptyList(), // TODO
+            attachments = attachments.map { buildAttachmentResponse(it) },
+            comments = comments.map { buildPostCommment(it) },
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
@@ -240,8 +237,17 @@ class PostController @Autowired constructor(
         )
     }
 
-    private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
-        PostResponse.PostAttachment(
+    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse =  with(owner) {
+        OwnerInfoResponse(
+            ownerId = id,
+            username = username,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
+            schoolShortenedName = schoolShortenedName
+        )
+    }
+
+    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
+        AttachmentResponse(
             attachmentId = id,
             name = name,
             url = attachment.storeKey.toFileSourceUrl(),
@@ -250,12 +256,20 @@ class PostController @Autowired constructor(
         )
     }
 
+    private fun buildPostCommment(comment: Comment): PostResponse.PostComment = with(comment) {
+        PostResponse.PostComment(
+            commentId = id,
+            ownerId = buildOwnerInfoResponse(owner),
+            replyCount = repliesCount
+        )
+    }
+
     private fun buildPostIndexDocument(post: Post): Document{
         val timestamp = post.createdAt?.epochSecond
         return Document(post.id!!).apply {
             put("title", post.title)
             put("content", post.content)
-            put("authorId", post.author.id!!)
+            put("ownerId", post.owner.id!!)
             put("topicId", post.topic.id!!)
             put("createdAt", timestamp!!)
         }

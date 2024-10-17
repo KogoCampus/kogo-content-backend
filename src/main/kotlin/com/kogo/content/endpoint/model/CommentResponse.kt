@@ -5,7 +5,7 @@ import java.time.Instant
 
 data class CommentResponse (
     var id: String,
-    var authorId: String?,
+    var owner: OwnerInfoResponse,
     var content: String,
     var parentId: String,
     var parentType: CommentParentType,

@@ -1,15 +1,10 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
-import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.endpoint.model.UserResponse
-import com.kogo.content.endpoint.model.UserUpdate
-import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.endpoint.model.*
+import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserContextService
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.endpoint.model.TopicResponse
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -24,6 +19,8 @@ import org.springframework.web.bind.annotation.*
 class MeController @Autowired constructor(
     private val userService : UserContextService
 ) {
+    companion object: Logger()
+
     @GetMapping("me")
     @Operation(
         summary = "get my user info",
@@ -33,7 +30,9 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
         )])
     fun getMe() = run {
+        println("passed1")
         val me = userService.getCurrentUserDetails()
+        println("passed2")
         HttpJsonResponse.successResponse(buildUserResponse(me))
     }
 
@@ -83,18 +82,18 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(userService.getUserTopics(me).map { buildTopicResponse(it) })
     }
 
-    @GetMapping("me/following")
-    @Operation(
-        summary = "get my following topics",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
-        )])
-    fun getMeFollowing() = run {
-        val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(userService.getUserFollowings(me).map { buildTopicResponse(it) })
-    }
+//    @GetMapping("me/following")
+//    @Operation(
+//        summary = "get my following topics",
+//        responses = [ApiResponse(
+//            responseCode = "200",
+//            description = "ok",
+//            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+//        )])
+//    fun getMeFollowing() = run {
+//        val me = userService.getCurrentUserDetails()
+//        HttpJsonResponse.successResponse(userService.getUserFollowings(me).map { buildTopicResponse(it) })
+//    }
 
     private fun buildUserResponse(user: UserDetails) = with(user) {
         UserResponse(
@@ -103,40 +102,19 @@ class MeController @Autowired constructor(
             email = email,
             schoolName = schoolName,
             schoolShortenedName = schoolShortenedName,
-            profileImage = profileImage?.let { buildUserProfileImage(it) },
-            followingTopics = followingTopics,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
         )
     }
 
-    private fun buildUserProfileImage(attachment: Attachment) = with(attachment) {
-        UserResponse.UserProfileImage(
-            attachmentId = id!!,
-            fileName = name,
-            url = attachment.storeKey.toFileSourceUrl(),
-            contentType = contentType,
-            size = fileSize
-        )
-    }
-
-    private fun buildTopicResponse(topic: Topic) = with(topic) {
+    private fun buildTopicResponse(topic: Topic): TopicResponse = with(topic) {
         TopicResponse(
             id = id!!,
-            ownerUserId = owner.id!!,
+            owner = buildOwnerInfoResponse(owner),
             topicName = topicName,
             description = description,
             tags = tags,
-            profileImage = profileImage?.let { buildTopicProfileImage(it) },
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
             createdAt = createdAt!!,
-        )
-    }
-
-    private fun buildTopicProfileImage(attachment: Attachment) = with(attachment) {
-        TopicResponse.TopicProfileImage(
-            attachmentId = id!!,
-            name = name,
-            url = attachment.storeKey.toFileSourceUrl(),
-            contentType = contentType,
-            size = fileSize
         )
     }
 
@@ -144,11 +122,11 @@ class MeController @Autowired constructor(
         PostResponse(
             id = id!!,
             topicId = post.topic.id,
-            authorUserId = author.id!!,
+            owner = buildOwnerInfoResponse(owner),
             title = title,
             content = content,
-            attachments = attachments.map { buildPostAttachmentResponse(it) },
-            comments = emptyList(), // TODO
+            attachments = attachments.map { buildAttachmentResponse(it) },
+            comments = comments.map { buildPostComment(it) },
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
@@ -156,13 +134,30 @@ class MeController @Autowired constructor(
         )
     }
 
-    private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
-        PostResponse.PostAttachment(
+    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse =  with(owner) {
+        OwnerInfoResponse(
+            ownerId = id,
+            username = username,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
+            schoolShortenedName = schoolShortenedName
+        )
+    }
+
+    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
+        AttachmentResponse(
             attachmentId = id,
             name = name,
             url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
+        )
+    }
+
+    private fun buildPostComment(comment: Comment): PostResponse.PostComment = with(comment) {
+        PostResponse.PostComment(
+            commentId = id,
+            ownerId = buildOwnerInfoResponse(owner),
+            replyCount = repliesCount
         )
     }
 }

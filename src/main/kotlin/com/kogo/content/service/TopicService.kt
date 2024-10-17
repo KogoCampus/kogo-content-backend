@@ -9,12 +9,14 @@ import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import software.amazon.awssdk.services.s3.model.Owner
 import java.time.Instant
 
 
 @Service
 class TopicService (
     private val repository: TopicRepository,
+    private val userDetailsRepository: UserDetailsRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler
 ) {
@@ -37,7 +39,10 @@ class TopicService (
             tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!,
             createdAt = Instant.now()
         )
-        return repository.save(topic)
+        val savedTopic = repository.save(topic)
+//        owner.followingTopics = owner.followingTopics!!.plus(savedTopic)
+//        userDetailsRepository.save(owner)
+        return savedTopic
     }
 
     @Transactional

@@ -2,9 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
-import com.kogo.content.endpoint.model.CommentDto
-import com.kogo.content.endpoint.model.CommentResponse
-import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
@@ -27,8 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.ResponseEntity
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("media")
@@ -266,16 +262,35 @@ class CommentController @Autowired constructor(
         commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
 
-    fun buildCommentResponse(comment: Comment): CommentResponse = with(comment) {
+    private fun buildCommentResponse(comment: Comment): CommentResponse = with(comment) {
         CommentResponse(
             id = id!!,
-            authorId = author.id,
+            owner = buildOwnerInfoResponse(owner),
             content = content,
             parentId = parentId,
             parentType = parentType,
             likes = likes,
             liked = liked,
             createdAt = createdAt!!,
+        )
+    }
+
+    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse = with(owner) {
+        OwnerInfoResponse(
+            ownerId = id,
+            username = username,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
+            schoolShortenedName = schoolShortenedName
+        )
+    }
+
+    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
+        AttachmentResponse(
+            attachmentId = id,
+            name = name,
+            url = attachment.storeKey.toFileSourceUrl(),
+            contentType = contentType,
+            size = fileSize
         )
     }
 
@@ -294,7 +309,7 @@ class CommentController @Autowired constructor(
             put("parentType", comment.parentType.name)
             put("parentCreatedAt", timestamp)
             put("content", comment.content)
-            put("authorId", comment.author.id!!)
+            put("ownerId", comment.owner.id!!)
         }
     }
 

@@ -2,6 +2,8 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
+import com.kogo.content.endpoint.model.OwnerInfoResponse
+import com.kogo.content.endpoint.model.AttachmentResponse
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
@@ -14,6 +16,7 @@ import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.UserDetails
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -24,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.time.format.DateTimeFormatter
+
 
 @RestController
 @RequestMapping("media")
@@ -106,20 +109,29 @@ class TopicController @Autowired constructor(
         HttpJsonResponse.successResponse(deletedTopic)
     }
 
-    private fun buildTopicResponse(topic: Topic) = with(topic) {
+    private fun buildTopicResponse(topic: Topic): TopicResponse = with(topic) {
         TopicResponse(
             id = id!!,
-            ownerUserId = owner.id!!,
+            owner = buildOwnerInfoResponse(owner),
             topicName = topicName,
             description = description,
             tags = tags,
-            profileImage = profileImage?.let { buildTopicProfileImage(it) },
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
             createdAt = createdAt!!
         )
     }
 
-    private fun buildTopicProfileImage(attachment: Attachment) = with(attachment) {
-        TopicResponse.TopicProfileImage(
+    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse = with(owner) {
+        OwnerInfoResponse(
+            ownerId = id,
+            username = username,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
+            schoolShortenedName = schoolShortenedName
+        )
+    }
+
+    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
+        AttachmentResponse(
             attachmentId = id!!,
             name = name,
             url = attachment.storeKey.toFileSourceUrl(),

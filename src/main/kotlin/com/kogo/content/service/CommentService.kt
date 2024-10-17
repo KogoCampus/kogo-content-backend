@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.LikeRepository
+import org.jetbrains.kotlin.util.profile
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -30,7 +31,7 @@ class CommentService @Autowired constructor(
             content = comment.content,
             parentId = parentId,
             parentType = parentType,
-            author = author,
+            owner = author,
             createdAt = Instant.now()
         )
         return commentRepository.save(newComment)

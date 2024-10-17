@@ -8,16 +8,7 @@ data class UserResponse (
     var email: String? = null,
     var schoolName: String? = null,
     var schoolShortenedName: String? = null,
-    var profileImage: UserProfileImage? = null,
-    var followingTopics: List<Topic>? = emptyList()
-) {
-    data class UserProfileImage (
-        val attachmentId: String,
-        val fileName: String,
-        val size: Long,
-        val contentType: String,
-        val url: String
-    )
-}
+    var profileImage: AttachmentResponse? = null
+) {}
 
 

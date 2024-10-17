@@ -178,7 +178,7 @@ class MeilisearchClient: SearchIndexService {
                         Document(documentId).apply {
                             put("title", hit.get("title").asText())
                             put("content", hit.get("content").asText())
-                            put("authorId", hit.get("authorId").asText())
+                            put("ownerId", hit.get("ownerId").asText())
                             put("topicId", hit.get("topicId").asText())
                         }
                     }
@@ -187,7 +187,7 @@ class MeilisearchClient: SearchIndexService {
                             put("parentId", hit.get("parentId").asText())
                             put("parentType", hit.get("parentType").asText())
                             put("content", hit.get("content").asText())
-                            put("authorId", hit.get("authorId").asText())
+                            put("ownerId", hit.get("ownerId").asText())
                         }
                     }
                     "topics" -> {
