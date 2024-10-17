@@ -3,6 +3,7 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.storage.entity.FollowingTopic
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.entity.UserDetails
@@ -16,7 +17,7 @@ import java.time.Instant
 @Service
 class TopicService (
     private val repository: TopicRepository,
-    private val userDetailsRepository: UserDetailsRepository,
+    private val followingTopicRepository: FollowingTopicRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler
 ) {
@@ -27,6 +28,13 @@ class TopicService (
     fun findByOwnerId(ownerId: String): List<Topic> = repository.findAllByOwnerId(ownerId)
 
     fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
+
+    fun findFollowingByOwnerId(ownerId: String): List<Topic> {
+        val followingTopics = followingTopicRepository.findByOwnerId(ownerId)
+        val topics = followingTopics
+            .mapNotNull { followingTopic -> find(followingTopic.topicId) }
+        return topics
+    }
 
     @Transactional
     fun create(dto: TopicDto, owner: UserDetails): Topic {
@@ -40,8 +48,11 @@ class TopicService (
             createdAt = Instant.now()
         )
         val savedTopic = repository.save(topic)
-//        owner.followingTopics = owner.followingTopics!!.plus(savedTopic)
-//        userDetailsRepository.save(owner)
+        val followingTopic = FollowingTopic(
+            ownerId = savedTopic.owner.id!!,
+            topicId = savedTopic.id!!
+        )
+        followingTopicRepository.save(followingTopic)
         return savedTopic
     }
 
