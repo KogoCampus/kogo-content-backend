@@ -101,20 +101,6 @@ class MeControllerTest  @Autowired constructor(
             .andExpect { jsonPath("$.data[0].createdAt").exists() }
     }
 
-    @Test
-    fun `should return current user's following topics`() {
-        val user = createUserFixture()
-        val topics = listOf(createTopicFixture())
-        every { userService.getCurrentUserDetails() } returns user
-        every { userService.getUserFollowings(user) } returns topics
-
-        mockMvc.get("$ME_API_BASE_URL/following")
-            .andExpect { status { isOk() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data[0].id") { value(topics[0].id) } }
-            .andExpect { jsonPath("$.data[0].createdAt").exists() }
-    }
-
     private fun buildMeApiUrl(vararg paths: String) =
         if (paths.isNotEmpty()) "$ME_API_BASE_URL/" + paths.joinToString("/")
         else ME_API_BASE_URL

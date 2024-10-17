@@ -145,7 +145,8 @@ class PostControllerTest @Autowired constructor(
             title = "updated post title",
             content = "updated post content",
             topic = post.topic,
-            author = post.author,
+            owner = post.owner,
+            comments = post.comments,
             createdAt = Instant.now()
         )
         every { topicService.find(postId) } returns topic
@@ -352,7 +353,7 @@ class PostControllerTest @Autowired constructor(
     private fun createPostFixture(topic: Topic) = fixture<Post> {
         mapOf(
             "topic" to topic,
-            "author" to createUserFixture(),
+            "owner" to createUserFixture(),
             "comments" to emptyList<Any>(),
             "attachments" to emptyList<Any>(),
             "createdAt" to Instant.now()

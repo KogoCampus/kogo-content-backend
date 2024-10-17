@@ -8,6 +8,7 @@ import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.TopicRepository
+import com.kogo.content.storage.repository.UserDetailsRepository
 import com.kogo.content.util.fixture
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +24,9 @@ class TopicServiceTest {
 
     private val fileHandler: FileHandler = mockk()
 
-    private val topicService: TopicService = TopicService(topicRepository, attachmentRepository, fileHandler)
+    private val userDetailsRepository: UserDetailsRepository = mockk()
+
+    private val topicService: TopicService = TopicService(topicRepository,userDetailsRepository,  attachmentRepository, fileHandler)
 
     @BeforeEach
     fun setup() {
