@@ -25,7 +25,7 @@ class CommentServiceTest {
             parentId = parentId,
             content = "comment-content",
             parentType = CommentParentType.POST,
-            author = user,
+            owner = user,
         )
 
         every { commentRepository.findAllByParentId(parentId) } returns listOf(result)
@@ -52,7 +52,7 @@ class CommentServiceTest {
         verify {
             commentRepository.save(withArg {
                 assertThat(it.content).isEqualTo("comment content")
-                assertThat(it.author).isEqualTo(user)
+                assertThat(it.owner).isEqualTo(user)
                 assertThat(it.parentId).isEqualTo("post-id")
                 assertThat(it.parentType).isEqualTo(CommentParentType.POST)
             })
@@ -67,7 +67,7 @@ class CommentServiceTest {
             parentId = "parent-id",
             parentType = CommentParentType.POST,
             content = "comment-content",
-            author = user,
+            owner = user,
         )
 
         val newComment = CommentUpdate(

@@ -84,7 +84,7 @@ class CommentControllerTest @Autowired constructor(
     private fun createPostFixture(topic: Topic) = fixture<Post> {
         mapOf(
             "topic" to topic,
-            "author" to createUserFixture(),
+            "owner" to createUserFixture(),
             "comments" to emptyList<Any>(),
             "attachments" to emptyList<Any>(),
         )
@@ -93,7 +93,7 @@ class CommentControllerTest @Autowired constructor(
     private fun createCommentFixture(post: Post) = fixture<Comment> {
         mapOf(
             "parentId" to post.id,
-            "author" to createUserFixture(),
+            "owner" to createUserFixture(),
             "createdAt" to Instant.now()
         )
     }
@@ -101,7 +101,7 @@ class CommentControllerTest @Autowired constructor(
     private fun createReplyFixture(comment: Comment) = fixture<Comment> {
         mapOf(
             "parentId" to comment.id,
-            "author" to createUserFixture(),
+            "owner" to createUserFixture(),
             "createdAt" to Instant.now()
         )
     }
@@ -287,7 +287,7 @@ class CommentControllerTest @Autowired constructor(
         val newComment = Comment(
             id = comment.id,
             content = "new content",
-            author = comment.author,
+            owner = comment.owner,
             parentType = comment.parentType,
             parentId = comment.parentId,
             createdAt = comment.createdAt

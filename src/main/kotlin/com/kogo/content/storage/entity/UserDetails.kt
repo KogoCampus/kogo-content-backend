@@ -25,8 +25,4 @@ data class UserDetails (
 
     @DBRef
     var profileImage: Attachment? = null,
-
-    @DBRef
-    @JsonManagedReference
-    var followingTopics: List<Topic>? = emptyList()
 )

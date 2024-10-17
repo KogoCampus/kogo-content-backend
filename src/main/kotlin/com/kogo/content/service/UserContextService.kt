@@ -59,7 +59,7 @@ class UserContextService @Autowired constructor(
 
     fun getUserPosts(user: UserDetails): List<Post> {
         val userId = user.id!!
-        return postRepository.findAllByAuthorId(userId)
+        return postRepository.findAllByOwnerId(userId)
     }
 
     fun getUserTopics(user: UserDetails): List<Topic> {
@@ -67,7 +67,4 @@ class UserContextService @Autowired constructor(
         return topicRepository.findAllByOwnerId(userId)
     }
 
-    fun getUserFollowings(user: UserDetails): List<Topic> {
-        return user.followingTopics!!
-    }
 }

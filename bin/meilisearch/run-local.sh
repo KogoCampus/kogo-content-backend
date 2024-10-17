@@ -25,5 +25,5 @@ container_id=$(docker run -d --rm \
 # Give the container a few seconds to start
 sleep 5
 
-chmod +x ./add-meilisearch-index.sh
-./add-meilisearch-index.sh "MASTER_KEY"
+chmod +x ./seed-index.sh
+./seed-index.sh "MASTER_KEY"

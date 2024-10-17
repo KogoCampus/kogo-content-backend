@@ -1,11 +1,12 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
+import com.kogo.content.endpoint.model.AttachmentResponse
+import com.kogo.content.endpoint.model.OwnerInfoResponse
 import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.service.FeedService
-import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -74,11 +75,11 @@ class FeedController @Autowired constructor(
         PostResponse(
             id = id!!,
             topicId = post.topic.id,
-            authorUserId = author.id!!,
+            owner = buildOwnerInfoResponse(owner),
             title = title,
             content = content,
-            attachments = attachments.map { buildPostAttachmentResponse(it) },
-            comments = emptyList(), // TODO
+            attachments = attachments.map { buildAttachmentResponse(it) },
+            comments = comments.map { buildPostCommment(it) },
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
@@ -86,13 +87,30 @@ class FeedController @Autowired constructor(
         )
     }
 
-    private fun buildPostAttachmentResponse(attachment: Attachment): PostResponse.PostAttachment = with(attachment) {
-        PostResponse.PostAttachment(
+    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse =  with(owner) {
+        OwnerInfoResponse(
+            ownerId = id,
+            username = username,
+            profileImage = profileImage?.let { buildAttachmentResponse(it) },
+            schoolShortenedName = schoolShortenedName
+        )
+    }
+
+    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
+        AttachmentResponse(
             attachmentId = id,
             name = name,
             url = attachment.storeKey.toFileSourceUrl(),
             contentType = contentType,
             size = fileSize
+        )
+    }
+
+    private fun buildPostCommment(comment: Comment): PostResponse.PostComment = with(comment) {
+        PostResponse.PostComment(
+            commentId = id,
+            ownerId = buildOwnerInfoResponse(owner),
+            replyCount = repliesCount
         )
     }
 }

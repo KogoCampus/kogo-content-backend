@@ -83,15 +83,15 @@ class PostService (
         return ids.toList()
     }
 
-    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findAllByAuthorId(authorId)
+    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findAllByOwnerId(authorId)
 
     @Transactional
-    fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {
+    fun create(topic: Topic, owner: UserDetails, dto: PostDto): Post {
         val post = Post(
             title = dto.title,
             content = dto.content,
             topic = topic,
-            author = author,
+            owner = owner,
             attachments = (dto.images!! + dto.videos!!).map {
                 attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository)
             },

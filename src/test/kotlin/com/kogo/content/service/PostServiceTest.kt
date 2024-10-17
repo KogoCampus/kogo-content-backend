@@ -77,7 +77,7 @@ class PostServiceTest {
             postRepository.save(withArg {
                 assertThat(it.title).isEqualTo("post title")
                 assertThat(it.content).isEqualTo("post content")
-                assertThat(it.author).isEqualTo(author)
+                assertThat(it.owner).isEqualTo(author)
                 assertThat(it.topic).isEqualTo(topic)
                 assertThat(it.attachments).containsExactly(attachment, attachment)
             })
@@ -92,9 +92,10 @@ class PostServiceTest {
             id = "post-id",
             title = "post title",
             content = "post content",
-            author = mockk<UserDetails>(),
+            owner = mockk<UserDetails>(),
             topic = mockk<Topic>(),
             attachments = listOf(attachmentExisting1, attachmentExisting2),
+            comments = listOf(mockk()),
             createdAt = Instant.now()
         )
         val postUpdate = PostUpdate(
