@@ -65,4 +65,4 @@ jobs:
                   docker push ${{ env.ECR_REPOSITORY }} --all-tags
 
             - name: Run App Runner Deployment
-              run: ./bin/deploy-apprunner.sh --auto
+              run: ./bin/deploy-apprunner-stg.sh --auto
