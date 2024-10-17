@@ -34,7 +34,7 @@ build/
 
 ### temporary files ###
 /tmp
-/bin/tmp
+/bin/meilisearch/tmp
 
 ### .gradle ###
 .gradle

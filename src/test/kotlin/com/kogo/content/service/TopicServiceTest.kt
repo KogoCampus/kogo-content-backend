@@ -7,6 +7,7 @@ import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
+import com.kogo.content.storage.repository.FollowingTopicRepository
 import com.kogo.content.storage.repository.TopicRepository
 import com.kogo.content.storage.repository.UserDetailsRepository
 import com.kogo.content.util.fixture
@@ -24,9 +25,9 @@ class TopicServiceTest {
 
     private val fileHandler: FileHandler = mockk()
 
-    private val userDetailsRepository: UserDetailsRepository = mockk()
+    private val followingTopicRepository: FollowingTopicRepository = mockk()
 
-    private val topicService: TopicService = TopicService(topicRepository,userDetailsRepository,  attachmentRepository, fileHandler)
+    private val topicService: TopicService = TopicService(topicRepository, followingTopicRepository, attachmentRepository, fileHandler)
 
     @BeforeEach
     fun setup() {

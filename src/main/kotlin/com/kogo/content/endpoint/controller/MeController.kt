@@ -3,6 +3,7 @@ package com.kogo.content.endpoint.controller
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
@@ -17,7 +18,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 class MeController @Autowired constructor(
-    private val userService : UserContextService
+    private val userService : UserContextService,
+    private val topicService: TopicService
 ) {
     companion object: Logger()
 
@@ -30,9 +32,7 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
         )])
     fun getMe() = run {
-        println("passed1")
         val me = userService.getCurrentUserDetails()
-        println("passed2")
         HttpJsonResponse.successResponse(buildUserResponse(me))
     }
 
@@ -53,6 +53,7 @@ class MeController @Autowired constructor(
     fun updateMe(
         @Valid meUpdate: UserUpdate) = run {
             val me = userService.getCurrentUserDetails()
+            val followingTopics = topicService.findFollowingByOwnerId(me.id!!)
             HttpJsonResponse.successResponse(buildUserResponse(userService.updateUserProfile(me, meUpdate)))
     }
 
@@ -82,18 +83,19 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(userService.getUserTopics(me).map { buildTopicResponse(it) })
     }
 
-//    @GetMapping("me/following")
-//    @Operation(
-//        summary = "get my following topics",
-//        responses = [ApiResponse(
-//            responseCode = "200",
-//            description = "ok",
-//            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
-//        )])
-//    fun getMeFollowing() = run {
-//        val me = userService.getCurrentUserDetails()
-//        HttpJsonResponse.successResponse(userService.getUserFollowings(me).map { buildTopicResponse(it) })
-//    }
+    @GetMapping("me/following")
+    @Operation(
+        summary = "get my following topics",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+        )])
+    fun getMeFollowing() = run {
+        val me = userService.getCurrentUserDetails()
+        val followingTopics = topicService.findFollowingByOwnerId(me.id!!)
+        HttpJsonResponse.successResponse(followingTopics.map{ buildTopicResponse(it) })
+    }
 
     private fun buildUserResponse(user: UserDetails) = with(user) {
         UserResponse(
