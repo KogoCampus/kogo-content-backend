@@ -56,6 +56,9 @@ jobs:
                   docker build \
                     --build-arg KCB_VERSION=${{ env.KCB_VERSION }} \
                     --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
+                    --build-arg AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }} \
+                    --build-arg AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }} \
+                    --build-arg AWS_REGION=${{ env.AWS_REGION }} \
                     -t ${{ env.ECR_REPOSITORY }}:latest \
                     -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} \
                     .

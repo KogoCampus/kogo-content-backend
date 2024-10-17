@@ -1,19 +1,21 @@
 ---
-compile-version-key: ${COMPILE_VERSION_KEY}
+compile-version-key: ${compile-version-key}
 
 spring:
-    cloud:
-        aws:
-            s3:
-                region: ${S3_REGION}
-                bucket: ${S3_BUCKET}
+    config:
+        import: aws-secretsmanager:/staging/kogo-content/application.properties
     data:
         mongodb:
-            database: ${MONGODB_DATABASE}
-            uri: ${MONGODB_URI}
-            username: ${MONGODB_USERNAME}
-            password: ${MONGODB_PASSWORD}
+            database: ${mongodb.database}
+            uri: ${mongodb.uri}
+            username: ${mongodb.username}
+            password: ${mongodb.password}
             auto-index-creation: true
+
+aws:
+    s3:
+        bucket: ${s3.bucket}
+        region: ${s3.region}
 
 kogo-api:
     base-url: "https://api.staging.kogocampus.com"
@@ -22,5 +24,5 @@ filehandler:
     prefix: files
 
 meilisearch:
-    host: ${MEILISEARCH_HOST}
-    apikey: ${MEILISEARCH_APIKEY}
+    host: ${meilisearch.host}
+    apikey: ${meilisearch.apikey}
