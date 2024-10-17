@@ -2,6 +2,10 @@
 compile-version-key: ${compile-version-key}
 
 spring:
+    cloud:
+        aws:
+            s3:
+                bucket: ${s3.bucket}
     config:
         import: aws-secretsmanager:/staging/kogo-content-backend/application.properties
     data:
@@ -11,10 +15,6 @@ spring:
             username: ${mongodb.username}
             password: ${mongodb.password}
             auto-index-creation: true
-
-aws:
-    s3:
-        bucket: ${s3.bucket}
 
 kogo-api:
     base-url: "https://api.staging.kogocampus.com"

@@ -8,6 +8,10 @@ springdoc:
         path: /index.html
 
 spring:
+    cloud:
+        aws:
+            secretsmanager:
+                region: us-west-2
     application:
         name: kogo-content-backend
     profiles:
