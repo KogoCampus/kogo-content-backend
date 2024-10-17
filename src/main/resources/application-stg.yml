@@ -5,6 +5,7 @@ spring:
     cloud:
         aws:
             s3:
+                region: us-west-2
                 bucket: ${s3.bucket}
     config:
         import: aws-secretsmanager:/staging/kogo-content-backend/application.properties
