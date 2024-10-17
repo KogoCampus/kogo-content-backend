@@ -1,20 +1,18 @@
 ---
-compile-version-key: ${compile-version-key}
+compile-version-key: ${COMPILE_VERSION_KEY}
 
 spring:
     cloud:
         aws:
             s3:
-                region: us-west-2
-                bucket: ${s3.bucket}
-    config:
-        import: aws-secretsmanager:/staging/kogo-content-backend/application.properties
+                region: ${S3_REGION}
+                bucket: ${S3_BUCKET}
     data:
         mongodb:
-            database: ${mongodb.database}
-            uri: ${mongodb.uri}
-            username: ${mongodb.username}
-            password: ${mongodb.password}
+            database: ${MONGODB_DATABASE}
+            uri: ${MONGODB_URI}
+            username: ${MONGODB_USERNAME}
+            password: ${MONGODB_PASSWORD}
             auto-index-creation: true
 
 kogo-api:
@@ -24,5 +22,5 @@ filehandler:
     prefix: files
 
 meilisearch:
-    host: ${meilisearch.host}
-    apikey: ${meilisearch.apikey}
+    host: ${MEILISEARCH_HOST}
+    apikey: ${MEILISEARCH_APIKEY}
