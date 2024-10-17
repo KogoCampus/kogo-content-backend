@@ -11,7 +11,7 @@ on:
 env:
     AWS_REGION: us-west-2
     ECR_REPOSITORY: 992382730467.dkr.ecr.us-west-2.amazonaws.com/staging-kogo-content-backend
-    SPRING_PROFILES_ACTIVE: stg
+    ACTIVE_PROFILE: stg
 
 jobs:
     deploy-staging:
@@ -42,12 +42,16 @@ jobs:
               run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
             - name: Build with Gradle (stg profile)
-              run: ./gradlew clean build -x test -PactiveProfile=${{ env.SPRING_PROFILES_ACTIVE }}
+              run: ./gradlew clean build -x test -PactiveProfile=${{ env.ACTIVE_PROFILE }}
 
             - name: Build Docker image
               run: |
                   COMMIT_HASH=${{ github.sha }}
-                  docker build -t ${{ env.ECR_REPOSITORY }}:latest -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} .
+                  docker build \
+                    --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
+                    -t ${{ env.ECR_REPOSITORY }}:latest \
+                    -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} \
+                    .
 
             - name: Push Docker images to ECR
               run: |
