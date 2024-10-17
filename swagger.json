@@ -1154,6 +1154,27 @@
           }
         }
       }
+    },
+    "/me/following": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my following topics",
+        "operationId": "getMeFollowing",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
