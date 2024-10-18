@@ -29,6 +29,8 @@ class TopicService (
 
     fun existsByTopicName(topicName: String): Boolean = repository.existsByTopicName(topicName)
 
+    fun isTopicOwner(topic: Topic, owner: UserDetails): Boolean = topic.owner == owner
+
     fun findFollowingByOwnerId(ownerId: String): List<Topic> {
         val followingTopics = followingTopicRepository.findByOwnerId(ownerId)
         val topics = followingTopics
