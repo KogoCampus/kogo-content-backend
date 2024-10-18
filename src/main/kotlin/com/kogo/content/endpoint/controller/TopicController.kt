@@ -8,6 +8,7 @@ import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.logging.Logger
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
@@ -87,8 +88,11 @@ class TopicController @Autowired constructor(
         )])
     fun updateGroup(
         @PathVariable("id") topicId: String,
-        @Valid topicUpdate: TopicUpdate) = run {
+        @Valid topicUpdate: TopicUpdate): ResponseEntity<*> = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
+            // exmaple usage
+//            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
+//                throw UserIsNotOwnerException.of<Topic>(topicId)
             val updatedTopic = topicService.update(topic, topicUpdate)
             val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
             searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)

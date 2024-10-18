@@ -5,6 +5,8 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.common.HttpJsonResponse.ErrorResponse
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.exception.UnsupportedMediaTypeException
+import com.kogo.content.exception.UserIsNotMemberException
+import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.logging.Logger
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatusCode
@@ -63,5 +65,23 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         log.error { "Unhandled exception occurred; ${ex.message}" }
         log.error { ex.stackTraceToString() }
         return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
+    }
+
+    @ExceptionHandler(UserIsNotOwnerException::class)
+    fun handleUserIsNotOwnerException(ex: UserIsNotOwnerException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(
+            ErrorCode.USER_IS_NOT_OWNER,
+            details = ex.message ?: "You are not the owner."
+        )
+    }
+
+    @ExceptionHandler(UserIsNotMemberException::class)
+    fun handleUserIsNotMemberException(ex: UserIsNotMemberException): ResponseEntity<ErrorResponse> {
+        log.error { ex }
+        return HttpJsonResponse.errorResponse(
+            ErrorCode.USER_IS_NOT_MEMBER,
+            details = ex.message ?: "You are not a member."
+        )
     }
 }
