@@ -39,25 +39,41 @@
     <script src="./swagger-ui-bundle.js" charset="UTF-8"> </script>
     <script src="./swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
     <script>
-    window.onload = function() {
-      // Begin Swagger UI call region
-      const ui = SwaggerUIBundle({
-        url: "./swagger.json",
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: "StandaloneLayout"
-      });
-      // End Swagger UI call region
+        const UrlMutatorPlugin = (system) => ({
+            rootInjects: {
+                setServer: (server) => {
+                    const jsonSpec = system.getState().toJSON().spec.json;
+                    const servers = [{url: server}];
+                    const newJsonSpec = Object.assign({}, jsonSpec, { servers });
 
-      window.ui = ui;
-    };
+                    return system.specActions.updateJsonSpec(newJsonSpec);
+                }
+            }
+        });
+
+        window.onload = function() {
+          // Begin Swagger UI call region
+          const ui = SwaggerUIBundle({
+              url: "./swagger.json",
+              dom_id: '#swagger-ui',
+              deepLinking: true,
+              presets: [
+                  SwaggerUIBundle.presets.apis,
+                  SwaggerUIStandalonePreset
+              ],
+              plugins: [
+                  SwaggerUIBundle.plugins.DownloadUrl,
+                  UrlMutatorPlugin
+              ],
+              onComplete: () => {
+                  window.ui.setServer("https://api.staging.kogocampus.com/content")
+              },
+              layout: "StandaloneLayout"
+          });
+          // End Swagger UI call region
+
+          window.ui = ui;
+        };
   </script>
   </body>
 </html>
