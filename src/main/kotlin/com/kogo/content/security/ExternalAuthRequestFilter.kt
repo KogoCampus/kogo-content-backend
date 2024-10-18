@@ -8,6 +8,7 @@ import com.kogo.content.storage.entity.UserIdToken
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.apache.tomcat.websocket.AuthenticationException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.stereotype.Component
@@ -95,7 +96,7 @@ class ExternalAuthRequestFilter (
             HttpMethod.GET, entity, String::class.java
         )
         if (response.statusCode != HttpStatus.OK) {
-            throw RuntimeException("External authentication failed with status code: ${response.statusCode.value()}")
+            throw AuthenticationException("External authentication failed with status code: ${response.statusCode.value()}")
         }
         val objectMapper = ObjectMapper()
         return objectMapper.readTree(response.body)
@@ -105,7 +106,7 @@ class ExternalAuthRequestFilter (
         val bearerToken = request.getHeader("Authorization")
         return bearerToken.takeIf { StringUtils.hasText(it) && bearerToken.startsWith("Bearer") }
             ?.substring(7)
-            ?: throw RuntimeException("Cannot read access token.")
+            ?: throw AuthenticationException("Cannot read access token.")
     }
 
     private fun isRequestURINotWhitelisted(requestURI: String): Boolean {
