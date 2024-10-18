@@ -843,6 +843,68 @@
         }
       }
     },
+    "/media/topics/{id}/unfollow": {
+      "post": {
+        "tags": [
+          "topic-controller"
+        ],
+        "summary": "unfollow a topic",
+        "operationId": "unfollowTopic",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{id}/follow": {
+      "post": {
+        "tags": [
+          "topic-controller"
+        ],
+        "summary": "follow a topic",
+        "operationId": "followTopic",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/posts/{postId}/views": {
       "post": {
         "tags": [
