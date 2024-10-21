@@ -3,10 +3,7 @@ package com.kogo.content.endpoint
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.common.HttpJsonResponse.ErrorResponse
-import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.exception.UnsupportedMediaTypeException
-import com.kogo.content.exception.UserIsNotMemberException
-import com.kogo.content.exception.UserIsNotOwnerException
+import com.kogo.content.exception.*
 import com.kogo.content.logging.Logger
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatusCode
@@ -69,21 +66,23 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
     }
 
-    @ExceptionHandler(UserIsNotOwnerException::class)
-    fun handleUserIsNotOwnerException(ex: UserIsNotOwnerException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(ActionDeniedException::class)
+    fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
+        log.error { "Action denied exception occurred: ${ex.details}" }
         log.error { ex }
-        return HttpJsonResponse.errorResponse(
-            ErrorCode.USER_IS_NOT_OWNER,
-            details = ex.message ?: "You are not the owner."
-        )
+
+        // 예외의 타입에 따라 적절한 응답을 생성
+        return when (ex) {
+            is UserIsNotOwnerException -> {
+                HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_OWNER, details = ex.details)
+            }
+            is UserIsNotMemberException -> {
+                HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_MEMBER, details = ex.details)
+            }
+            else -> {
+                HttpJsonResponse.errorResponse(ErrorCode.FORBIDDEN, details = "Access denied for resource: ${ex.resourceName}")
+            }
+        }
     }
 
-    @ExceptionHandler(UserIsNotMemberException::class)
-    fun handleUserIsNotMemberException(ex: UserIsNotMemberException): ResponseEntity<ErrorResponse> {
-        log.error { ex }
-        return HttpJsonResponse.errorResponse(
-            ErrorCode.USER_IS_NOT_MEMBER,
-            details = ex.message ?: "You are not a member."
-        )
-    }
 }

@@ -6,6 +6,7 @@ enum class ErrorCode(val httpStatus: HttpStatus) {
     // 40X
     BAD_REQUEST(HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED),
+    FORBIDDEN(HttpStatus.FORBIDDEN),
     USER_IS_NOT_OWNER(HttpStatus.FORBIDDEN),
     USER_IS_NOT_MEMBER(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),

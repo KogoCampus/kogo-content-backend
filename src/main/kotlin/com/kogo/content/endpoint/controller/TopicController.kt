@@ -7,6 +7,7 @@ import com.kogo.content.endpoint.model.AttachmentResponse
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
+import com.kogo.content.exception.ActionDeniedException
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.logging.Logger
@@ -91,8 +92,8 @@ class TopicController @Autowired constructor(
         @Valid topicUpdate: TopicUpdate): ResponseEntity<*> = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
             // exmaple usage
-            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
-                throw UserIsNotOwnerException.of<Topic>(topicId)
+//            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
+//                throwUserIsNotOwner(topicId)
             val updatedTopic = topicService.update(topic, topicUpdate)
             val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
             searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)
@@ -206,4 +207,6 @@ class TopicController @Autowired constructor(
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
+
+    private fun throwUserIsNotOwner(topicId: String): Nothing = throw UserIsNotOwnerException.of<Topic>(topicId)
 }
