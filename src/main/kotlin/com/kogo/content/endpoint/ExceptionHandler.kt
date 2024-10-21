@@ -71,17 +71,10 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         log.error { "Action denied exception occurred: ${ex.details}" }
         log.error { ex }
 
-        // 예외의 타입에 따라 적절한 응답을 생성
-        return when (ex) {
-            is UserIsNotOwnerException -> {
-                HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_OWNER, details = ex.details)
-            }
-            is UserIsNotMemberException -> {
-                HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_MEMBER, details = ex.details)
-            }
-            else -> {
-                HttpJsonResponse.errorResponse(ErrorCode.FORBIDDEN, details = "Access denied for resource: ${ex.resourceName}")
-            }
+        return if (ex is UserIsNotOwnerException) {
+            HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_OWNER, details = ex.details)
+        } else {
+            HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_MEMBER, details = ex.details)
         }
     }
 
