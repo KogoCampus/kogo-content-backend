@@ -91,8 +91,8 @@ class TopicController @Autowired constructor(
         @Valid topicUpdate: TopicUpdate): ResponseEntity<*> = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
             // exmaple usage
-//            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
-//                throw UserIsNotOwnerException.of<Topic>(topicId)
+            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
+                throw UserIsNotOwnerException.of<Topic>(topicId)
             val updatedTopic = topicService.update(topic, topicUpdate)
             val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
             searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)

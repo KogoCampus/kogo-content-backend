@@ -9,24 +9,23 @@ import org.springframework.util.MultiValueMap
 open class HttpJsonResponse {
 
     data class SuccessResponse (
-        val status: HttpStatus,
-        val message: String?,
         val data: Any?
     ) : HttpJsonResponse()
 
-    data class ErrorResponse (
-        val status: HttpStatus,
-        val message: String,
-        val details: String?
+    data class ErrorResponse(
+        val error: ErrorDetails
     ) : HttpJsonResponse()
+
+    data class ErrorDetails(
+        val reason: String,
+        val details: String?
+    )
 
     companion object {
         fun successResponse(data: Any?, message: String? = "", httpStatus: HttpStatus = HttpStatus.OK, headers: HttpHeaders = HttpHeaders())
             = ResponseEntity.status(httpStatus)
                 .headers(headers)
                 .body(SuccessResponse(
-                    status = httpStatus,
-                    message = message,
                     data = data
                 ))
 
@@ -34,9 +33,10 @@ open class HttpJsonResponse {
             = ResponseEntity.status(errorCode.httpStatus)
             .headers(headers)
             .body(ErrorResponse(
-                status = errorCode.httpStatus,
-                message = errorCode.message,
-                details = details
+                error = ErrorDetails(
+                    reason = errorCode.name,
+                    details = details
+                )
             ))
     }
 }

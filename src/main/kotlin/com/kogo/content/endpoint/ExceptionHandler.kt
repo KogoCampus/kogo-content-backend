@@ -27,6 +27,7 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         log.error { ex }
+        log.error { ex.message }
         return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "${ex.resourceName} not found for id: ${ex.resourceId}")
     }
 
@@ -48,9 +49,10 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         val fieldErrors = bindingResult.fieldErrors
         return ResponseEntity(
             ErrorResponse(
-                status = errorCode.httpStatus,
-                message = errorCode.message,
-                details = "Error: ${ex.body.detail} in ${ex.objectName}"
+                error = HttpJsonResponse.ErrorDetails(
+                    reason = errorCode.name,
+                    details = "Error: ${ex.body.detail} in ${ex.objectName}"
+                )
             ), errorCode.httpStatus)
     }
 
