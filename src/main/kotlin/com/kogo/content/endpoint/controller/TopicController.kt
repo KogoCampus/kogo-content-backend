@@ -91,9 +91,8 @@ class TopicController @Autowired constructor(
         @PathVariable("id") topicId: String,
         @Valid topicUpdate: TopicUpdate): ResponseEntity<*> = run {
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-            // exmaple usage
-//            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
-//                throwUserIsNotOwner(topicId)
+            if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
+                throwUserIsNotOwner(topicId)
             val updatedTopic = topicService.update(topic, topicUpdate)
             val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
             searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)
@@ -109,6 +108,8 @@ class TopicController @Autowired constructor(
         )])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
+        if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
+            throwUserIsNotOwner(topicId)
         val deletedTopic = topicService.delete(topic)
         searchIndexService.deleteDocument(SearchIndex.TOPICS, topicId)
         HttpJsonResponse.successResponse(deletedTopic)

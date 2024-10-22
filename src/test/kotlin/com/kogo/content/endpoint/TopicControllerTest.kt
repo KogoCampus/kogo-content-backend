@@ -105,6 +105,7 @@ class TopicControllerTest @Autowired constructor(
     fun `should update an existing topic`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
+        val user = createUserFixture()
         val updatedTopic = Topic(
             id = topicId,
             topicName = "updated topic name",
@@ -112,7 +113,10 @@ class TopicControllerTest @Autowired constructor(
             owner = topic.owner,
             createdAt = topic.createdAt
         )
+
         every { topicService.find(topicId) } returns topic
+        every { userService.getCurrentUserDetails() } returns user
+        every { topicService.isTopicOwner(topic, user) } returns true
         every { topicService.update(topic, any()) } returns updatedTopic
         every { searchIndexService.updateDocument(any(), any()) } returns Unit
         mockMvc.perform(
@@ -127,6 +131,7 @@ class TopicControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.topicName").value(updatedTopic.topicName))
             .andExpect(jsonPath("$.data.description").value(updatedTopic.description))
             .andExpect { jsonPath("$.data.createdAt").exists() }
+            .andExpect(jsonPath("$.error.reason").doesNotExist())
     }
 
     @Test
@@ -147,11 +152,18 @@ class TopicControllerTest @Autowired constructor(
     fun `should delete a topic`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
+        val user = createUserFixture()
+
         every { topicService.find(topicId) } returns topic
+        every { userService.getCurrentUserDetails() } returns user
+        every { topicService.isTopicOwner(topic, user) } returns true
         every { topicService.delete(topic) } returns Unit
         every { searchIndexService.deleteDocument(any(), any()) } returns Unit
+
         mockMvc.delete(buildTopicApiUrl(topicId))
             .andExpect { status { isOk() } }
+            .andExpect{ jsonPath("$.error.reason").doesNotExist() } // Ensure no error is present
+            .andExpect{ jsonPath("$.data").exists() }
     }
 
     @Test
