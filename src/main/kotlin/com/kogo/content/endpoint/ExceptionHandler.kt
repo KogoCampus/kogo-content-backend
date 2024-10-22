@@ -71,11 +71,7 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         log.error { "Action denied exception occurred: ${ex.details}" }
         log.error { ex }
 
-        return if (ex is UserIsNotOwnerException) {
-            HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_OWNER, details = ex.details)
-        } else {
-            HttpJsonResponse.errorResponse(ErrorCode.USER_IS_NOT_MEMBER, details = ex.details)
-        }
+            return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
     }
 
 }
