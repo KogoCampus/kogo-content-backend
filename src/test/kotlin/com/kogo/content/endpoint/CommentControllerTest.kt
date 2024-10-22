@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
@@ -354,7 +355,9 @@ class CommentControllerTest @Autowired constructor(
                 .with { it.method = "POST"; it }
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.message").value("User's like added successfully to comment $commentId."))
+            .andExpect(jsonPath("$.error.reason").doesNotExist())
+            .andExpect(jsonPath("$.data").exists())
+            .andExpect(jsonPath("$.data.id").value(commentId))
     }
 
     @Test
@@ -399,7 +402,8 @@ class CommentControllerTest @Autowired constructor(
                 .with{ it.method = "POST"; it }
         )
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.details").value("user already liked this comment $commentId."))
+            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.error.details").value("user already liked this comment $commentId."))
     }
 
     @Test

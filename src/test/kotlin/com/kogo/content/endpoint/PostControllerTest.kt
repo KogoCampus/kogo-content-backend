@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.searchengine.SearchIndexService
@@ -223,7 +224,9 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.message").value("User's like added successfully to post: $postId"))
+            .andExpect(jsonPath("$.error.reason").doesNotExist())
+            .andExpect(jsonPath("$.data").exists())
+            .andExpect(jsonPath("$.data.id").value(postId))
     }
 
     @Test
@@ -252,7 +255,8 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.details").value("user already liked this post: $postId"))
+            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.error.details").value("user already liked this post: $postId"))
     }
 
     @Test
@@ -306,7 +310,9 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.message").value("User's view added successfully to post: $postId"))
+            .andExpect(jsonPath("$.error.reason").doesNotExist())
+            .andExpect(jsonPath("$.data").exists())
+            .andExpect(jsonPath("$.data.id").value(postId))
     }
 
     @Test
@@ -335,7 +341,8 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.details").value("user already viewed this post: $postId"))
+            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.error.details").value("user already viewed this post: $postId"))
     }
 
     private fun buildPostApiUrl(topicId: String, vararg paths: String, params: Map<String, String> = emptyMap() ): String {
