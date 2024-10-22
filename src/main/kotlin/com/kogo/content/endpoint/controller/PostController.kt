@@ -7,6 +7,7 @@ import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
+import com.kogo.content.service.CommentService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -28,10 +29,11 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("media")
 class PostController @Autowired constructor(
-    private val postService : PostService,
-    private val topicService : TopicService,
+    private val postService: PostService,
+    private val topicService: TopicService,
     private val userContextService: UserContextService,
-    private val searchIndexService: SearchIndexService
+    private val searchIndexService: SearchIndexService,
+    private val commentService: CommentService
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -132,6 +134,10 @@ class PostController @Autowired constructor(
         @PathVariable("postId") postId: String) = run {
         findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        // recursively delete comments
+        post.comments.forEach { comment ->
+            deleteCommentAndUpdateIndex(comment)
+        }
         val deletedPost = postService.delete(post)
         searchIndexService.deleteDocument(SearchIndex.POSTS, postId)
         HttpJsonResponse.successResponse(deletedPost)
@@ -220,6 +226,23 @@ class PostController @Autowired constructor(
     private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
     private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<Post>(postId)
+
+    private fun deleteCommentAndUpdateIndex(comment: Comment) {
+        // Recursively delete the comment and replies from the search index
+        deleteCommentsFromSearchIndex(comment)
+        // Recursively delete the comment and replies in the DB
+        commentService.delete(comment)
+    }
+
+    private fun deleteCommentsFromSearchIndex(comment: Comment) {
+        // First, delete the current comment from the search index
+        searchIndexService.deleteDocument(SearchIndex.COMMENTS, comment.id!!)
+        // Recursively delete all replies from the search index
+        val replies = commentService.getReplies(comment)
+        replies.forEach { reply ->
+            deleteCommentsFromSearchIndex(reply)
+        }
+    }
 
     private fun buildPostResponse(post: Post): PostResponse = with(post) {
         PostResponse(

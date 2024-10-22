@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Transactional
 
 @RestController
 @RequestMapping("media")
@@ -167,9 +168,9 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
     ) = run {
         findTopicAndPost(topicId, postId)
-        findComment(commentId)
-        val deletedComment = commentService.delete(commentId)
-        searchIndexService.deleteDocument(SearchIndex.COMMENTS, commentId)
+        val deletingComment = findComment(commentId)
+        deleteCommentsFromSearchIndex(deletingComment)
+        val deletedComment = commentService.delete(deletingComment)
         HttpJsonResponse.successResponse(deletedComment)
     }
 
@@ -262,6 +263,17 @@ class CommentController @Autowired constructor(
         commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
 
+    @Transactional
+    fun deleteCommentsFromSearchIndex(comment: Comment) {
+        // First, delete the current comment from the search index
+        searchIndexService.deleteDocument(SearchIndex.COMMENTS, comment.id!!)
+        // Recursively delete all replies from the search index
+        val replies = commentRepository.findAllById(comment.replies)
+        replies.forEach { reply ->
+            deleteCommentsFromSearchIndex(reply)
+        }
+    }
+
     private fun buildCommentResponse(comment: Comment): CommentResponse = with(comment) {
         CommentResponse(
             id = id!!,
@@ -272,6 +284,7 @@ class CommentController @Autowired constructor(
             likes = likes,
             liked = liked,
             createdAt = createdAt!!,
+            replies = replies
         )
     }
 
