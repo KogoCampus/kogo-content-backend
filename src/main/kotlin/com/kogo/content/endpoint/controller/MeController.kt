@@ -111,6 +111,7 @@ class MeController @Autowired constructor(
         if(originalOwner.id!! == newOwnerId)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot transfer ownership to yourself")
         val transferredTopic = topicService.transfer0wnership(topic, newOwner)
+        topicService.follow(topic, newOwner)
         HttpJsonResponse.successResponse(buildTopicResponse(transferredTopic))
     }
 
