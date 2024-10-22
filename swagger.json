@@ -996,6 +996,45 @@
         }
       }
     },
+    "/me/ownership/topics/{topicId}/transfer": {
+      "post": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "transfer the topic ownership",
+        "operationId": "transferOwner",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "transfer_to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/posts/search": {
       "get": {
         "tags": [
