@@ -11,7 +11,6 @@ import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.FollowingTopicRepository
 import com.kogo.content.storage.repository.TopicRepository
-import com.kogo.content.storage.repository.UserDetailsRepository
 import com.kogo.content.util.fixture
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat

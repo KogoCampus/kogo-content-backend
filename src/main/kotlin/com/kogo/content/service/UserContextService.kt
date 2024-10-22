@@ -12,6 +12,7 @@ import com.kogo.content.storage.repository.PostRepository
 import com.kogo.content.storage.repository.TopicRepository
 import com.kogo.content.storage.repository.UserDetailsRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +27,8 @@ class UserContextService @Autowired constructor(
     private val fileHandler: FileHandler,
 ) {
     companion object : Logger()
+
+    fun find(userId: String): UserDetails? =userDetailsRepository.findByIdOrNull(userId)
 
     fun getCurrentUsername(): String {
         val authentication = SecurityContextHolder.getContext().authentication
