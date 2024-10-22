@@ -10,16 +10,15 @@ import com.kogo.content.storage.entity.UserDetails
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import software.amazon.awssdk.services.s3.model.Owner
 import java.time.Instant
 
 
 @Service
-class TopicService (
+class TopicService(
     private val repository: TopicRepository,
     private val followingTopicRepository: FollowingTopicRepository,
     private val attachmentRepository: AttachmentRepository,
-    private val fileHandler: FileHandler
+    private val fileHandler: FileHandler,
 ) {
     fun find(topicId: String): Topic? = repository.findByIdOrNull(topicId)
 
@@ -98,5 +97,11 @@ class TopicService (
         if (followingTopic != null) {
             followingTopicRepository.deleteById(followingTopic.id!!)
         }
+    }
+
+    @Transactional
+    fun transfer0wnership(topic: Topic, user: UserDetails): Topic {
+        topic.owner = user
+        return repository.save(topic)
     }
 }
