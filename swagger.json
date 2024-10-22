@@ -1449,7 +1449,8 @@
           "likes",
           "owner",
           "parentId",
-          "parentType"
+          "parentType",
+          "replies"
         ],
         "type": "object",
         "properties": {
@@ -1482,6 +1483,12 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
