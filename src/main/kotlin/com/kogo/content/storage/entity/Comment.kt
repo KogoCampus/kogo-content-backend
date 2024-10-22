@@ -21,7 +21,8 @@ data class Comment (
     var liked: Boolean = false,
     var createdAt: Instant?=null,
 
-    var repliesCount: Int = 0
+    var repliesCount: Int = 0,
+    var replies: List<String>
 )
 
 enum class CommentParentType {

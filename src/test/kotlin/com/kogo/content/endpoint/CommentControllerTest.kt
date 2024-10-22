@@ -15,7 +15,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.junit.jupiter.api.Test
 import com.kogo.content.util.fixture
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -257,12 +259,23 @@ class CommentControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val comment = createCommentFixture(post)
+        val reply1 = createReplyFixture(comment)
+        val reply2 = createReplyFixture(comment)
+        val replies = listOf(reply1, reply2)
 
+        // Mocking repository and service responses
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
-        every { commentService.delete(comment.id!!) } returns Unit
+        every { commentService.delete(comment) } returns Unit
         every { searchIndexService.deleteDocument(any(), any()) } returns Unit
+
+        // Mocking recursive replies deletion
+        every { commentRepository.findAllById(comment.replies) } returns replies
+        every { commentRepository.findAllById(reply1.replies) } returns emptyList() // No further replies
+        every { commentRepository.findAllById(reply2.replies) } returns emptyList() // No further replies
+        every { commentRepository.deleteById(any()) } just Runs
+
         mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
             .andExpect { status { isOk() } }
     }
@@ -291,7 +304,8 @@ class CommentControllerTest @Autowired constructor(
             owner = comment.owner,
             parentType = comment.parentType,
             parentId = comment.parentId,
-            createdAt = comment.createdAt
+            createdAt = comment.createdAt,
+            replies = comment.replies
         )
 
         every { topicService.find(topic.id!!) } returns topic

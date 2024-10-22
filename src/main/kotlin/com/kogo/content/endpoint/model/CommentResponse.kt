@@ -11,5 +11,6 @@ data class CommentResponse (
     var parentType: CommentParentType,
     val likes: Int,
     val liked: Boolean,
-    var createdAt: Instant
+    var createdAt: Instant,
+    var replies: List<String>
 ) {}
