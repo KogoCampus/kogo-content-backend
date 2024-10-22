@@ -3,8 +3,7 @@ package com.kogo.content.endpoint
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.common.HttpJsonResponse.ErrorResponse
-import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.exception.UnsupportedMediaTypeException
+import com.kogo.content.exception.*
 import com.kogo.content.logging.Logger
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatusCode
@@ -25,6 +24,7 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         log.error { ex }
+        log.error { ex.message }
         return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "${ex.resourceName} not found for id: ${ex.resourceId}")
     }
 
@@ -46,9 +46,10 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         val fieldErrors = bindingResult.fieldErrors
         return ResponseEntity(
             ErrorResponse(
-                status = errorCode.httpStatus,
-                message = errorCode.message,
-                details = "Error: ${ex.body.detail} in ${ex.objectName}"
+                error = HttpJsonResponse.ErrorDetails(
+                    reason = errorCode.name,
+                    details = "Error: ${ex.body.detail} in ${ex.objectName}"
+                )
             ), errorCode.httpStatus)
     }
 
@@ -64,4 +65,13 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         log.error { ex.stackTraceToString() }
         return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
     }
+
+    @ExceptionHandler(ActionDeniedException::class)
+    fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
+        log.error { "Action denied exception occurred: ${ex.details}" }
+        log.error { ex }
+
+            return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
+    }
+
 }
