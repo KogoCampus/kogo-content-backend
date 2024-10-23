@@ -344,6 +344,19 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": {
+                    "reason": "USER_IS_NOT_OWNER"
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -370,6 +383,19 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": {
+                    "reason": "USER_IS_NOT_OWNER"
+                  }
                 }
               }
             }
@@ -1725,6 +1751,9 @@
         "properties": {
           "data": {
             "type": "object"
+          },
+          "message": {
+            "type": "string"
           }
         }
       }
