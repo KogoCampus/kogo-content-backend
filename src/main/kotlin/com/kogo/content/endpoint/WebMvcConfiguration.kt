@@ -13,16 +13,4 @@ class WebMvcConfiguration : WebMvcConfigurer {
         registry.addInterceptor(RequestInterceptor()).addPathPatterns("/media/**")
         super.addInterceptors(registry)
     }
-
-    @Bean
-    fun addCorsConfig(): WebMvcConfigurer {
-        return object : WebMvcConfigurer {
-            override fun addCorsMappings(registry: CorsRegistry) {
-                registry.addMapping("/**")
-                    .allowedMethods("*")
-                    .allowedOrigins("*")
-                    .allowCredentials(false)
-            }
-        }
-    }
 }
