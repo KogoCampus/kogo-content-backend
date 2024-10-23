@@ -9,5 +9,6 @@ data class TopicResponse(
     var description: String,
     var tags: List<String> = emptyList(),
     var profileImage: AttachmentResponse? = null,
-    var createdAt: Instant
+    var createdAt: Instant,
+    var updatedAt: Instant,
 ) {}

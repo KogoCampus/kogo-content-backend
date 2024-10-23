@@ -12,5 +12,6 @@ data class CommentResponse (
     val likes: Int,
     val liked: Boolean,
     var createdAt: Instant,
+    var updatedAt: Instant,
     var replies: List<String>
 ) {}

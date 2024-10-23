@@ -97,6 +97,7 @@ class PostService (
             },
             comments = emptyList(),
             createdAt = Instant.now(),
+            updatedAt = Instant.now(),
         )
         return repository.save(post)
     }
@@ -105,6 +106,7 @@ class PostService (
     fun update(post: Post, postUpdate: PostUpdate) : Post {
         postUpdate.title?.let { post.title = it }
         postUpdate.content?.let { post.content = it }
+        post.updatedAt = Instant.now()
 
         val attachmentMaintainedAfterDeletion: List<Attachment> = post.attachments.filter { attachment -> attachment.id !in postUpdate.attachmentDelete!! }
         val attachmentAdded = (postUpdate.images!! + postUpdate.videos!!).map {

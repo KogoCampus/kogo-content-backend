@@ -176,7 +176,8 @@ class TopicController @Autowired constructor(
             description = description,
             tags = tags,
             profileImage = profileImage?.let { buildAttachmentResponse(it) },
-            createdAt = createdAt!!
+            createdAt = createdAt!!,
+            updatedAt = updatedAt!!,
         )
     }
 

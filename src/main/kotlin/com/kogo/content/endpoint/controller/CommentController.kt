@@ -290,6 +290,7 @@ class CommentController @Autowired constructor(
             likes = likes,
             liked = liked,
             createdAt = createdAt!!,
+            updatedAt = updatedAt!!,
             replies = replies
         )
     }

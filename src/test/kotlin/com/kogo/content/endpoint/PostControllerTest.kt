@@ -169,6 +169,7 @@ class PostControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val postId = post.id!!
         val user = post.owner
+        val updatedAt = Instant.now()
         val updatedPost = Post(
             id = postId,
             title = "updated post title",
@@ -176,7 +177,8 @@ class PostControllerTest @Autowired constructor(
             topic = post.topic,
             owner = post.owner,
             comments = post.comments,
-            createdAt = Instant.now()
+            createdAt = post.createdAt,
+            updatedAt = updatedAt,
         )
 
         // Mocking repository and service responses
@@ -199,6 +201,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(updatedPost.content))
             .andExpect(jsonPath("$.data.topicId").value(topicId))
             .andExpect(jsonPath("$.data.createdAt").exists())
+            .andExpect(jsonPath("$.data.updatedAt").exists())
     }
 
     @Test
@@ -469,7 +472,8 @@ class PostControllerTest @Autowired constructor(
             "owner" to createUserFixture(),
             "comments" to emptyList<Any>(),
             "attachments" to emptyList<Any>(),
-            "createdAt" to Instant.now()
+            "createdAt" to Instant.now(),
+            "updatedAt" to Instant.now()
         )
     }
 

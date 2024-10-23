@@ -270,6 +270,7 @@ class PostController @Autowired constructor(
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
+            updatedAt = updatedAt!!,
             commentCount = commentCount,
         )
     }
