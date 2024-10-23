@@ -2,11 +2,7 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
-import com.kogo.content.endpoint.common.HttpJsonResponse.ErrorResponse
 import com.kogo.content.exception.*
-import com.kogo.content.logging.Logger
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.HttpStatus
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.storage.entity.Topic
@@ -32,8 +28,8 @@ class ExceptionHandlerTest {
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleResourceNotFoundException(ex)
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
-        assertEquals(ErrorCode.NOT_FOUND.name, response.body?.error?.reason)
-        assertEquals("Topic not found for id: 123", response.body?.error?.details)
+        assertEquals(ErrorCode.NOT_FOUND.name, response.body?.error)
+        assertEquals("Topic not found for id: 123", response.body?.details)
     }
 
     @Test
@@ -44,8 +40,8 @@ class ExceptionHandlerTest {
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleUnsupportedMediaTypeException(ex)
 
         assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, response.statusCode)
-        assertEquals(ErrorCode.UNSUPPORTED_MEDIA_TYPE.name, response.body?.error?.reason)
-        assertEquals("text/plain is not supported. Please upload application/json.", response.body?.error?.details)
+        assertEquals(ErrorCode.UNSUPPORTED_MEDIA_TYPE.name, response.body?.error)
+        assertEquals("text/plain is not supported. Please upload application/json.", response.body?.details)
     }
 
     @Test
@@ -55,8 +51,8 @@ class ExceptionHandlerTest {
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleAuthenticationException(ex)
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-        assertEquals(ErrorCode.UNAUTHORIZED.name, response.body?.error?.reason)
-        assertEquals("Your access token is invalid or missing.", response.body?.error?.details)
+        assertEquals(ErrorCode.UNAUTHORIZED.name, response.body?.error)
+        assertEquals("Your access token is invalid or missing.", response.body?.details)
     }
 
     @Test
@@ -66,8 +62,8 @@ class ExceptionHandlerTest {
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleUnhandledException(ex)
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
-        assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.reason)
-        assertEquals("Unexpected error occurred.", response.body?.error?.details)
+        assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error)
+        assertEquals("Unexpected error occurred.", response.body?.details)
     }
 
     @Test
@@ -77,7 +73,7 @@ class ExceptionHandlerTest {
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleActionDeniedException(ex)
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-        assertEquals(ErrorCode.USER_IS_NOT_OWNER.name, response.body?.error?.reason)
-        assertEquals("You are not the owner of Topic with id: 123.", response.body?.error?.details)
+        assertEquals(ErrorCode.USER_IS_NOT_OWNER.name, response.body?.error)
+        assertEquals("You are not the owner of Topic with id: 123.", response.body?.details)
     }
 }
