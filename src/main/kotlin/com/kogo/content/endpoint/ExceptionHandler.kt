@@ -20,6 +20,18 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
 
     companion object : Logger()
 
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
+        log.error { "Authentication Failed: ${ex.message}" }
+        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
+    }
+
+    @ExceptionHandler(ActionDeniedException::class)
+    fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
+        log.error { "Action denied exception occurred: ${ex.details}" }
+        return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
+    }
+
     // i.e. throw ResourceNotFound("Comment", commendId)
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
@@ -41,11 +53,13 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         status: HttpStatusCode,
         request: WebRequest
     ): ResponseEntity<Any> {
-        val message = "Request validation failed: ${ex.body.detail} in ${ex.objectName}"
-        log.error { message }
         val errorCode = ErrorCode.BAD_REQUEST
         val bindingResult = ex.bindingResult
         val fieldErrors = bindingResult.fieldErrors
+
+        val message = "Request validation failed: ${ex.body.detail} in ${ex.objectName} : $bindingResult : $fieldErrors"
+        log.error { message }
+
         return ResponseEntity(
             ErrorResponse(
                 error = errorCode.name,
@@ -53,21 +67,10 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
             ), errorCode.httpStatus)
     }
 
-    @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
-        log.error { "Authentication Failed: ${ex.message}" }
-        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
-    }
-
-    @ExceptionHandler(ActionDeniedException::class)
-    fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
-        log.error { "Action denied exception occurred: ${ex.details}" }
-        return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
-    }
-
     @ExceptionHandler(Exception::class)
     fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
-        log.error (ex) { "Unhandled exception occurred; ${ex.message}" }
-        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
+        val message = "Unhandled exception occurred; ${ex.message}"
+        log.error (ex) { message }
+        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = message)
     }
 }
