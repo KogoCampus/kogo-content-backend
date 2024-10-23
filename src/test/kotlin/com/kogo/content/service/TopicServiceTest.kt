@@ -133,11 +133,12 @@ class TopicServiceTest {
     @Test
     fun `should follow a topic`() {
         val owner = createUserFixture()
-        val topic = createTopicFixture()
+        val topic = createTopicFixture().copy(userCount = 1)
         val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
         // Mock the save operation to return a FollowingTopic object
         every { followingTopicRepository.save(any()) } returns followingTopic
+        every { topicRepository.save(any<Topic>()) } returns topic.copy(userCount = topic.userCount + 1)
 
         // Call the service method
         topicService.follow(topic, owner)
@@ -148,22 +149,29 @@ class TopicServiceTest {
                 assertThat(it.userId).isEqualTo(owner.id)
                 assertThat(it.topicId).isEqualTo(topic.id)
             })
+            topicRepository.save(withArg {
+                assertThat(it.userCount).isEqualTo(2) // Verify userCount is incremented
+            })
         }
     }
 
     @Test
     fun `should unfollow a topic`() {
         val owner = createUserFixture()
-        val topic = createTopicFixture()
+        val topic = createTopicFixture().copy(userCount = 2)
         val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
         every { followingTopicRepository.findByUserIdAndTopicId(owner.id!!, topic.id!!) } returns listOf(followingTopic)
         every { followingTopicRepository.deleteById(followingTopic.id!!) } just Runs
+        every { topicRepository.save(any<Topic>()) } returns topic.copy(userCount = topic.userCount - 1)
 
         topicService.unfollow(topic, owner)
 
         verify {
             followingTopicRepository.deleteById(followingTopic.id!!)
+            topicRepository.save(withArg {
+                assertThat(it.userCount).isEqualTo(1) // Verify userCount is decremented
+            })
         }
     }
 

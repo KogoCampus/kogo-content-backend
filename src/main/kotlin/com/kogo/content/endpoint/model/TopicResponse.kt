@@ -11,4 +11,5 @@ data class TopicResponse(
     var profileImage: AttachmentResponse? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
+    var userCount: Int,
 ) {}
