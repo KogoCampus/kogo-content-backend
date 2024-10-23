@@ -98,6 +98,8 @@ class TopicController @Autowired constructor(
             val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
             if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
                 throwUserIsNotOwner(topicId)
+            if (topicUpdate.topicName != null && topicService.existsByTopicName(topicUpdate.topicName!!))
+                return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicUpdate.topicName}")
             val updatedTopic = topicService.update(topic, topicUpdate)
             val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
             searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)

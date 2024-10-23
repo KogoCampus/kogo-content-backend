@@ -20,7 +20,7 @@ container_id=$(docker run -d --rm \
   -p 7700:7700 \
   -e MEILI_MASTER_KEY='MASTER_KEY' \
   -v "$mount_path/tmp/meili_data:/meili_data" \
-  getmeili/meilisearch:v1.10)
+  getmeili/meilisearch:latest)
 
 # Give the container a few seconds to start
 sleep 5
