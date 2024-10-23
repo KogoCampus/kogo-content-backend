@@ -1383,6 +1383,7 @@
           "likes",
           "owner",
           "title",
+          "updatedAt",
           "viewcount"
         ],
         "type": "object",
@@ -1419,6 +1420,10 @@
             "format": "int32"
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
             "type": "string",
             "format": "date-time"
           },
@@ -1476,7 +1481,8 @@
           "owner",
           "parentId",
           "parentType",
-          "replies"
+          "replies",
+          "updatedAt"
         ],
         "type": "object",
         "properties": {
@@ -1510,6 +1516,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "replies": {
             "type": "array",
             "items": {
@@ -1536,7 +1546,8 @@
           "id",
           "owner",
           "tags",
-          "topicName"
+          "topicName",
+          "updatedAt"
         ],
         "type": "object",
         "properties": {
@@ -1562,6 +1573,10 @@
             "$ref": "#/components/schemas/AttachmentResponse"
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
             "type": "string",
             "format": "date-time"
           }
