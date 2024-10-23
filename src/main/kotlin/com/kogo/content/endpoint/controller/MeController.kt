@@ -153,6 +153,7 @@ class MeController @Autowired constructor(
             tags = tags,
             profileImage = profileImage?.let { buildAttachmentResponse(it) },
             createdAt = createdAt!!,
+            updatedAt = updatedAt!!,
         )
     }
 
@@ -168,7 +169,8 @@ class MeController @Autowired constructor(
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
-            commentCount = commentCount
+            updatedAt = updatedAt!!,
+            commentCount = commentCount,
         )
     }
 

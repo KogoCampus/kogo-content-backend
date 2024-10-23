@@ -83,6 +83,7 @@ class FeedController @Autowired constructor(
             viewcount = viewcount,
             likes = likes,
             createdAt = createdAt!!,
+            updatedAt = updatedAt!!,
             commentCount = commentCount,
         )
     }

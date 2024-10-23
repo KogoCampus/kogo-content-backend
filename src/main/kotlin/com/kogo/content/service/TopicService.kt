@@ -54,7 +54,8 @@ class TopicService(
             profileImage = dto.profileImage?.let {
                 attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) },
             tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!,
-            createdAt = Instant.now()
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
         )
         val savedTopic = repository.save(topic)
         val followingTopic = FollowingTopic(
@@ -73,6 +74,7 @@ class TopicService(
             tags!!.takeIf { it.isNotEmpty() }?.let { topic.tags = it }
             profileImage?.let { topic.profileImage = attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) }
         }
+        topic.updatedAt = Instant.now()
         return repository.save(topic)
     }
 

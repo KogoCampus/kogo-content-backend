@@ -98,7 +98,8 @@ class CommentControllerTest @Autowired constructor(
         mapOf(
             "parentId" to post.id,
             "owner" to createUserFixture(),
-            "createdAt" to Instant.now()
+            "createdAt" to Instant.now(),
+            "updatedAt" to Instant.now()
         )
     }
 
@@ -106,7 +107,8 @@ class CommentControllerTest @Autowired constructor(
         mapOf(
             "parentId" to comment.id,
             "owner" to createUserFixture(),
-            "createdAt" to Instant.now()
+            "createdAt" to Instant.now(),
+            "updatedAt" to Instant.now()
         )
     }
 
@@ -325,8 +327,10 @@ class CommentControllerTest @Autowired constructor(
         val comment = createCommentFixture(post)
         val currentUser = createUserFixture() // Simulate the owner of the comment
         val updatedContent = "new content"
+        val updatedAt = Instant.now()
         val commentUpdate = CommentUpdate(content = updatedContent)
-        val newComment = comment.copy(content = updatedContent)
+
+        val newComment = comment.copy(content = updatedContent, updatedAt = updatedAt)
 
         // Mocking repository and service responses
         every { topicService.find(topic.id!!) } returns topic
@@ -347,7 +351,8 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.content").value(newComment.content))
             .andExpect(jsonPath("$.data.parentId").value(comment.parentId))
-            .andExpect(jsonPath("$.data.createdAt").exists())
+            .andExpect(jsonPath("$.data.createdAt").value(comment.createdAt.toString())) // Ensure createdAt remains unchanged
+            .andExpect(jsonPath("$.data.updatedAt").value(updatedAt.toString()))
     }
 
     @Test

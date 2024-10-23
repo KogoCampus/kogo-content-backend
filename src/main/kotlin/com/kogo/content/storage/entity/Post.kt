@@ -28,6 +28,7 @@ data class Post (
 
     var commentCount: Int = 0,
     var createdAt: Instant?=null,
+    var updatedAt: Instant?=null,
 
     var viewcount: Int = 0,
     var likes: Int = 0,

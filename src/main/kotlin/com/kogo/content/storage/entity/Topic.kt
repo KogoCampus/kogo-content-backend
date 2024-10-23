@@ -29,6 +29,7 @@ data class Topic (
     var tags: List<String> = emptyList(),
 
     var createdAt: Instant?=null,
+    var updatedAt: Instant?=null,
 
     var userCount: Int = 1,
 )

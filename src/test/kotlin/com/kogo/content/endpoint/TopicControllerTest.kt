@@ -106,12 +106,14 @@ class TopicControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         val topicId = topic.id!!
         val user = createUserFixture()
+        val updatedAt = Instant.now()
         val updatedTopic = Topic(
             id = topicId,
             topicName = "updated topic name",
             description = "updated description",
             owner = topic.owner,
-            createdAt = topic.createdAt
+            createdAt = topic.createdAt,
+            updatedAt = updatedAt
         )
 
         every { topicService.find(topicId) } returns topic
@@ -130,6 +132,7 @@ class TopicControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.topicName").value(updatedTopic.topicName))
             .andExpect(jsonPath("$.data.description").value(updatedTopic.description))
+            .andExpect { jsonPath("$.data.createdAt").exists() }
             .andExpect { jsonPath("$.data.createdAt").exists() }
             .andExpect(jsonPath("$.error.reason").doesNotExist())
     }
@@ -180,7 +183,8 @@ class TopicControllerTest @Autowired constructor(
 
     private fun createTopicFixture() = fixture<Topic> { mapOf(
         "owner" to createUserFixture(),
-        "createdAt" to Instant.now()
+        "createdAt" to Instant.now(),
+        "updatedAt" to Instant.now()
     ) }
 
     private fun createUserFixture() = fixture<UserDetails>()

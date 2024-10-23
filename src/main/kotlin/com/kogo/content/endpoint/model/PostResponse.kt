@@ -12,6 +12,7 @@ data class PostResponse(
     var comments: List<PostComment>,
     var commentCount: Int,
     var createdAt: Instant,
+    var updatedAt: Instant,
     val viewcount: Int,
     val likes: Int,
 ) {

@@ -35,6 +35,7 @@ class CommentService @Autowired constructor(
             parentType = parentType,
             owner = author,
             createdAt = Instant.now(),
+            updatedAt = Instant.now(),
             replies = emptyList()
         )
         val savedComment = commentRepository.save(newComment)
@@ -80,6 +81,7 @@ class CommentService @Autowired constructor(
     @Transactional
     fun update(comment: Comment, commentUpdate: CommentUpdate): Comment {
         commentUpdate.let { comment.content = it.content }
+        comment.updatedAt = Instant.now()
         return commentRepository.save(comment)
     }
 

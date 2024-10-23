@@ -99,6 +99,7 @@ class MeControllerTest  @Autowired constructor(
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data[0].id") { value(topics[0].id) } }
             .andExpect { jsonPath("$.data[0].createdAt").exists() }
+            .andExpect { jsonPath("$.data[0].updatedAt").exists() }
     }
 
     private fun buildMeApiUrl(vararg paths: String) =
@@ -110,14 +111,16 @@ class MeControllerTest  @Autowired constructor(
     private fun createPostFixture() = fixture<Post> {
         mapOf(
             "author" to createUserFixture(),
-            "createdAt" to Instant.now()
+            "createdAt" to Instant.now(),
+            "updatedAt" to Instant.now()
         )
     }
 
     private fun createTopicFixture() = fixture<Topic> {
         mapOf(
             "owner" to createUserFixture(),
-            "createdAt" to Instant.now()
+            "createdAt" to Instant.now(),
+            "updatedAt" to Instant.now()
         )
     }
 }
