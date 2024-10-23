@@ -51,8 +51,9 @@ class PostController @Autowired constructor(
     fun listPostsInTopic(
         @PathVariable("topicId") topicId: String,
         @RequestParam("limit") limit: Int?,
-        @RequestParam("page") page: String?) = run {
+        @RequestParam("page") page: String?): ResponseEntity<*> = run {
         findTopicByIdOrThrow(topicId)
+        if(page != null) postService.find(page) ?: throwPostNotFound(page)
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
         HttpJsonResponse.successResponse(
@@ -225,6 +226,7 @@ class PostController @Autowired constructor(
         @RequestParam("q") keyword: String,
         @RequestParam("limit") limit: Int?,
         @RequestParam("page") page: String?) = run {
+        if(page != null) postService.find(page) ?: throwPostNotFound(page)
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
         HttpJsonResponse.successResponse(

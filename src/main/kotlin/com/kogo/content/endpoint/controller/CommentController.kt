@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -42,6 +43,7 @@ class CommentController @Autowired constructor(
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(
         summary = "Get all comments from the post",
+        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok - All comments",
@@ -52,15 +54,24 @@ class CommentController @Autowired constructor(
     )
     fun getComments(
         @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String
-    ) = run {
+        @PathVariable("postId") postId: String,
+        @RequestParam("limit") limit: Int?,
+        @RequestParam("page") page: String?
+    ): ResponseEntity<*> = run {
         findTopicAndPost(topicId, postId)
-        HttpJsonResponse.successResponse(commentService.findCommentsByParentId(postId).map{ buildCommentResponse(it) })
+        if(page != null) commentService.find(page) ?: throwCommentNotFound(page)
+        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+        val paginationResponse = commentService.listCommentsByParentId(postId, paginationRequest)
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map{ buildCommentResponse(it) },
+            headers = paginationResponse.toHeaders()
+        )
     }
 
     @GetMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/replies")
     @Operation(
         summary = "Get all replies of the comment",
+        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok - Replies",
@@ -72,11 +83,18 @@ class CommentController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
-    ) = run {
+        @RequestParam("limit") limit: Int?,
+        @RequestParam("page") page: String?
+    ): ResponseEntity<*> = run {
         findTopicAndPost(topicId, postId)
         findComment(commentId)
-        val replies = commentService.findCommentsByParentId(commentId)
-        HttpJsonResponse.successResponse(replies.map{ buildCommentResponse(it) })
+        if(page != null) commentService.find(page) ?: throwCommentNotFound(page)
+        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+        val paginationResponse = commentService.listCommentsByParentId(commentId, paginationRequest)
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map{ buildCommentResponse(it) },
+            headers = paginationResponse.toHeaders()
+        )
     }
 
     @GetMapping("topics/{topicId}/posts/{postId}/comments/{commentId}")
@@ -266,6 +284,8 @@ class CommentController @Autowired constructor(
     fun findComment(commentId: String) = run {
         commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
+
+    private fun throwCommentNotFound(commentId: String): Nothing = throw ResourceNotFoundException.of<Comment>(commentId)
 
     private fun throwUserIsNotOwner(commentId: String): Nothing = throw UserIsNotOwnerException.of<Comment>(commentId)
 
