@@ -113,4 +113,6 @@ class CommentService @Autowired constructor(
     fun getReplies(comment: Comment): List<Comment> {
         return commentRepository.findAllById(comment.replies)
     }
+
+    fun isCommentOwner(comment: Comment, user: UserDetails): Boolean = comment.owner == user
 }

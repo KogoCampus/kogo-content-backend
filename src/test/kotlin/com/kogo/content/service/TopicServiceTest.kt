@@ -49,7 +49,7 @@ class TopicServiceTest {
         }
         val profileAttachment = mockk<Attachment>()
         val savedTopic = createTopicFixture().copy(id = "topic-id", owner = owner)
-        val followingTopic = FollowingTopic(ownerId = owner.id!!, topicId = savedTopic.id!!).copy(id = "following-id")
+        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = savedTopic.id!!).copy(id = "following-id")
 
         // Mock the save operations
         every { topicRepository.save(any()) } returns savedTopic
@@ -69,7 +69,7 @@ class TopicServiceTest {
                 assertThat(it.tags).isEqualTo(listOf("tag1", "tag2"))
             })
             followingTopicRepository.save(withArg {
-                assertThat(it.ownerId).isEqualTo(owner.id)
+                assertThat(it.userId).isEqualTo(owner.id)
                 assertThat(it.topicId).isEqualTo(savedTopic.id)
             })
         }
@@ -134,7 +134,7 @@ class TopicServiceTest {
     fun `should follow a topic`() {
         val owner = createUserFixture()
         val topic = createTopicFixture()
-        val followingTopic = FollowingTopic(ownerId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
+        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
         // Mock the save operation to return a FollowingTopic object
         every { followingTopicRepository.save(any()) } returns followingTopic
@@ -145,7 +145,7 @@ class TopicServiceTest {
         // Verify the save method is called with the correct arguments
         verify {
             followingTopicRepository.save(withArg {
-                assertThat(it.ownerId).isEqualTo(owner.id)
+                assertThat(it.userId).isEqualTo(owner.id)
                 assertThat(it.topicId).isEqualTo(topic.id)
             })
         }
@@ -155,9 +155,9 @@ class TopicServiceTest {
     fun `should unfollow a topic`() {
         val owner = createUserFixture()
         val topic = createTopicFixture()
-        val followingTopic = FollowingTopic(ownerId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
+        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
-        every { followingTopicRepository.findByOwnerIdAndTopicId(owner.id!!, topic.id!!) } returns listOf(followingTopic)
+        every { followingTopicRepository.findByUserIdAndTopicId(owner.id!!, topic.id!!) } returns listOf(followingTopic)
         every { followingTopicRepository.deleteById(followingTopic.id!!) } just Runs
 
         topicService.unfollow(topic, owner)

@@ -140,7 +140,7 @@ class TopicController @Autowired constructor(
     fun followTopic(@PathVariable("id") topicId: String): ResponseEntity<*> = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
         val user = userContextService.getCurrentUserDetails()
-        if (topicService.existsFollowingByOwnerIdAndTopicId(user.id!!, topic.id!!))
+        if (topicService.existsFollowingByUserIdAndTopicId(user.id!!, topic.id!!))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the topic")
         topicService.follow(topic, user)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
@@ -162,7 +162,7 @@ class TopicController @Autowired constructor(
         val user = userContextService.getCurrentUserDetails()
         if(topicService.isTopicOwner(topic, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The owner cannot unfollow the topic")
-        if (!topicService.existsFollowingByOwnerIdAndTopicId(user.id!!, topic.id!!))
+        if (!topicService.existsFollowingByUserIdAndTopicId(user.id!!, topic.id!!))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the topic")
         topicService.unfollow(topic, user)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))

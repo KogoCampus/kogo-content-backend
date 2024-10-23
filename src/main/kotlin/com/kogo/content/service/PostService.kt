@@ -154,4 +154,6 @@ class PostService (
 
     fun findViewByUserIdAndParentId(userId: String, parentId: String): View? =
         viewRepository.findByUserIdAndParentId(userId, parentId)
+
+    fun isPostOwner(post: Post, user: UserDetails): Boolean = post.owner == user
 }

@@ -31,18 +31,18 @@ class TopicService(
     fun isTopicOwner(topic: Topic, owner: UserDetails): Boolean = topic.owner == owner
 
     fun findFollowingByOwnerId(ownerId: String): List<Topic> {
-        val followingTopics = followingTopicRepository.findByOwnerId(ownerId)
+        val followingTopics = followingTopicRepository.findByUserId(ownerId)
         val topics = followingTopics
             .mapNotNull { followingTopic -> find(followingTopic.topicId) }
         return topics
     }
 
-    fun existsFollowingByOwnerIdAndTopicId(ownerId: String, topicId: String): Boolean {
-        return followingTopicRepository.existsByOwnerIdAndTopicId(ownerId, topicId)
+    fun existsFollowingByUserIdAndTopicId(userId: String, topicId: String): Boolean {
+        return followingTopicRepository.existsByUserIdAndTopicId(userId, topicId)
     }
 
-    fun findFollowingByOwnerIdAndTopicId(ownerId: String, topicId: String): FollowingTopic {
-        return(followingTopicRepository.findByOwnerIdAndTopicId(ownerId, topicId)[0])
+    fun findFollowingByUserIdAndTopicId(userId: String, topicId: String): FollowingTopic {
+        return(followingTopicRepository.findByUserIdAndTopicId(userId, topicId)[0])
     }
 
     @Transactional
@@ -58,7 +58,7 @@ class TopicService(
         )
         val savedTopic = repository.save(topic)
         val followingTopic = FollowingTopic(
-            ownerId = savedTopic.owner.id!!,
+            userId = savedTopic.owner.id!!,
             topicId = savedTopic.id!!
         )
         followingTopicRepository.save(followingTopic)
@@ -85,7 +85,7 @@ class TopicService(
     @Transactional
     fun follow(topic: Topic, user: UserDetails) {
         val followingTopic = FollowingTopic(
-            ownerId = user.id!!,
+            userId = user.id!!,
             topicId = topic.id!!
         )
         followingTopicRepository.save(followingTopic)
@@ -93,7 +93,7 @@ class TopicService(
 
     @Transactional
     fun unfollow(topic: Topic, user: UserDetails) {
-        val followingTopic = followingTopicRepository.findByOwnerIdAndTopicId(user.id!!, topic.id!!).firstOrNull()
+        val followingTopic = followingTopicRepository.findByUserIdAndTopicId(user.id!!, topic.id!!).firstOrNull()
         if (followingTopic != null) {
             followingTopicRepository.deleteById(followingTopic.id!!)
         }

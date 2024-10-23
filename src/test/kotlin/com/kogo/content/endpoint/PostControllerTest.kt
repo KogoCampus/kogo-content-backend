@@ -97,15 +97,19 @@ class PostControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should create a new post`() {
+    fun `should create a new post if user is a topic member`() {
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val user = createUserFixture()
         val topicId = topic.id!!
+
+        // Mocking repository and service responses
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.create(topic, user, any())} returns post
+        every { topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId) } returns true // User is a topic member
+        every { postService.create(topic, user, any()) } returns post
         every { searchIndexService.addDocument(any(), any()) } returns Unit
+
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId))
                 .part(MockPart("title", post.title.toByteArray()))
@@ -119,6 +123,28 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(post.content))
             .andExpect(jsonPath("$.data.topicId").value(topic.id))
             .andExpect { jsonPath("$.data.createdAt").exists() }
+    }
+
+    @Test
+    fun `should return 403 if user is not a topic member`() {
+        val topic = createTopicFixture()
+        val user = createUserFixture()
+        val topicId = topic.id!!
+
+        // Mocking repository and service responses
+        every { topicService.find(topicId) } returns topic
+        every { userService.getCurrentUserDetails() } returns user
+        every { topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId) } returns false // User is not a topic member
+
+        mockMvc.perform(
+            multipart(buildPostApiUrl(topicId))
+                .part(MockPart("title", "new post".toByteArray()))
+                .part(MockPart("content", "post content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it }
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_MEMBER"))
     }
 
     @Test
@@ -136,11 +162,12 @@ class PostControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should update an existing post`() {
+    fun `should update an existing post if user is the post owner`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
         val post = createPostFixture(topic)
         val postId = post.id!!
+        val user = post.owner
         val updatedPost = Post(
             id = postId,
             title = "updated post title",
@@ -150,10 +177,15 @@ class PostControllerTest @Autowired constructor(
             comments = post.comments,
             createdAt = Instant.now()
         )
-        every { topicService.find(postId) } returns topic
+
+        // Mocking repository and service responses
+        every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.isPostOwner(post, user) } returns true // User is the post owner
         every { postService.update(post, any()) } returns updatedPost
         every { searchIndexService.updateDocument(any(), any()) } returns Unit
+
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
                 .part(MockPart("title", updatedPost.title.toByteArray()))
@@ -166,6 +198,30 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(updatedPost.content))
             .andExpect(jsonPath("$.data.topicId").value(topicId))
             .andExpect(jsonPath("$.data.createdAt").exists())
+    }
+
+    @Test
+    fun `should return 403 if user is not the post owner`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val post = createPostFixture(topic)
+        val postId = post.id!!
+        val differentUser = createUserFixture() // Different user from the post owner
+
+        // Mocking repository and service responses
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns differentUser // Different user
+        every { postService.isPostOwner(post, differentUser) } returns false // User is not the post owner
+
+        mockMvc.perform(
+            multipart(buildPostApiUrl(topicId, postId))
+                .part(MockPart("title", "updated post title".toByteArray()))
+                .part(MockPart("content", "updated post content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "PUT"; it })
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_OWNER"))
     }
 
     @Test
@@ -186,17 +242,65 @@ class PostControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should delete a post`() {
+    fun `should delete a post if user is the post owner`() {
         val topic = createTopicFixture()
         val topicId = topic.id!!
         val post = createPostFixture(topic)
         val postId = post.id!!
+        val user = post.owner
+
+        // Mocking repository and service responses
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.isPostOwner(post, user) } returns true // User is the post owner
+        every { topicService.isTopicOwner(topic, user) } returns false // User is not topic owner
         every { postService.delete(post) } returns Unit
         every { searchIndexService.deleteDocument(any(), any()) } returns Unit
+
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `should delete the post if user is the topic owner`() {
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
+        val postId = post.id!!
+        val topicId = topic.id!!
+        val user = createUserFixture() // A different user who is the topic owner
+
+        // Mocking repository and service responses
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { topicService.isTopicOwner(topic, user) } returns true // User is the topic owner
+        every { postService.delete(post) } returns Unit
+        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
+
+        mockMvc.delete(buildPostApiUrl(topicId, postId))
+            .andExpect{ status().isOk }
+    }
+
+    @Test
+    fun `should return 403 if user is neither post owner nor topic owner`() {
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
+        val postId = post.id!!
+        val topicId = topic.id!!
+        val user = createUserFixture() // A different user who is neither the post nor topic owner
+
+        // Mocking repository and service responses
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { userService.getCurrentUserDetails() } returns user
+        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { topicService.isTopicOwner(topic, user) } returns false // User is not the topic owner
+
+        mockMvc.delete(buildPostApiUrl(topicId, postId))
+            .andExpect{ status().isForbidden }
+            .andExpect{jsonPath("$.error.reason").value("USER_IS_NOT_OWNER")}
     }
 
     @Test

@@ -10,7 +10,7 @@ data class FollowingTopic(
     @Id
     var id: String? = null,
 
-    var ownerId: String,
+    var userId: String,
 
     var topicId: String
 ) {}

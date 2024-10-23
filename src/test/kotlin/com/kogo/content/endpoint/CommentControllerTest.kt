@@ -1,6 +1,7 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
+import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
@@ -255,18 +256,20 @@ class CommentControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should delete an existing comment`() {
+    fun `should delete an existing comment if user is the owner`() {
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val comment = createCommentFixture(post)
         val reply1 = createReplyFixture(comment)
         val reply2 = createReplyFixture(comment)
         val replies = listOf(reply1, reply2)
+        val currentUser = createUserFixture()
 
         // Mocking repository and service responses
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
+        every { commentService.isCommentOwner(comment, currentUser) } returns true
         every { commentService.delete(comment) } returns Unit
         every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
@@ -275,9 +278,31 @@ class CommentControllerTest @Autowired constructor(
         every { commentRepository.findAllById(reply1.replies) } returns emptyList() // No further replies
         every { commentRepository.findAllById(reply2.replies) } returns emptyList() // No further replies
         every { commentRepository.deleteById(any()) } just Runs
+        every { userService.getCurrentUserDetails() } returns currentUser
 
         mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
             .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `should return 403 if user is not the comment owner`() {
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
+        val comment = createCommentFixture(post)
+        val currentUser = createUserFixture() // The current user (not the owner)
+        val differentUser = createUserFixture() // Another user to simulate the owner
+
+        // Mocking repository and service responses
+        every { topicService.find(topic.id!!) } returns topic
+        every { postService.find(post.id!!) } returns post
+        every { commentService.find(comment.id!!) } returns comment
+        every { commentService.isCommentOwner(comment, currentUser) } returns false // User is not the owner
+        every { userService.getCurrentUserDetails() } returns currentUser
+
+        // Perform delete request and expect 403 Forbidden
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
+            .andExpect { status { isForbidden() } }
+            .andExpect { jsonPath("$.error.reason").value("USER_IS_NOT_OWNER") }
     }
 
     @Test
@@ -294,25 +319,24 @@ class CommentControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should update an existing comment`() {
+    fun `should update an existing comment if user is the owner`() {
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val comment = createCommentFixture(post)
-        val newComment = Comment(
-            id = comment.id,
-            content = "new content",
-            owner = comment.owner,
-            parentType = comment.parentType,
-            parentId = comment.parentId,
-            createdAt = comment.createdAt,
-            replies = comment.replies
-        )
+        val currentUser = createUserFixture() // Simulate the owner of the comment
+        val updatedContent = "new content"
+        val commentUpdate = CommentUpdate(content = updatedContent)
+        val newComment = comment.copy(content = updatedContent)
 
+        // Mocking repository and service responses
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
-        every { commentService.update(comment, any()) } returns newComment
+        every { commentService.isCommentOwner(comment, currentUser) } returns true // User is the owner
+        every { commentService.update(comment, commentUpdate) } returns newComment
         every { searchIndexService.updateDocument(any(), any()) } returns Unit
+        every { userService.getCurrentUserDetails() } returns currentUser
+
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
                 .part(MockPart("content", newComment.content.toByteArray()))
@@ -324,6 +348,32 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(newComment.content))
             .andExpect(jsonPath("$.data.parentId").value(comment.parentId))
             .andExpect(jsonPath("$.data.createdAt").exists())
+    }
+
+    @Test
+    fun `should return 403 if user is not the comment owner during update`() {
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
+        val comment = createCommentFixture(post)
+        val currentUser = createUserFixture() // Simulate the current user
+        val updatedContent = "new content"
+        val commentUpdate = CommentUpdate(content = updatedContent)
+
+        // Mocking repository and service responses
+        every { topicService.find(topic.id!!) } returns topic
+        every { postService.find(post.id!!) } returns post
+        every { commentService.find(comment.id!!) } returns comment
+        every { commentService.isCommentOwner(comment, currentUser) } returns false // User is not the owner
+        every { userService.getCurrentUserDetails() } returns currentUser // Mock the user as non-owner
+
+        mockMvc.perform(
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
+                .part(MockPart("content", updatedContent.toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "PUT"; it }
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_OWNER"))
     }
 
     @Test
