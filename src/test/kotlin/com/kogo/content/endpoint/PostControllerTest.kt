@@ -144,7 +144,8 @@ class PostControllerTest @Autowired constructor(
                 .with { it.method = "POST"; it }
         )
             .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_MEMBER"))
+            .andExpect(jsonPath("$.error").value("USER_IS_NOT_MEMBER"))
+            .andExpect(jsonPath("$.details").value("You are not a member of Topic with id: $topicId."))
     }
 
     @Test
@@ -221,7 +222,8 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .with { it.method = "PUT"; it })
             .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_OWNER"))
+            .andExpect(jsonPath("$.error").value("USER_IS_NOT_OWNER"))
+            .andExpect(jsonPath("$.details").value("You are not the owner of Post with id: $postId."))
     }
 
     @Test

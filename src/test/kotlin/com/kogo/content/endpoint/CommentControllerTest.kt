@@ -373,7 +373,8 @@ class CommentControllerTest @Autowired constructor(
                 .with { it.method = "PUT"; it }
         )
             .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.error.reason").value("USER_IS_NOT_OWNER"))
+            .andExpect(jsonPath("$.error").value("USER_IS_NOT_OWNER"))
+            .andExpect(jsonPath("$.details").value("You are not the owner of Comment with id: ${comment.id}."))
     }
 
     @Test
