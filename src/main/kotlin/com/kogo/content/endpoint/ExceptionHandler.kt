@@ -23,14 +23,13 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
     // i.e. throw ResourceNotFound("Comment", commendId)
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
-        log.error { ex }
-        log.error { ex.message }
+        log.error { ex.stackTraceToString() }
         return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, details = "${ex.resourceName} not found for id: ${ex.resourceId}")
     }
 
     @ExceptionHandler(UnsupportedMediaTypeException::class)
     fun handleUnsupportedMediaTypeException(ex: UnsupportedMediaTypeException): ResponseEntity<ErrorResponse> {
-        log.error { ex }
+        log.error { ex.stackTraceToString() }
         return HttpJsonResponse.errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, details = "${ex.mediaType} is not supported. Please upload ${ex.acceptedMediaType}.")
     }
 
@@ -46,32 +45,26 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         val fieldErrors = bindingResult.fieldErrors
         return ResponseEntity(
             ErrorResponse(
-                error = HttpJsonResponse.ErrorDetails(
-                    reason = errorCode.name,
-                    details = "Error: ${ex.body.detail} in ${ex.objectName}"
-                )
+                error = errorCode.name,
+                details = "Error: ${ex.body.detail} in ${ex.objectName}"
             ), errorCode.httpStatus)
     }
 
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
-        log.error { ex }
-        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
-    }
-
-    @ExceptionHandler(Exception::class)
-    fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
-        log.error { "Unhandled exception occurred; ${ex.message}" }
         log.error { ex.stackTraceToString() }
-        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
+        return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
     }
 
     @ExceptionHandler(ActionDeniedException::class)
     fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
-        log.error { "Action denied exception occurred: ${ex.details}" }
-        log.error { ex }
-
-            return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
+        log.error (ex) { "Action denied exception occurred: ${ex.details}" }
+        return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
     }
 
+    @ExceptionHandler(Exception::class)
+    fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
+        log.error (ex) { "Unhandled exception occurred; ${ex.message}" }
+        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = "Unexpected error occurred.")
+    }
 }

@@ -7,7 +7,6 @@ import com.kogo.content.endpoint.model.AttachmentResponse
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.exception.ActionDeniedException
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.logging.Logger
@@ -82,11 +81,17 @@ class TopicController @Autowired constructor(
     @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = TopicUpdate::class))])
     @Operation(
         summary = "update topic attributes",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))],
-        )])
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                content = [Content(mediaType = "application/json", schema = Schema(example = "{ \"reason\": \"USER_IS_NOT_OWNER\"}"))]
+            )
+        ])
     fun updateGroup(
         @PathVariable("id") topicId: String,
         @Valid topicUpdate: TopicUpdate): ResponseEntity<*> = run {
@@ -102,10 +107,16 @@ class TopicController @Autowired constructor(
     @DeleteMapping("topics/{id}")
     @Operation(
         summary = "delete a topic",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-        )])
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "ok",
+            ),
+            ApiResponse(
+                responseCode = "403",
+                content = [Content(mediaType = "application/json", schema = Schema(example = "{ \"reason\": \"USER_IS_NOT_OWNER\"}"))]
+            )
+        ])
     fun deleteTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
         if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))

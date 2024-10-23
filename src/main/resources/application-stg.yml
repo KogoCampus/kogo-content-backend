@@ -1,6 +1,12 @@
 ---
 compile-version-key: ${compile-version-key}
 
+kogo-api:
+    base-url: "https://api.staging.kogocampus.com"
+
+filehandler:
+    prefix: files
+
 spring:
     config:
         import: aws-secretsmanager:/staging/kogo-content/application.properties
@@ -17,12 +23,10 @@ aws:
         bucket: ${s3.bucket}
         region: ${s3.region}
 
-kogo-api:
-    base-url: "https://api.staging.kogocampus.com"
-
-filehandler:
-    prefix: files
-
 meilisearch:
     host: ${meilisearch.host}
     apikey: ${meilisearch.apikey}
+
+sentry:
+    dsn: ${sentry.dsn}
+    traces-sample-rate: 1.0

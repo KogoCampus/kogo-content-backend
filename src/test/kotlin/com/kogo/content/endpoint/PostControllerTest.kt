@@ -255,8 +255,8 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
-            .andExpect(jsonPath("$.error.details").value("user already liked this post: $postId"))
+            .andExpect(jsonPath("$.error").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.details").value("user already liked this post: $postId"))
     }
 
     @Test
@@ -341,8 +341,8 @@ class PostControllerTest @Autowired constructor(
                 .contentType(MediaType.APPLICATION_JSON)
                 .with{ it.method = "POST"; it })
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
-            .andExpect(jsonPath("$.error.details").value("user already viewed this post: $postId"))
+            .andExpect(jsonPath("$.error").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.details").value("user already viewed this post: $postId"))
     }
 
     private fun buildPostApiUrl(topicId: String, vararg paths: String, params: Map<String, String> = emptyMap() ): String {

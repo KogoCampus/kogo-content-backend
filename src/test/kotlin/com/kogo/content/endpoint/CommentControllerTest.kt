@@ -416,8 +416,8 @@ class CommentControllerTest @Autowired constructor(
                 .with{ it.method = "POST"; it }
         )
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error.reason").value(ErrorCode.BAD_REQUEST.name))
-            .andExpect(jsonPath("$.error.details").value("user already liked this comment $commentId."))
+            .andExpect(jsonPath("$.error").value(ErrorCode.BAD_REQUEST.name))
+            .andExpect(jsonPath("$.details").value("user already liked this comment $commentId."))
     }
 
     @Test
