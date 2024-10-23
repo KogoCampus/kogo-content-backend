@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.client.HttpServerErrorException
 
 @Component
 class ExternalAuthRequestFilter (
@@ -91,15 +92,19 @@ class ExternalAuthRequestFilter (
             set("APP-VERSION-KEY", compileVersionKey)
         }
         val entity = HttpEntity<Any?>(headers)
-        val response = restTemplate.exchange(
-            "$kogoApiUrl$AUTH_ENDPOINT?grant_type=access_token",
-            HttpMethod.GET, entity, String::class.java
-        )
-        if (response.statusCode != HttpStatus.OK) {
-            throw AuthenticationException("External authentication failed with status code: ${response.statusCode.value()}")
+        return try {
+            val response = restTemplate.exchange(
+                "$kogoApiUrl$AUTH_ENDPOINT?grant_type=access_token",
+                HttpMethod.GET, entity, String::class.java
+            )
+            if (response.statusCode != HttpStatus.OK) {
+                throw AuthenticationException("External authentication failed with status code: ${response.statusCode.value()}")
+            }
+            val objectMapper = ObjectMapper()
+            objectMapper.readTree(response.body)
+        } catch (ex: HttpServerErrorException) {
+            throw AuthenticationException("External authentication failed: Server error - ${ex.statusCode} - ${ex.responseBodyAsString}")
         }
-        val objectMapper = ObjectMapper()
-        return objectMapper.readTree(response.body)
     }
 
     private fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String {
