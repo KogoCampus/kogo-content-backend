@@ -594,6 +594,12 @@
         "operationId": "getComments",
         "parameters": [
           {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
             "name": "topicId",
             "in": "path",
             "required": true,
@@ -605,6 +611,23 @@
             "name": "postId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -682,6 +705,12 @@
         "operationId": "getReplies",
         "parameters": [
           {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
             "name": "topicId",
             "in": "path",
             "required": true,
@@ -701,6 +730,23 @@
             "name": "commentId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string"
             }
