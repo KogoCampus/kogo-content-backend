@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
@@ -119,6 +120,7 @@ class TopicControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.isTopicOwner(topic, user) } returns true
+        every { topicService.existsByTopicName("updated topic name") } returns false
         every { topicService.update(topic, any()) } returns updatedTopic
         every { searchIndexService.updateDocument(any(), any()) } returns Unit
         mockMvc.perform(
@@ -135,6 +137,34 @@ class TopicControllerTest @Autowired constructor(
             .andExpect { jsonPath("$.data.createdAt").exists() }
             .andExpect { jsonPath("$.data.createdAt").exists() }
             .andExpect(jsonPath("$.error.reason").doesNotExist())
+    }
+
+    @Test
+    fun `should return 400 when updating topic name is not unique`() {
+        val topic = createTopicFixture()
+        val topicId = topic.id!!
+        val user = createUserFixture()
+        val topicUpdate = TopicUpdate(
+            topicName = "duplicate topic name",
+            description = "updated description"
+        )
+
+        // Mocking the necessary service responses
+        every { topicService.find(topicId) } returns topic
+        every { userService.getCurrentUserDetails() } returns user
+        every { topicService.isTopicOwner(topic, user) } returns true
+        every { topicService.existsByTopicName("duplicate topic name") } returns true // Duplicate topic name found
+
+        mockMvc.perform(
+            multipart(buildTopicApiUrl(topicId))
+                .part(MockPart("topicName", topicUpdate.topicName!!.toByteArray()))
+                .part(MockPart("description", topicUpdate.description!!.toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "PUT"; it })
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.error").value("BAD_REQUEST"))
+            .andExpect(jsonPath("$.details").value("topic name must be unique: ${topicUpdate.topicName}"))
     }
 
     @Test
