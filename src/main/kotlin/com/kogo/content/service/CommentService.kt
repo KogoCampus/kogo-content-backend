@@ -2,12 +2,17 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.PostRepository
 import org.jetbrains.kotlin.util.profile
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,6 +26,19 @@ class CommentService @Autowired constructor(
 ) {
     fun findCommentsByParentId(parentId: String): List<Comment> {
         return commentRepository.findAllByParentId(parentId)
+    }
+
+    fun listCommentsByParentId(parentId: String, paginationRequest: PaginationRequest): PaginationResponse<Comment> {
+        val limit = paginationRequest.limit
+        val page = paginationRequest.page
+        val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
+        val comments = if (page != null) {
+            commentRepository.findAllByParentIdAndIdLessThan(parentId, page, pageable)
+        } else {
+            commentRepository.findAllByParentId(parentId, pageable)
+        }
+        val nextPageToken = comments.lastOrNull()?.id
+        return PaginationResponse(comments, nextPageToken)
     }
 
     fun find(commentId: String): Comment? {

@@ -2,6 +2,8 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.PaginationResponse
 import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
@@ -16,10 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.junit.jupiter.api.Test
 import com.kogo.content.util.fixture
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
+import io.mockk.*
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.data.repository.findByIdOrNull
@@ -122,15 +122,26 @@ class CommentControllerTest @Autowired constructor(
         val post = createPostFixture(topic)
         val comments = listOf(createCommentFixture(post), createCommentFixture(post))
         val postId = post.id!!
+        val paginationRequest = PaginationRequest(limit = 10, page = null)
+        val paginationResponse = PaginationResponse(comments, "sample-next-page-token")
+        val paginationRequestSlot = slot<PaginationRequest>()
 
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
-        every { commentService.findCommentsByParentId(postId) } returns comments
-        mockMvc.get(buildCommentApiUrl(topic.id!!, postId))
-            .andExpect { status { isOk() }}
+        every { commentService.listCommentsByParentId(postId, capture(paginationRequestSlot)) } returns paginationResponse
+
+        mockMvc.get(buildCommentApiUrl(topic.id!!, postId)) {
+            param("limit", paginationRequest.limit.toString())
+        }
+            .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
-            .andExpect { jsonPath("$.data[0].createdAt") { exists() } }
+            .andExpect { jsonPath("$.data.length()") { value(comments.size) } }
+            .andExpect { header { string("next_page", "sample-next-page-token") } }
+            .andExpect { header { string("item_count", "${comments.size}") } }
+
+        val capturedPaginationRequest = paginationRequestSlot.captured
+        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
+        assertThat(capturedPaginationRequest.page).isEqualTo(paginationRequest.page)
     }
 
     @Test
@@ -138,19 +149,30 @@ class CommentControllerTest @Autowired constructor(
         val topic = createTopicFixture()
         val post = createPostFixture(topic)
         val parentComment = createCommentFixture(post)
-        val comments = listOf(createReplyFixture(parentComment), createReplyFixture(parentComment))
+        val replies = listOf(createReplyFixture(parentComment), createReplyFixture(parentComment))
         val parentCommentId = parentComment.id!!
         val postId = post.id!!
+        val paginationRequest = PaginationRequest(limit = 10, page = null)
+        val paginationResponse = PaginationResponse(replies, "sample-next-page-token")
+        val paginationRequestSlot = slot<PaginationRequest>()
 
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(postId) } returns post
         every { commentService.find(parentCommentId) } returns parentComment
-        every { commentService.findCommentsByParentId(parentCommentId) } returns comments
-        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, parentCommentId, "replies"))
-            .andExpect { status { isOk() }}
+        every { commentService.listCommentsByParentId(parentCommentId, capture(paginationRequestSlot)) } returns paginationResponse
+
+        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, parentCommentId, "replies")) {
+            param("limit", paginationRequest.limit.toString())
+        }
+            .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data.length()") {value(comments.size)} }
-            .andExpect { jsonPath("$.data[0].createdAt") { exists() } }
+            .andExpect { jsonPath("$.data.length()") { value(replies.size) } }
+            .andExpect { header { string("next_page", "sample-next-page-token") } }
+            .andExpect { header { string("item_count", "${replies.size}") } }
+
+        val capturedPaginationRequest = paginationRequestSlot.captured
+        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
+        assertThat(capturedPaginationRequest.page).isEqualTo(paginationRequest.page)
     }
 
     @Test
