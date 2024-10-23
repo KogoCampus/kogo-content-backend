@@ -1593,7 +1593,8 @@
           "owner",
           "tags",
           "topicName",
-          "updatedAt"
+          "updatedAt",
+          "userCount"
         ],
         "type": "object",
         "properties": {
@@ -1625,6 +1626,10 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "userCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
