@@ -90,6 +90,8 @@ class TopicService(
             userId = user.id!!,
             topicId = topic.id!!
         )
+        topic.userCount += 1
+        repository.save(topic)
         followingTopicRepository.save(followingTopic)
     }
 
@@ -97,6 +99,8 @@ class TopicService(
     fun unfollow(topic: Topic, user: UserDetails) {
         val followingTopic = followingTopicRepository.findByUserIdAndTopicId(user.id!!, topic.id!!).firstOrNull()
         if (followingTopic != null) {
+            topic.userCount -= 1
+            repository.save(topic)
             followingTopicRepository.deleteById(followingTopic.id!!)
         }
     }

@@ -178,6 +178,7 @@ class TopicController @Autowired constructor(
             profileImage = profileImage?.let { buildAttachmentResponse(it) },
             createdAt = createdAt!!,
             updatedAt = updatedAt!!,
+            userCount = userCount
         )
     }
 
