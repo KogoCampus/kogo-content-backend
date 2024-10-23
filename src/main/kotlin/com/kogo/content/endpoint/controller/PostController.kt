@@ -4,6 +4,8 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.exception.UserIsNotMemberException
+import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
@@ -91,8 +93,11 @@ class PostController @Autowired constructor(
     fun createPost(
         @PathVariable("topicId") topicId: String,
         @Valid postDto: PostDto) = run {
-            findTopicByIdOrThrow(topicId)
-            val post = postService.create(findTopicByIdOrThrow(topicId), userContextService.getCurrentUserDetails(), postDto)
+            val topic = findTopicByIdOrThrow(topicId)
+            val user = userContextService.getCurrentUserDetails()
+            if(!topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId))
+                throwUserIsNotMember(topicId)
+            val post = postService.create(topic, userContextService.getCurrentUserDetails(), postDto)
             val postDocument = buildPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post))
@@ -115,7 +120,10 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @Valid postUpdate: PostUpdate) = run {
+        findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val user = userContextService.getCurrentUserDetails()
+        if(!postService.isPostOwner(post, user)) throwUserIsNotOwner(postId)
         val updatedPost = postService.update(post, postUpdate)
         val updatedPostDocument = buildPostIndexDocumentUpdate(postId, postUpdate)
         searchIndexService.updateDocument(SearchIndex.POSTS, updatedPostDocument)
@@ -132,8 +140,10 @@ class PostController @Autowired constructor(
     fun deletePost(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String) = run {
-        findTopicByIdOrThrow(topicId)
+        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val user = userContextService.getCurrentUserDetails()
+        if(!postService.isPostOwner(post, user) && !topicService.isTopicOwner(topic, user)) throwUserIsNotOwner(postId)
         // recursively delete comments
         post.comments.forEach { comment ->
             deleteCommentAndUpdateIndex(comment)
@@ -223,9 +233,13 @@ class PostController @Autowired constructor(
         )
     }
 
-    private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
+    private fun findTopicByIdOrThrow(topicId: String): Topic = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
     private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<Post>(postId)
+
+    private fun throwUserIsNotOwner(postId: String): Nothing = throw UserIsNotOwnerException.of<Post>(postId)
+
+    private fun throwUserIsNotMember(topicId: String): Nothing = throw UserIsNotMemberException.of<Topic>(topicId)
 
     private fun deleteCommentAndUpdateIndex(comment: Comment) {
         // Recursively delete the comment and replies from the search index

@@ -4,6 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.searchengine.Document
 import com.kogo.content.searchengine.SearchIndex
 import com.kogo.content.searchengine.SearchIndexService
@@ -169,6 +170,8 @@ class CommentController @Autowired constructor(
     ) = run {
         findTopicAndPost(topicId, postId)
         val deletingComment = findComment(commentId)
+        if(!commentService.isCommentOwner(deletingComment, userContextService.getCurrentUserDetails()))
+            throwUserIsNotOwner(commentId)
         deleteCommentsFromSearchIndex(deletingComment)
         val deletedComment = commentService.delete(deletingComment)
         HttpJsonResponse.successResponse(deletedComment)
@@ -196,7 +199,8 @@ class CommentController @Autowired constructor(
         // check comment exist
         findTopicAndPost(topicId, postId)
         val comment = findComment(commentId)
-
+        if(!commentService.isCommentOwner(comment, userContextService.getCurrentUserDetails()))
+            throwUserIsNotOwner(commentId)
         val newComment = commentService.update(comment, commentUpdate)
         val updateCommentDocument = buildCommentIndexDocumentUpdate(commentId, commentUpdate)
         searchIndexService.updateDocument(SearchIndex.COMMENTS, updateCommentDocument)
@@ -262,6 +266,8 @@ class CommentController @Autowired constructor(
     fun findComment(commentId: String) = run {
         commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
+
+    private fun throwUserIsNotOwner(commentId: String): Nothing = throw UserIsNotOwnerException.of<Comment>(commentId)
 
     @Transactional
     fun deleteCommentsFromSearchIndex(comment: Comment) {
