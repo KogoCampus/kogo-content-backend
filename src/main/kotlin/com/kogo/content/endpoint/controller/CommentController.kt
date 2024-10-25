@@ -35,10 +35,7 @@ class CommentController @Autowired constructor(
     private val commentService: CommentService,
     private val postService: PostService,
     private val userContextService: UserContextService,
-    private val searchIndexService: SearchIndexService,
     private val topicService: TopicService,
-    private val postRepository: PostRepository,
-    private val commentRepository: CommentRepository,
 ) {
     @GetMapping("topics/{topicId}/posts/{postId}/comments")
     @Operation(
@@ -137,8 +134,6 @@ class CommentController @Autowired constructor(
         findTopicAndPost(topicId, postId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(postId, CommentParentType.POST, author, commentDto)
-        val commentDocument = buildCommentIndexDocument(newComment)
-        searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
@@ -165,8 +160,6 @@ class CommentController @Autowired constructor(
         findComment(commentId)
         val author = userContextService.getCurrentUserDetails()
         val newComment = commentService.create(commentId, CommentParentType.COMMENT, author, commentDto)
-        val commentDocument = buildCommentIndexDocument(newComment)
-        searchIndexService.addDocument(SearchIndex.COMMENTS, commentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
@@ -190,7 +183,6 @@ class CommentController @Autowired constructor(
         val deletingComment = findComment(commentId)
         if(!commentService.isCommentOwner(deletingComment, userContextService.getCurrentUserDetails()))
             throwUserIsNotOwner(commentId)
-        deleteCommentsFromSearchIndex(deletingComment)
         val deletedComment = commentService.delete(deletingComment)
         HttpJsonResponse.successResponse(deletedComment)
     }
@@ -220,8 +212,6 @@ class CommentController @Autowired constructor(
         if(!commentService.isCommentOwner(comment, userContextService.getCurrentUserDetails()))
             throwUserIsNotOwner(commentId)
         val newComment = commentService.update(comment, commentUpdate)
-        val updateCommentDocument = buildCommentIndexDocumentUpdate(commentId, commentUpdate)
-        searchIndexService.updateDocument(SearchIndex.COMMENTS, updateCommentDocument)
         HttpJsonResponse.successResponse(buildCommentResponse(newComment))
     }
 
@@ -289,17 +279,6 @@ class CommentController @Autowired constructor(
 
     private fun throwUserIsNotOwner(commentId: String): Nothing = throw UserIsNotOwnerException.of<Comment>(commentId)
 
-    @Transactional
-    fun deleteCommentsFromSearchIndex(comment: Comment) {
-        // First, delete the current comment from the search index
-        searchIndexService.deleteDocument(SearchIndex.COMMENTS, comment.id!!)
-        // Recursively delete all replies from the search index
-        val replies = commentRepository.findAllById(comment.replies)
-        replies.forEach { reply ->
-            deleteCommentsFromSearchIndex(reply)
-        }
-    }
-
     private fun buildCommentResponse(comment: Comment): CommentResponse = with(comment) {
         CommentResponse(
             id = id!!,
@@ -332,30 +311,5 @@ class CommentController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
-    }
-
-    fun buildCommentIndexDocument(comment: Comment): Document {
-        val timestamp: Long? = if (comment.parentType == CommentParentType.POST) {
-            postRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond
-        } else {
-            commentRepository.findByIdOrNull(comment.parentId)?.createdAt?.epochSecond
-        }
-
-        if (timestamp == null) {
-            throw IllegalStateException("Cannot find parent entity with ID: ${comment.parentId}")
-        }
-        return Document(comment.id!!).apply {
-            put("parentId", comment.parentId)
-            put("parentType", comment.parentType.name)
-            put("parentCreatedAt", timestamp)
-            put("content", comment.content)
-            put("ownerId", comment.owner.id!!)
-        }
-    }
-
-    private fun buildCommentIndexDocumentUpdate(commentId: String, commentUpdate: CommentUpdate): Document{
-        return Document(commentId).apply {
-            put("content", commentUpdate.content)
-        }
     }
 }

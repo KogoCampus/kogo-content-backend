@@ -34,7 +34,6 @@ class PostController @Autowired constructor(
     private val postService: PostService,
     private val topicService: TopicService,
     private val userContextService: UserContextService,
-    private val searchIndexService: SearchIndexService,
     private val commentService: CommentService
 ) {
     @GetMapping("topics/{topicId}/posts")
@@ -99,8 +98,6 @@ class PostController @Autowired constructor(
             if(!topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId))
                 throwUserIsNotMember(topicId)
             val post = postService.create(topic, userContextService.getCurrentUserDetails(), postDto)
-            val postDocument = buildPostIndexDocument(post)
-            searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
             HttpJsonResponse.successResponse(buildPostResponse(post, topic))
     }
 
@@ -126,8 +123,6 @@ class PostController @Autowired constructor(
         val user = userContextService.getCurrentUserDetails()
         if(!postService.isPostOwner(post, user)) throwUserIsNotOwner(postId)
         val updatedPost = postService.update(post, postUpdate)
-        val updatedPostDocument = buildPostIndexDocumentUpdate(postId, postUpdate)
-        searchIndexService.updateDocument(SearchIndex.POSTS, updatedPostDocument)
         HttpJsonResponse.successResponse(buildPostResponse(updatedPost, topic))
     }
 
@@ -147,10 +142,9 @@ class PostController @Autowired constructor(
         if(!postService.isPostOwner(post, user) && !topicService.isTopicOwner(topic, user)) throwUserIsNotOwner(postId)
         // recursively delete comments
         post.comments.forEach { comment ->
-            deleteCommentAndUpdateIndex(comment)
+            commentService.delete(comment)
         }
         val deletedPost = postService.delete(post)
-        searchIndexService.deleteDocument(SearchIndex.POSTS, postId)
         HttpJsonResponse.successResponse(deletedPost)
     }
 
@@ -214,29 +208,36 @@ class PostController @Autowired constructor(
         HttpJsonResponse.successResponse(buildPostResponse(post, topic), "User's view added successfully to post: ${postId}")
     }
 
-//    @GetMapping("posts/search")
-//    @Operation(
-//        summary = "search posts containing the keyword",
-//        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
-//        responses = [ApiResponse(
-//            responseCode = "200",
-//            description = "ok",
-//            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
-//            content = [Content(mediaType = "application/json", array = ArraySchema(
-//                schema = Schema(implementation = PostResponse::class)))],
-//        )])
-//    fun searchPosts(
-//        @RequestParam("q") keyword: String,
-//        @RequestParam("limit") limit: Int?,
-//        @RequestParam("page") page: String?) = run {
-//        if(page != null) postService.find(page) ?: throwPostNotFound(page)
-//        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+
+    @GetMapping("posts/search")
+    @Operation(
+        summary = "search posts containing the keyword",
+        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = PostResponse::class)))],
+        )])
+    fun searchPosts(
+        @RequestParam("q") keyword: String,
+        @RequestParam("limit") limit: Int?,
+        @RequestParam("page") page: String?): Nothing = run {
+        if(page != null) postService.find(page) ?: throwPostNotFound(page)
+        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+        TODO("" +
+            "1. remove return type Nothing" +
+            "2. use(create) a function inside postService to get Post Pagination using the keyword" +
+            "3. return the successResponse with the pagination result"
+        )
+
 //        val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
 //        HttpJsonResponse.successResponse(
-//            data = paginationResponse.items.map { buildPostResponse(it) },
+//            data = paginationResponse.items.map { buildPostResponse(it, it.topic) },
 //            headers = paginationResponse.toHeaders()
 //        )
-//    }
+    }
 
     private fun findTopicByIdOrThrow(topicId: String): Topic = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
@@ -245,23 +246,6 @@ class PostController @Autowired constructor(
     private fun throwUserIsNotOwner(postId: String): Nothing = throw UserIsNotOwnerException.of<Post>(postId)
 
     private fun throwUserIsNotMember(topicId: String): Nothing = throw UserIsNotMemberException.of<Topic>(topicId)
-
-    private fun deleteCommentAndUpdateIndex(comment: Comment) {
-        // Recursively delete the comment and replies from the search index
-        deleteCommentsFromSearchIndex(comment)
-        // Recursively delete the comment and replies in the DB
-        commentService.delete(comment)
-    }
-
-    private fun deleteCommentsFromSearchIndex(comment: Comment) {
-        // First, delete the current comment from the search index
-        searchIndexService.deleteDocument(SearchIndex.COMMENTS, comment.id!!)
-        // Recursively delete all replies from the search index
-        val replies = commentService.getReplies(comment)
-        replies.forEach { reply ->
-            deleteCommentsFromSearchIndex(reply)
-        }
-    }
 
     private fun buildPostResponse(post: Post, topic: Topic): PostResponse{
         return PostResponse(
@@ -306,23 +290,5 @@ class PostController @Autowired constructor(
             ownerId = buildOwnerInfoResponse(owner),
             replyCount = repliesCount
         )
-    }
-
-    private fun buildPostIndexDocument(post: Post): Document{
-        val timestamp = post.createdAt?.epochSecond
-        return Document(post.id!!).apply {
-            put("title", post.title)
-            put("content", post.content)
-            put("ownerId", post.owner.id!!)
-            put("topicId", post.topic.id!!)
-            put("createdAt", timestamp!!)
-        }
-    }
-
-    private fun buildPostIndexDocumentUpdate(postId: String, postUpdate: PostUpdate): Document{
-        return Document(postId).apply {
-            postUpdate.title?.let { put("title", it) }
-            postUpdate.content?.let { put("content", it) }
-        }
     }
 }

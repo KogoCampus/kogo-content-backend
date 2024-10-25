@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import java.time.Instant
 
-@Component
+
 class MeilisearchClient: SearchIndexService {
     private val restTemplate: RestTemplate = RestTemplate()
 

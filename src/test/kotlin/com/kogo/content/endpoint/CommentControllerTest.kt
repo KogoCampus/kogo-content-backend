@@ -4,7 +4,6 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PaginationResponse
-import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.CommentService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
@@ -47,9 +46,6 @@ class CommentControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserContextService
-
-    @MockkBean
-    lateinit var searchIndexService: SearchIndexService
 
     @MockkBean
     lateinit var postRepository: PostRepository
@@ -202,7 +198,6 @@ class CommentControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(postId, CommentParentType.POST, user, any()) } returns comment
         every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
-        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildCommentApiUrl(topic.id!!, postId))
                 .part(MockPart("content", comment.content.toByteArray()))
@@ -230,7 +225,6 @@ class CommentControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { commentService.create(parentComment.id!!, CommentParentType.COMMENT, user, any()) } returns reply
         every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
-        every { searchIndexService.addDocument(any(), any()) } returns Unit
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, postId, parentComment.id!!, "replies"))
                 .part(MockPart("content", reply.content.toByteArray()))
@@ -295,7 +289,6 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.isCommentOwner(comment, currentUser) } returns true
         every { commentService.delete(comment) } returns Unit
-        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
         // Mocking recursive replies deletion
         every { commentRepository.findAllById(comment.replies) } returns replies
@@ -360,7 +353,6 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.isCommentOwner(comment, currentUser) } returns true // User is the owner
         every { commentService.update(comment, commentUpdate) } returns newComment
-        every { searchIndexService.updateDocument(any(), any()) } returns Unit
         every { userService.getCurrentUserDetails() } returns currentUser
 
         mockMvc.perform(

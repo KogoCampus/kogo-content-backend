@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
 
-@SpringBootTest
+
 class MeilisearchClientTest {
 
     private val restTemplate: RestTemplate = mockk()

@@ -25,7 +25,6 @@ class PostService (
     private val likeRepository: LikeRepository,
     private val viewRepository: ViewRepository,
     private val fileHandler: FileHandler,
-    private val searchIndexService: SearchIndexService
 ) {
     fun find(postId: String): Post? = repository.findByIdOrNull(postId)
 
@@ -43,45 +42,47 @@ class PostService (
     }
 
     fun listPostsByKeyword(keyword: String, paginationRequest: PaginationRequest): PaginationResponse<Post> {
-        val limit = paginationRequest.limit
-        val page = paginationRequest.page
-        val indexes = listOf(SearchIndex.POSTS, SearchIndex.COMMENTS)
-
-        val pageTimestamp = page?.let { repository.findByIdOrNull(it)?.createdAt?.epochSecond }
-        val postFilter = PostFilter(pageTimestamp)
-        val commentFilter = CommentFilter(pageTimestamp)
-        val queryOptions = QueryOptions(
-            queryString = keyword,
-            filters = listOf(postFilter, commentFilter)
-        )
-        val documents = searchIndexService.searchDocuments(indexes, queryOptions)
-        val postIds = aggregatePostAndCommentSearchResults(documents)
-
-        val posts = mutableListOf<Post>()
-        postIds.forEach { id ->
-            posts.add(find(id)!!)
-        }
-        val limitedPosts = posts.take(limit)
-        val nextPageToken = limitedPosts.lastOrNull()?.id
-        return PaginationResponse(limitedPosts, nextPageToken)
+        TODO("return the Post Pagination Response containing the keyword")
+//        val limit = paginationRequest.limit
+//        val page = paginationRequest.page
+//        val indexes = listOf(SearchIndex.POSTS, SearchIndex.COMMENTS)
+//
+//        val pageTimestamp = page?.let { repository.findByIdOrNull(it)?.createdAt?.epochSecond }
+//        val postFilter = PostFilter(pageTimestamp)
+//        val commentFilter = CommentFilter(pageTimestamp)
+//        val queryOptions = QueryOptions(
+//            queryString = keyword,
+//            filters = listOf(postFilter, commentFilter)
+//        )
+//        val documents = searchIndexService.searchDocuments(indexes, queryOptions)
+//        val postIds = aggregatePostAndCommentSearchResults(documents)
+//
+//        val posts = mutableListOf<Post>()
+//        postIds.forEach { id ->
+//            posts.add(find(id)!!)
+//        }
+//        val limitedPosts = posts.take(limit)
+//        val nextPageToken = limitedPosts.lastOrNull()?.id
+//        return PaginationResponse(limitedPosts, nextPageToken)
     }
 
-    private fun aggregatePostAndCommentSearchResults(documents: Map<SearchIndex, List<Document>>): List<String>{
-        val ids = mutableSetOf<String>()
-        documents.forEach { (index, documentList) ->
-            documentList.forEach { document ->
-                val id = if (index.indexId == "comments") {
-                    document.toJsonNode().get("parentId").asText()
-                } else {
-                    document.toJsonNode().get("id").asText()
-                }
-                println(index.indexId)
-                println(id)
-                ids.add(id)
-            }
-        }
-        return ids.toList()
-    }
+    // CAN BE DELETED
+//    private fun aggregatePostAndCommentSearchResults(documents: Map<SearchIndex, List<Document>>): List<String>{
+//        val ids = mutableSetOf<String>()
+//        documents.forEach { (index, documentList) ->
+//            documentList.forEach { document ->
+//                val id = if (index.indexId == "comments") {
+//                    document.toJsonNode().get("parentId").asText()
+//                } else {
+//                    document.toJsonNode().get("id").asText()
+//                }
+//                println(index.indexId)
+//                println(id)
+//                ids.add(id)
+//            }
+//        }
+//        return ids.toList()
+//    }
 
     fun listPostsByAuthorId(authorId: String): List<Post> = repository.findAllByOwnerId(authorId)
 

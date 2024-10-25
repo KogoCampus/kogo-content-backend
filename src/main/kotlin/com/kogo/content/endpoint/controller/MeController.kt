@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.*
 class MeController @Autowired constructor(
     private val userService: UserContextService,
     private val topicService: TopicService,
-    private val followingTopicRepository: FollowingTopicRepository
 ) {
     companion object: Logger()
 

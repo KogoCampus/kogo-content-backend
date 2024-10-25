@@ -3,7 +3,6 @@ package com.kogo.content.endpoint
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PaginationResponse
-import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserContextService
@@ -43,9 +42,6 @@ class PostControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserContextService
-
-    @MockkBean
-    lateinit var searchIndexService: SearchIndexService
 
     @Test
     fun `should return a paginated list of posts by topic id`() {
@@ -108,7 +104,6 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId) } returns true // User is a topic member
         every { postService.create(topic, user, any()) } returns post
-        every { searchIndexService.addDocument(any(), any()) } returns Unit
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId))
@@ -187,7 +182,6 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { postService.isPostOwner(post, user) } returns true // User is the post owner
         every { postService.update(post, any()) } returns updatedPost
-        every { searchIndexService.updateDocument(any(), any()) } returns Unit
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
@@ -261,7 +255,6 @@ class PostControllerTest @Autowired constructor(
         every { postService.isPostOwner(post, user) } returns true // User is the post owner
         every { topicService.isTopicOwner(topic, user) } returns false // User is not topic owner
         every { postService.delete(post) } returns Unit
-        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect { status { isOk() } }
@@ -282,7 +275,6 @@ class PostControllerTest @Autowired constructor(
         every { postService.isPostOwner(post, user) } returns false // User is not the post owner
         every { topicService.isTopicOwner(topic, user) } returns true // User is the topic owner
         every { postService.delete(post) } returns Unit
-        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect{ status().isOk }

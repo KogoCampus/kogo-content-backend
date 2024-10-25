@@ -4,7 +4,6 @@ import com.kogo.content.endpoint.model.PaginationRequest
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.searchengine.SearchIndexService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
@@ -26,9 +25,8 @@ class PostServiceTest {
     private val likeRepository: LikeRepository = mockk()
     private val viewRepository: ViewRepository = mockk()
     private val fileHandler: FileHandler = mockk()
-    private val searchIndexService : SearchIndexService = mockk()
 
-    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler, searchIndexService)
+    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler)
 
     @Test
     fun `should return first page of posts in topic when page token param is not given`() {

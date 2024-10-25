@@ -15,7 +15,3 @@ kogo-api:
 
 filehandler:
     prefix: tmp/files
-
-meilisearch:
-    host: http://localhost:7700
-    masterkey: 'MASTER_KEY'

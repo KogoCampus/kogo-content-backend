@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.*
 class TopicController @Autowired constructor(
     private val topicService : TopicService,
     private val userContextService: UserContextService,
-    private val searchIndexService: SearchIndexService
 ) {
     companion object : Logger()
 
@@ -69,8 +68,6 @@ class TopicController @Autowired constructor(
         if (topicService.existsByTopicName(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
         val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
-        val topicDocument = buildTopicIndexDocument(topic)
-        searchIndexService.addDocument(SearchIndex.TOPICS, topicDocument)
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
 
@@ -101,8 +98,6 @@ class TopicController @Autowired constructor(
             if (topicUpdate.topicName != null && topicService.existsByTopicName(topicUpdate.topicName!!))
                 return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicUpdate.topicName}")
             val updatedTopic = topicService.update(topic, topicUpdate)
-            val updatedTopicDocument = buildTopicIndexDocumentUpdate(topicId, topicUpdate)
-            searchIndexService.updateDocument(SearchIndex.TOPICS, updatedTopicDocument)
             HttpJsonResponse.successResponse(buildTopicResponse(updatedTopic))
     }
 
@@ -124,7 +119,6 @@ class TopicController @Autowired constructor(
         if(!topicService.isTopicOwner(topic, userContextService.getCurrentUserDetails()))
             throwUserIsNotOwner(topicId)
         val deletedTopic = topicService.delete(topic)
-        searchIndexService.deleteDocument(SearchIndex.TOPICS, topicId)
         HttpJsonResponse.successResponse(deletedTopic)
     }
 
@@ -170,6 +164,8 @@ class TopicController @Autowired constructor(
         HttpJsonResponse.successResponse(buildTopicResponse(topic))
     }
 
+    // TODO("API to get Topic search results using the keyword")
+
     private fun buildTopicResponse(topic: Topic): TopicResponse = with(topic) {
         TopicResponse(
             id = id!!,
@@ -201,25 +197,6 @@ class TopicController @Autowired constructor(
             contentType = contentType,
             size = fileSize
         )
-    }
-
-    private fun buildTopicIndexDocument(topic: Topic): Document {
-        val timestamp = topic.createdAt?.epochSecond
-        return Document(topic.id!!).apply {
-            put("topicName", topic.topicName)
-            put("description", topic.description)
-            put("ownerId", topic.owner.id!!)
-            put("tags", topic.tags)
-            put("createdAt", timestamp!!)
-        }
-    }
-
-    private fun buildTopicIndexDocumentUpdate(topicId: String, topicUpdate: TopicUpdate): Document{
-        return Document(topicId).apply {
-            topicUpdate.topicName?.let { put("topicName", it) }
-            topicUpdate.description?.let { put("description", it) }
-            topicUpdate.tags?.let { put("tags", it) }
-        }
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
