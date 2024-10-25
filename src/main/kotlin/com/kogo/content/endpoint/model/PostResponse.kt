@@ -6,6 +6,7 @@ data class PostResponse(
     var id: String,
     var owner: OwnerInfoResponse,
     var topicId: String? = null,
+    var topicName: String?= null,
     var title: String,
     var content: String,
     var attachments: List<AttachmentResponse>,

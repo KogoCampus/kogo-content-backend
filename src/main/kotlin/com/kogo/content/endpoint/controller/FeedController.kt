@@ -42,7 +42,7 @@ class FeedController @Autowired constructor(
         val paginationResponse = feedService.listFeedsByLatest(paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
+            data = paginationResponse.items.map { buildPostResponse(it, it.topic) },
             headers = paginationResponse.toHeaders()
         )
     }
@@ -66,25 +66,26 @@ class FeedController @Autowired constructor(
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = feedService.listFeedsByPopular(paginationRequest)
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
+            data = paginationResponse.items.map { buildPostResponse(it, it.topic) },
             headers = paginationResponse.toHeaders()
         )
     }
 
-    private fun buildPostResponse(post: Post): PostResponse = with(post) {
-        PostResponse(
-            id = id!!,
+    private fun buildPostResponse(post: Post, topic: Topic): PostResponse {
+        return PostResponse(
+            id = post.id!!,
             topicId = post.topic.id,
-            owner = buildOwnerInfoResponse(owner),
-            title = title,
-            content = content,
-            attachments = attachments.map { buildAttachmentResponse(it) },
-            comments = comments.map { buildPostCommment(it) },
-            viewcount = viewcount,
-            likes = likes,
-            createdAt = createdAt!!,
-            updatedAt = updatedAt!!,
-            commentCount = commentCount,
+            topicName = topic.topicName,
+            owner = buildOwnerInfoResponse(post.owner),
+            title = post.title,
+            content = post.content,
+            attachments = post.attachments.map { buildAttachmentResponse(it) },
+            comments = post.comments.map { buildPostCommment(it) },
+            viewcount = post.viewcount,
+            likes = post.likes,
+            createdAt = post.createdAt!!,
+            updatedAt = post.updatedAt!!,
+            commentCount = post.commentCount,
         )
     }
 

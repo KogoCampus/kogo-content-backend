@@ -321,10 +321,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create a like under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addLike(postId, user) } returns Unit
@@ -353,10 +355,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when creating a duplicate like under the same post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
         mockMvc.perform(
@@ -370,10 +374,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should delete a like under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
         every { postService.removeLike(postId, user) } returns Unit
@@ -394,10 +400,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when deleting non-existing like`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
         mockMvc.delete("/media/posts/$postId/likes")
@@ -407,10 +415,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create a view under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addView(postId, user) } returns Unit
@@ -439,10 +449,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when creating a duplicate view under the same post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns mockk()
         mockMvc.perform(

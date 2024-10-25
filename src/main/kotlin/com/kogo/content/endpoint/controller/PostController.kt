@@ -52,12 +52,12 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @RequestParam("limit") limit: Int?,
         @RequestParam("page") page: String?): ResponseEntity<*> = run {
-        findTopicByIdOrThrow(topicId)
+        val topic = findTopicByIdOrThrow(topicId)
         if(page != null) postService.find(page) ?: throwPostNotFound(page)
         val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
+            data = paginationResponse.items.map { buildPostResponse(it, topic) },
             headers = paginationResponse.toHeaders()
         )
     }
@@ -73,9 +73,9 @@ class PostController @Autowired constructor(
     fun getPost(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String) = run {
-        findTopicByIdOrThrow(topicId)
+        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
-        HttpJsonResponse.successResponse(buildPostResponse(post))
+        HttpJsonResponse.successResponse(buildPostResponse(post, topic))
     }
 
     @RequestMapping(
@@ -101,7 +101,7 @@ class PostController @Autowired constructor(
             val post = postService.create(topic, userContextService.getCurrentUserDetails(), postDto)
             val postDocument = buildPostIndexDocument(post)
             searchIndexService.addDocument(SearchIndex.POSTS, postDocument)
-            HttpJsonResponse.successResponse(buildPostResponse(post))
+            HttpJsonResponse.successResponse(buildPostResponse(post, topic))
     }
 
     @RequestMapping(
@@ -121,14 +121,14 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @Valid postUpdate: PostUpdate) = run {
-        findTopicByIdOrThrow(topicId)
+        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
         val user = userContextService.getCurrentUserDetails()
         if(!postService.isPostOwner(post, user)) throwUserIsNotOwner(postId)
         val updatedPost = postService.update(post, postUpdate)
         val updatedPostDocument = buildPostIndexDocumentUpdate(postId, postUpdate)
         searchIndexService.updateDocument(SearchIndex.POSTS, updatedPostDocument)
-        HttpJsonResponse.successResponse(buildPostResponse(updatedPost))
+        HttpJsonResponse.successResponse(buildPostResponse(updatedPost, topic))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -167,11 +167,12 @@ class PostController @Autowired constructor(
         )])
     fun createLike(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val topic = findTopicByIdOrThrow(post.topic.id!!)
         val user = userContextService.getCurrentUserDetails()
         if (postService.findLikeByUserIdAndParentId(user.id!!, postId) != null)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this post: ${postId}")
         postService.addLike(postId, user)
-        HttpJsonResponse.successResponse(buildPostResponse(post), "User's like added successfully to post: ${postId}")
+        HttpJsonResponse.successResponse(buildPostResponse(post, topic), "User's like added successfully to post: ${postId}")
     }
 
     @DeleteMapping("posts/{postId}/likes")
@@ -184,11 +185,12 @@ class PostController @Autowired constructor(
         )])
     fun deleteLike(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val topic = findTopicByIdOrThrow(post.topic.id!!)
         val user = userContextService.getCurrentUserDetails()
         if (postService.findLikeByUserIdAndParentId(user.id!!, postId) == null)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user never liked this post: ${postId}")
         postService.removeLike(postId, user)
-        HttpJsonResponse.successResponse(buildPostResponse(post), "User's like deleted successfully to post: ${postId}")
+        HttpJsonResponse.successResponse(buildPostResponse(post, topic), "User's like deleted successfully to post: ${postId}")
     }
 
     @RequestMapping(
@@ -204,36 +206,37 @@ class PostController @Autowired constructor(
         )])
     fun createView(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
         val post = postService.find(postId) ?: throwPostNotFound(postId)
+        val topic = findTopicByIdOrThrow(post.topic.id!!)
         val user = userContextService.getCurrentUserDetails()
         if (postService.findViewByUserIdAndParentId(user.id!!, postId) != null)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already viewed this post: ${postId}")
         postService.addView(postId, user)
-        HttpJsonResponse.successResponse(buildPostResponse(post), "User's view added successfully to post: ${postId}")
+        HttpJsonResponse.successResponse(buildPostResponse(post, topic), "User's view added successfully to post: ${postId}")
     }
 
-    @GetMapping("posts/search")
-    @Operation(
-        summary = "search posts containing the keyword",
-        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
-            content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = PostResponse::class)))],
-        )])
-    fun searchPosts(
-        @RequestParam("q") keyword: String,
-        @RequestParam("limit") limit: Int?,
-        @RequestParam("page") page: String?) = run {
-        if(page != null) postService.find(page) ?: throwPostNotFound(page)
-        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
-        val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
-        HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
-            headers = paginationResponse.toHeaders()
-        )
-    }
+//    @GetMapping("posts/search")
+//    @Operation(
+//        summary = "search posts containing the keyword",
+//        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
+//        responses = [ApiResponse(
+//            responseCode = "200",
+//            description = "ok",
+//            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+//            content = [Content(mediaType = "application/json", array = ArraySchema(
+//                schema = Schema(implementation = PostResponse::class)))],
+//        )])
+//    fun searchPosts(
+//        @RequestParam("q") keyword: String,
+//        @RequestParam("limit") limit: Int?,
+//        @RequestParam("page") page: String?) = run {
+//        if(page != null) postService.find(page) ?: throwPostNotFound(page)
+//        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
+//        val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
+//        HttpJsonResponse.successResponse(
+//            data = paginationResponse.items.map { buildPostResponse(it) },
+//            headers = paginationResponse.toHeaders()
+//        )
+//    }
 
     private fun findTopicByIdOrThrow(topicId: String): Topic = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
 
@@ -260,20 +263,21 @@ class PostController @Autowired constructor(
         }
     }
 
-    private fun buildPostResponse(post: Post): PostResponse = with(post) {
-        PostResponse(
-            id = id!!,
+    private fun buildPostResponse(post: Post, topic: Topic): PostResponse{
+        return PostResponse(
+            id = post.id!!,
             topicId = post.topic.id,
-            owner = buildOwnerInfoResponse(owner),
-            title = title,
-            content = content,
-            attachments = attachments.map { buildAttachmentResponse(it) },
-            comments = comments.map { buildPostCommment(it) },
-            viewcount = viewcount,
-            likes = likes,
-            createdAt = createdAt!!,
-            updatedAt = updatedAt!!,
-            commentCount = commentCount,
+            owner = buildOwnerInfoResponse(post.owner),
+            title = post.title,
+            topicName = topic.topicName,
+            content = post.content,
+            attachments = post.attachments.map { buildAttachmentResponse(it) },
+            comments = post.comments.map { buildPostCommment(it) },
+            viewcount = post.viewcount,
+            likes = post.likes,
+            createdAt = post.createdAt!!,
+            updatedAt = post.updatedAt!!,
+            commentCount = post.commentCount,
         )
     }
 
