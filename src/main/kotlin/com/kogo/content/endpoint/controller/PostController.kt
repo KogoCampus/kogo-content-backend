@@ -83,7 +83,7 @@ class PostController @Autowired constructor(
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
-    @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = PostDto::class))])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = PostDto::class))])
     @Operation(
         summary = "create a post under the given topic",
         responses = [ApiResponse(
@@ -107,9 +107,9 @@ class PostController @Autowired constructor(
     @RequestMapping(
         path = ["topics/{topicId}/posts/{postId}"],
         method = [RequestMethod.PUT],
-        consumes = [org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE]
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
-    @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = PostUpdate::class))])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = PostUpdate::class))])
     @Operation(
         summary = "update attributes of an existing post",
         responses = [ApiResponse(
