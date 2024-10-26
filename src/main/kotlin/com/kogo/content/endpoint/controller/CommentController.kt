@@ -288,6 +288,7 @@ class CommentController @Autowired constructor(
             parentType = parentType,
             likes = likes,
             liked = liked,
+            createdAt = createdAt!!,
             updatedAt = updatedAt!!,
             replies = replies,
             repliesCount = repliesCount
