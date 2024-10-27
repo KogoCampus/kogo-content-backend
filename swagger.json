@@ -75,7 +75,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/PostUpdate"
               }
@@ -125,7 +125,83 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{topicId}/posts/{postId}/likes": {
+      "put": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "create a like under the given post",
+        "operationId": "addLike",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "delete a like under the given post",
+        "operationId": "deleteLike",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
                 }
               }
             }
@@ -183,7 +259,7 @@
         "tags": [
           "comment-controller"
         ],
-        "summary": "Update a comment/reply",
+        "summary": "Update a comment",
         "operationId": "updateComment",
         "parameters": [
           {
@@ -237,7 +313,7 @@
         "tags": [
           "comment-controller"
         ],
-        "summary": "Delete a comment/reply",
+        "summary": "Delete a comment",
         "operationId": "deleteComment",
         "parameters": [
           {
@@ -271,7 +347,324 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{topicId}/posts/{postId}/comments/{commentId}/replies/{replyId}": {
+      "put": {
+        "tags": [
+          "reply-controller"
+        ],
+        "summary": "Update a comment",
+        "operationId": "updateReply",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reply-controller"
+        ],
+        "summary": "Delete a comment",
+        "operationId": "deleteReply",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The comment is deleted.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{topicId}/posts/{postId}/comments/{commentId}/replies/{replyId}/likes": {
+      "put": {
+        "tags": [
+          "reply-controller"
+        ],
+        "summary": "Like a comment",
+        "operationId": "addLikeToReply",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reply-controller"
+        ],
+        "summary": "Delete a like under the comment",
+        "operationId": "deleteLikeFromComment",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{topicId}/posts/{postId}/comments/{commentId}/likes": {
+      "put": {
+        "tags": [
+          "comment-controller"
+        ],
+        "summary": "Like a comment",
+        "operationId": "addLikeToComment",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "comment-controller"
+        ],
+        "summary": "Delete a like under the comment",
+        "operationId": "deleteLikeFromComment_1",
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
                 }
               }
             }
@@ -382,7 +775,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "object"
                 }
               }
             }
@@ -396,6 +789,37 @@
                   "example": {
                     "reason": "USER_IS_NOT_OWNER"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/topics/{id}/follow": {
+      "put": {
+        "tags": [
+          "topic-controller"
+        ],
+        "summary": "follow a topic",
+        "operationId": "followTopic",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
                 }
               }
             }
@@ -505,20 +929,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "requestParameters",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -564,7 +982,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/PostDto"
               }
@@ -616,20 +1034,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "requestParameters",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -675,7 +1087,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/CommentDto"
               }
@@ -699,7 +1111,7 @@
     "/media/topics/{topicId}/posts/{postId}/comments/{commentId}/replies": {
       "get": {
         "tags": [
-          "comment-controller"
+          "reply-controller"
         ],
         "summary": "Get all replies of the comment",
         "operationId": "getReplies",
@@ -735,20 +1147,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "requestParameters",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -770,7 +1176,7 @@
       },
       "post": {
         "tags": [
-          "comment-controller"
+          "reply-controller"
         ],
         "summary": "Create a new reply under the comment",
         "operationId": "createReply",
@@ -802,7 +1208,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/CommentDto"
               }
@@ -816,98 +1222,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/topics/{topicId}/posts/{postId}/comments/{commentId}/likes": {
-      "post": {
-        "tags": [
-          "comment-controller"
-        ],
-        "summary": "Like a comment",
-        "operationId": "createLike",
-        "parameters": [
-          {
-            "name": "topicId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "comment-controller"
-        ],
-        "summary": "Delete a like under the comment",
-        "operationId": "deleteLike",
-        "parameters": [
-          {
-            "name": "topicId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
                 }
               }
             }
@@ -939,128 +1253,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/topics/{id}/follow": {
-      "post": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "follow a topic",
-        "operationId": "followTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/posts/{postId}/views": {
-      "post": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "create a view under the given post",
-        "operationId": "createView",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/View"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/posts/{postId}/likes": {
-      "post": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "create a like under the given post",
-        "operationId": "createLike_1",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "delete a like under the given post",
-        "operationId": "deleteLike_1",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
                 }
               }
             }
@@ -1107,7 +1299,7 @@
         }
       }
     },
-    "/media/posts/search": {
+    "/media/topics/{topicId}/posts/search": {
       "get": {
         "tags": [
           "post-controller"
@@ -1139,7 +1331,7 @@
             }
           },
           {
-            "name": "page",
+            "name": "pageToken",
             "in": "query",
             "required": false,
             "schema": {
@@ -1187,20 +1379,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "requestParameters",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -1244,20 +1430,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "requestParameters",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -1292,7 +1472,7 @@
           "me-controller"
         ],
         "summary": "get my topics",
-        "operationId": "getMeGroups",
+        "operationId": "getTopicsOwnedByUser",
         "responses": {
           "200": {
             "description": "ok",
@@ -1313,7 +1493,7 @@
           "me-controller"
         ],
         "summary": "get my posts",
-        "operationId": "getMePosts",
+        "operationId": "getPostsAuthoredByUser",
         "responses": {
           "200": {
             "description": "ok",
@@ -1379,55 +1559,15 @@
           }
         }
       },
-      "OwnerInfoResponse": {
-        "required": [
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "ownerId": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/AttachmentResponse"
-          },
-          "schoolShortenedName": {
-            "type": "string"
-          }
-        }
-      },
-      "PostComment": {
-        "required": [
-          "ownerId",
-          "replyCount"
-        ],
-        "type": "object",
-        "properties": {
-          "commentId": {
-            "type": "string"
-          },
-          "ownerId": {
-            "$ref": "#/components/schemas/OwnerInfoResponse"
-          },
-          "replyCount": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "PostResponse": {
         "required": [
           "attachments",
+          "author",
           "commentCount",
-          "comments",
           "content",
           "createdAt",
           "id",
           "likes",
-          "owner",
           "title",
           "updatedAt",
           "viewcount"
@@ -1437,10 +1577,13 @@
           "id": {
             "type": "string"
           },
-          "owner": {
-            "$ref": "#/components/schemas/OwnerInfoResponse"
+          "author": {
+            "$ref": "#/components/schemas/UserInfo"
           },
           "topicId": {
+            "type": "string"
+          },
+          "topicName": {
             "type": "string"
           },
           "title": {
@@ -1453,12 +1596,6 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AttachmentResponse"
-            }
-          },
-          "comments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PostComment"
             }
           },
           "commentCount": {
@@ -1480,6 +1617,36 @@
           "likes": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "UserInfo": {
+        "required": [
+          "email",
+          "id",
+          "schoolName",
+          "schoolShortenedName",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/AttachmentResponse"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "schoolShortenedName": {
+            "type": "string"
           }
         }
       },
@@ -1517,17 +1684,33 @@
           }
         }
       },
+      "Like": {
+        "required": [
+          "likableId",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "likableId": {
+            "type": "string"
+          }
+        }
+      },
       "CommentResponse": {
         "required": [
+          "author",
           "content",
           "createdAt",
           "id",
-          "liked",
           "likes",
-          "owner",
-          "parentId",
-          "parentType",
-          "replies",
+          "postId",
+          "repliesCount",
           "updatedAt"
         ],
         "type": "object",
@@ -1535,28 +1718,18 @@
           "id": {
             "type": "string"
           },
-          "owner": {
-            "$ref": "#/components/schemas/OwnerInfoResponse"
+          "author": {
+            "$ref": "#/components/schemas/UserInfo"
+          },
+          "postId": {
+            "type": "string"
           },
           "content": {
             "type": "string"
           },
-          "parentId": {
-            "type": "string"
-          },
-          "parentType": {
-            "type": "string",
-            "enum": [
-              "COMMENT",
-              "POST"
-            ]
-          },
           "likes": {
             "type": "integer",
             "format": "int32"
-          },
-          "liked": {
-            "type": "boolean"
           },
           "createdAt": {
             "type": "string",
@@ -1566,11 +1739,9 @@
             "type": "string",
             "format": "date-time"
           },
-          "replies": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "repliesCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -1589,12 +1760,12 @@
         "required": [
           "createdAt",
           "description",
+          "followingUserCount",
           "id",
           "owner",
           "tags",
           "topicName",
-          "updatedAt",
-          "userCount"
+          "updatedAt"
         ],
         "type": "object",
         "properties": {
@@ -1602,7 +1773,7 @@
             "type": "string"
           },
           "owner": {
-            "$ref": "#/components/schemas/OwnerInfoResponse"
+            "$ref": "#/components/schemas/UserInfo"
           },
           "topicName": {
             "type": "string"
@@ -1627,7 +1798,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "userCount": {
+          "followingUserCount": {
             "type": "integer",
             "format": "int32"
           }
@@ -1761,65 +1932,20 @@
           }
         }
       },
-      "Like": {
-        "required": [
-          "parentId",
-          "userId"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "parentId": {
-            "type": "string"
-          }
-        }
-      },
-      "View": {
-        "required": [
-          "parentId",
-          "userId"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "parentId": {
-            "type": "string"
-          }
-        }
-      },
       "PaginationRequest": {
         "required": [
-          "limit"
+          "limit",
+          "pageToken"
         ],
         "type": "object",
         "properties": {
+          "pageToken": {
+            "type": "string",
+            "description": "page token"
+          },
           "limit": {
             "type": "integer",
             "format": "int32"
-          },
-          "page": {
-            "type": "string"
-          }
-        }
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "object"
-          },
-          "message": {
-            "type": "string"
           }
         }
       }
