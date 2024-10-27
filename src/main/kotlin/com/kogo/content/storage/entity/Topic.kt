@@ -1,15 +1,13 @@
 package com.kogo.content.storage.entity
 
-import com.fasterxml.jackson.annotation.JsonBackReference
-import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
-import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.DocumentReference
 import java.time.Instant
 
-@Document
+@Document(collection = "topics")
 @CompoundIndex(def = "{'owner.id': 1}")
 data class Topic (
     @Id
@@ -20,10 +18,10 @@ data class Topic (
 
     var description: String = "",
 
-    @DBRef
+    @DocumentReference
     var profileImage: Attachment? = null,
 
-    @DBRef
+    @DocumentReference
     var owner: UserDetails,
 
     var tags: List<String> = emptyList(),
@@ -31,5 +29,5 @@ data class Topic (
     var createdAt: Instant?=null,
     var updatedAt: Instant?=null,
 
-    var userCount: Int = 1,
+    var followingUserCount: Int = 1,
 )

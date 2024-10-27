@@ -2,6 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.service.entity.CommentService
 import com.kogo.content.storage.entity.Comment
 import com.kogo.content.storage.entity.CommentParentType
 import com.kogo.content.storage.entity.Post
@@ -33,12 +34,12 @@ class CommentServiceTest {
             replies = emptyList()
         )
 
-        every { commentRepository.findAllByParentId(parentId) } returns listOf(result)
+        every { commentRepository.findAllByPostId(parentId) } returns listOf(result)
 
-        commentService.findCommentsByParentId(parentId)
+        commentService.listCommentsByPostId(parentId)
 
         verify {
-            commentRepository.findAllByParentId(withArg {
+            commentRepository.findAllByPostId(withArg {
                 assertThat(it).isEqualTo(parentId)
             })
         }

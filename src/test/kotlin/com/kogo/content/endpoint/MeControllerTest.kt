@@ -1,7 +1,6 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.endpoint.model.UserUpdate
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
@@ -13,12 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.mock.web.MockMultipartFile
-import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.time.Instant
 

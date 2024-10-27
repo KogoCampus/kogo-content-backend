@@ -1,8 +1,8 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.service.UserContextService
-import com.kogo.content.service.TopicService
+import com.kogo.content.service.entity.UserContextService
+import com.kogo.content.service.entity.TopicService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.util.fixture

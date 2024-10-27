@@ -4,12 +4,10 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.exception.UserIsNotOwnerException
 import com.kogo.content.logging.Logger
-import com.kogo.content.service.TopicService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.entity.TopicService
+import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.storage.entity.*
-import com.kogo.content.storage.repository.FollowingTopicRepository
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -38,7 +36,7 @@ class MeController @Autowired constructor(
         )])
     fun getMe() = run {
         val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(buildUserResponse(me))
+        HttpJsonResponse.successResponse(UserInfo.from(me))
     }
 
     @RequestMapping(
@@ -58,7 +56,8 @@ class MeController @Autowired constructor(
     fun updateMe(
         @Valid meUpdate: UserUpdate) = run {
             val me = userService.getCurrentUserDetails()
-            HttpJsonResponse.successResponse(buildUserResponse(userService.updateUserProfile(me, meUpdate)))
+            val updatedUser = userService.updateUserProfile(me, meUpdate)
+            HttpJsonResponse.successResponse(UserInfo.from(updatedUser))
     }
 
     @GetMapping("me/ownership/posts")
@@ -69,9 +68,9 @@ class MeController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))]
         )])
-    fun getMePosts() = run {
+    fun getPostsAuthoredByUser() = run {
         val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(userService.getUserPosts(me).map { buildPostResponse(it) })
+        HttpJsonResponse.successResponse(userService.getUserPosts(me).map { PostResponse.from(it) })
     }
 
     @GetMapping("me/ownership/topics")
@@ -82,9 +81,9 @@ class MeController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
         )])
-    fun getMeGroups() = run {
+    fun getTopicsOwnedByUser() = run {
         val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(userService.getUserTopics(me).map { buildTopicResponse(it) })
+        HttpJsonResponse.successResponse(userService.getUserTopics(me).map { TopicResponse.from(it) })
     }
 
     @RequestMapping(
@@ -105,13 +104,16 @@ class MeController @Autowired constructor(
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
         val newOwner = userService.find(newOwnerId) ?: throwUserNotFound(newOwnerId)
         val originalOwner = userService.getCurrentUserDetails()
+
         if(!topicService.isTopicOwner(topic, originalOwner))
-            throwUserIsNotOwner(topicId)
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this topic")
+
         if(originalOwner.id!! == newOwnerId)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot transfer ownership to yourself")
-        val transferredTopic = topicService.transfer0wnership(topic, newOwner)
+        val transferredTopic = topicService.transferOwnership(topic, newOwner)
         topicService.follow(topic, newOwner)
-        HttpJsonResponse.successResponse(buildTopicResponse(transferredTopic))
+
+        HttpJsonResponse.successResponse(TopicResponse.from(transferredTopic))
     }
 
     @GetMapping("me/following")
@@ -124,81 +126,11 @@ class MeController @Autowired constructor(
         )])
     fun getMeFollowing() = run {
         val me = userService.getCurrentUserDetails()
-        val followingTopics = topicService.findFollowingByOwnerId(me.id!!)
-        HttpJsonResponse.successResponse(followingTopics.map{ buildTopicResponse(it) })
+        val followingTopics = topicService.listFollowingTopicsByUserId(me.id!!)
+        HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.from(it) })
     }
 
     private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<UserDetails>(userId)
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
-    private fun throwUserIsNotOwner(topicId: String): Nothing = throw UserIsNotOwnerException.of<Topic>(topicId)
-
-    private fun buildUserResponse(user: UserDetails) = with(user) {
-        UserResponse(
-            id = id!!,
-            username = username,
-            email = email,
-            schoolName = schoolName,
-            schoolShortenedName = schoolShortenedName,
-            profileImage = profileImage?.let { buildAttachmentResponse(it) },
-        )
-    }
-
-    private fun buildTopicResponse(topic: Topic): TopicResponse = with(topic) {
-        TopicResponse(
-            id = id!!,
-            owner = buildOwnerInfoResponse(owner),
-            topicName = topicName,
-            description = description,
-            tags = tags,
-            profileImage = profileImage?.let { buildAttachmentResponse(it) },
-            createdAt = createdAt!!,
-            updatedAt = updatedAt!!,
-            userCount = userCount
-        )
-    }
-
-    private fun buildPostResponse(post: Post): PostResponse = with(post) {
-        PostResponse(
-            id = id!!,
-            topicId = post.topic.id,
-            owner = buildOwnerInfoResponse(owner),
-            title = title,
-            content = content,
-            attachments = attachments.map { buildAttachmentResponse(it) },
-            comments = comments.map { buildPostComment(it) },
-            viewcount = viewcount,
-            likes = likes,
-            createdAt = createdAt!!,
-            updatedAt = updatedAt!!,
-            commentCount = commentCount,
-        )
-    }
-
-    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse =  with(owner) {
-        OwnerInfoResponse(
-            ownerId = id,
-            username = username,
-            profileImage = profileImage?.let { buildAttachmentResponse(it) },
-            schoolShortenedName = schoolShortenedName
-        )
-    }
-
-    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
-        AttachmentResponse(
-            attachmentId = id,
-            name = name,
-            url = attachment.storeKey.toFileSourceUrl(),
-            contentType = contentType,
-            size = fileSize
-        )
-    }
-
-    private fun buildPostComment(comment: Comment): PostResponse.PostComment = with(comment) {
-        PostResponse.PostComment(
-            commentId = id,
-            ownerId = buildOwnerInfoResponse(owner),
-            replyCount = repliesCount
-        )
-    }
 }
 

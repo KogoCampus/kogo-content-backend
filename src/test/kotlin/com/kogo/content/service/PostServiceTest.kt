@@ -1,9 +1,10 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.service.entity.PostService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
@@ -15,8 +16,6 @@ import com.kogo.content.storage.repository.ViewRepository
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.boot.autoconfigure.security.SecurityProperties.User
-import org.springframework.data.domain.PageRequest
 import java.time.Instant
 
 class PostServiceTest {

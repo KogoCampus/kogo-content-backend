@@ -1,6 +1,6 @@
 package com.kogo.content.storage.entity
 
-import com.kogo.content.filehandler.FileStoreKey
+import com.kogo.content.filesystem.FileStoreKey
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 

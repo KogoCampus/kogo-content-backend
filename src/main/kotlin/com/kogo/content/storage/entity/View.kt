@@ -10,5 +10,5 @@ data class View (
 
     var userId: String,
 
-    var parentId : String
+    var viewableId : String
 )

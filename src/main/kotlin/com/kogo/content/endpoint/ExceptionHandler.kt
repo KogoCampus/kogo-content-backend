@@ -26,12 +26,6 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, details = "Your access token is invalid or missing.")
     }
 
-    @ExceptionHandler(ActionDeniedException::class)
-    fun handleActionDeniedException(ex: ActionDeniedException): ResponseEntity<ErrorResponse> {
-        log.error { "Action denied exception occurred: ${ex.details}" }
-        return HttpJsonResponse.errorResponse(ex.errorCode(), details = ex.details)
-    }
-
     // i.e. throw ResourceNotFound("Comment", commendId)
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {

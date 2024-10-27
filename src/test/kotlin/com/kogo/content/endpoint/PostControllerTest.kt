@@ -1,11 +1,11 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.endpoint.model.PaginationRequest
-import com.kogo.content.endpoint.model.PaginationResponse
-import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.pagination.PaginationRequest
+import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.entity.PostService
+import com.kogo.content.service.entity.TopicService
+import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
@@ -180,7 +180,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns true // User is the post owner
+        every { postService.isPostAuthor(post, user) } returns true // User is the post owner
         every { postService.update(post, any()) } returns updatedPost
 
         mockMvc.perform(
@@ -210,7 +210,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns differentUser // Different user
-        every { postService.isPostOwner(post, differentUser) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, differentUser) } returns false // User is not the post owner
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
@@ -252,7 +252,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns true // User is the post owner
+        every { postService.isPostAuthor(post, user) } returns true // User is the post owner
         every { topicService.isTopicOwner(topic, user) } returns false // User is not topic owner
         every { postService.delete(post) } returns Unit
 
@@ -272,7 +272,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, user) } returns false // User is not the post owner
         every { topicService.isTopicOwner(topic, user) } returns true // User is the topic owner
         every { postService.delete(post) } returns Unit
 
@@ -292,7 +292,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, user) } returns false // User is not the post owner
         every { topicService.isTopicOwner(topic, user) } returns false // User is not the topic owner
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))

@@ -2,10 +2,11 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.filehandler.FileStoreKey
+import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.filesystem.FileStoreKey
+import com.kogo.content.service.entity.TopicService
 import com.kogo.content.storage.entity.Attachment
-import com.kogo.content.storage.entity.FollowingTopic
+import com.kogo.content.storage.entity.UserFollowing
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
@@ -49,11 +50,11 @@ class TopicServiceTest {
         }
         val profileAttachment = mockk<Attachment>()
         val savedTopic = createTopicFixture().copy(id = "topic-id", owner = owner)
-        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = savedTopic.id!!).copy(id = "following-id")
+        val userFollowing = UserFollowing(userId = owner.id!!, topicId = savedTopic.id!!).copy(id = "following-id")
 
         // Mock the save operations
         every { topicRepository.save(any()) } returns savedTopic
-        every { followingTopicRepository.save(any()) } returns followingTopic
+        every { followingTopicRepository.save(any()) } returns userFollowing
         every { attachmentRepository.saveFileAndReturnAttachment(any(), any(), any()) } returns profileAttachment
 
         // Call the service method
@@ -134,10 +135,10 @@ class TopicServiceTest {
     fun `should follow a topic`() {
         val owner = createUserFixture()
         val topic = createTopicFixture().copy(userCount = 1)
-        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
+        val userFollowing = UserFollowing(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
         // Mock the save operation to return a FollowingTopic object
-        every { followingTopicRepository.save(any()) } returns followingTopic
+        every { followingTopicRepository.save(any()) } returns userFollowing
         every { topicRepository.save(any<Topic>()) } returns topic.copy(userCount = topic.userCount + 1)
 
         // Call the service method
@@ -159,16 +160,16 @@ class TopicServiceTest {
     fun `should unfollow a topic`() {
         val owner = createUserFixture()
         val topic = createTopicFixture().copy(userCount = 2)
-        val followingTopic = FollowingTopic(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
+        val userFollowing = UserFollowing(userId = owner.id!!, topicId = topic.id!!).copy(id = "following-id")
 
-        every { followingTopicRepository.findByUserIdAndTopicId(owner.id!!, topic.id!!) } returns listOf(followingTopic)
-        every { followingTopicRepository.deleteById(followingTopic.id!!) } just Runs
+        every { followingTopicRepository.findByUserIdAndTopicId(owner.id!!, topic.id!!) } returns listOf(userFollowing)
+        every { followingTopicRepository.deleteById(userFollowing.id!!) } just Runs
         every { topicRepository.save(any<Topic>()) } returns topic.copy(userCount = topic.userCount - 1)
 
         topicService.unfollow(topic, owner)
 
         verify {
-            followingTopicRepository.deleteById(followingTopic.id!!)
+            followingTopicRepository.deleteById(userFollowing.id!!)
             topicRepository.save(withArg {
                 assertThat(it.userCount).isEqualTo(1) // Verify userCount is decremented
             })
