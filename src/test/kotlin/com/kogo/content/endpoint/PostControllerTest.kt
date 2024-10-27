@@ -1,12 +1,11 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.endpoint.model.PaginationRequest
-import com.kogo.content.endpoint.model.PaginationResponse
-import com.kogo.content.searchengine.SearchIndexService
-import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.pagination.PaginationRequest
+import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.entity.PostService
+import com.kogo.content.service.entity.TopicService
+import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
@@ -43,9 +42,6 @@ class PostControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserContextService
-
-    @MockkBean
-    lateinit var searchIndexService: SearchIndexService
 
     @Test
     fun `should return a paginated list of posts by topic id`() {
@@ -108,7 +104,6 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.existsFollowingByUserIdAndTopicId(user.id!!, topicId) } returns true // User is a topic member
         every { postService.create(topic, user, any()) } returns post
-        every { searchIndexService.addDocument(any(), any()) } returns Unit
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId))
@@ -185,9 +180,8 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns true // User is the post owner
+        every { postService.isPostAuthor(post, user) } returns true // User is the post owner
         every { postService.update(post, any()) } returns updatedPost
-        every { searchIndexService.updateDocument(any(), any()) } returns Unit
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
@@ -216,7 +210,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns differentUser // Different user
-        every { postService.isPostOwner(post, differentUser) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, differentUser) } returns false // User is not the post owner
 
         mockMvc.perform(
             multipart(buildPostApiUrl(topicId, postId))
@@ -258,10 +252,9 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns true // User is the post owner
+        every { postService.isPostAuthor(post, user) } returns true // User is the post owner
         every { topicService.isTopicOwner(topic, user) } returns false // User is not topic owner
         every { postService.delete(post) } returns Unit
-        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect { status { isOk() } }
@@ -279,10 +272,9 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, user) } returns false // User is not the post owner
         every { topicService.isTopicOwner(topic, user) } returns true // User is the topic owner
         every { postService.delete(post) } returns Unit
-        every { searchIndexService.deleteDocument(any(), any()) } returns Unit
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))
             .andExpect{ status().isOk }
@@ -300,7 +292,7 @@ class PostControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { postService.find(postId) } returns post
         every { userService.getCurrentUserDetails() } returns user
-        every { postService.isPostOwner(post, user) } returns false // User is not the post owner
+        every { postService.isPostAuthor(post, user) } returns false // User is not the post owner
         every { topicService.isTopicOwner(topic, user) } returns false // User is not the topic owner
 
         mockMvc.delete(buildPostApiUrl(topicId, postId))
@@ -321,10 +313,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create a like under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addLike(postId, user) } returns Unit
@@ -353,10 +347,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when creating a duplicate like under the same post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
         mockMvc.perform(
@@ -370,10 +366,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should delete a like under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
         every { postService.removeLike(postId, user) } returns Unit
@@ -394,10 +392,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when deleting non-existing like`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
         mockMvc.delete("/media/posts/$postId/likes")
@@ -407,10 +407,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create a view under the post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns null
         every { postService.addView(postId, user) } returns Unit
@@ -439,10 +441,12 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when creating a duplicate view under the same post`() {
-        val post = createPostFixture(createTopicFixture())
+        val topic = createTopicFixture()
+        val post = createPostFixture(topic)
         val postId = post.id!!
         val user = createUserFixture()
         every { postService.find(postId) } returns post
+        every { topicService.find(topic.id!!)} returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { postService.findViewByUserIdAndParentId(user.id!!, postId) } returns mockk()
         mockMvc.perform(

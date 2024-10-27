@@ -7,8 +7,7 @@ enum class ErrorCode(val httpStatus: HttpStatus) {
     BAD_REQUEST(HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED),
     FORBIDDEN(HttpStatus.FORBIDDEN),
-    USER_IS_NOT_OWNER(HttpStatus.FORBIDDEN),
-    USER_IS_NOT_MEMBER(HttpStatus.FORBIDDEN),
+    USER_ACTION_DENIED(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE),
 

@@ -1,10 +1,9 @@
 package com.kogo.content.storage.entity
 
-import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
-import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.DocumentReference
 
 @Document
 data class UserDetails (
@@ -23,6 +22,6 @@ data class UserDetails (
 
     var schoolShortenedName: String? = null,
 
-    @DBRef
+    @DocumentReference
     var profileImage: Attachment? = null,
 )

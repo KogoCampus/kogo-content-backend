@@ -1,7 +1,12 @@
 package com.kogo.content.util
 
+import com.kogo.content.storage.entity.Comment
+import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.UserDetails
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
+import java.time.Instant
 import kotlin.random.Random
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -52,5 +57,35 @@ private fun getRandomParameterValue(type: KType): Any? {
             enumConstants[Random.nextInt(enumConstants.size)]
         }
         else -> null
+    }
+}
+
+class Fixture {
+    companion object {
+        fun createUserFixture() = fixture<UserDetails>()
+
+        fun createTopicFixture() = fixture<Topic> {
+            mapOf(
+                "owner" to createUserFixture()
+            )
+        }
+
+        fun createPostFixture(topic: Topic) = fixture<Post> {
+            mapOf(
+                "topic" to topic,
+                "owner" to createUserFixture(),
+                "comments" to emptyList<Any>(),
+                "attachments" to emptyList<Any>(),
+            )
+        }
+
+        fun createCommentFixture(post: Post) = fixture<Comment> {
+            mapOf(
+                "postId" to post.id,
+                "owner" to createUserFixture(),
+                "createdAt" to Instant.now(),
+                "updatedAt" to Instant.now()
+            )
+        }
     }
 }

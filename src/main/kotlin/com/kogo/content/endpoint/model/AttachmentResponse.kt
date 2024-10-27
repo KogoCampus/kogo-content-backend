@@ -6,4 +6,14 @@ data class AttachmentResponse (
     val size: Long,
     val contentType: String,
     val url: String
-)
+) {
+    companion object {
+        fun from(attachment: com.kogo.content.storage.entity.Attachment): AttachmentResponse = AttachmentResponse (
+            attachmentId = attachment.id,
+            name = attachment.name,
+            url = attachment.storeKey.toFileSourceUrl(),
+            contentType = attachment.contentType,
+            size = attachment.fileSize
+        )
+    }
+}

@@ -1,7 +1,5 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.Topic
-
 data class UserResponse (
     var id: String,
     var username: String? = null,

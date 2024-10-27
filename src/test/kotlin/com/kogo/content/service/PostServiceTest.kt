@@ -1,10 +1,10 @@
 package com.kogo.content.service
 
-import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.searchengine.SearchIndexService
+import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.service.entity.PostService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
@@ -16,8 +16,6 @@ import com.kogo.content.storage.repository.ViewRepository
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.boot.autoconfigure.security.SecurityProperties.User
-import org.springframework.data.domain.PageRequest
 import java.time.Instant
 
 class PostServiceTest {
@@ -26,9 +24,8 @@ class PostServiceTest {
     private val likeRepository: LikeRepository = mockk()
     private val viewRepository: ViewRepository = mockk()
     private val fileHandler: FileHandler = mockk()
-    private val searchIndexService : SearchIndexService = mockk()
 
-    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler, searchIndexService)
+    private val postService: PostService = PostService(postRepository, attachmentRepository, likeRepository, viewRepository, fileHandler)
 
     @Test
     fun `should return first page of posts in topic when page token param is not given`() {

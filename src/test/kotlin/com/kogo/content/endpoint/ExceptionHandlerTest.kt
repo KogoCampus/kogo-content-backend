@@ -65,15 +65,4 @@ class ExceptionHandlerTest {
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error)
         assertEquals("Unhandled exception occurred; ${ex.message}", response.body?.details)
     }
-
-    @Test
-    fun `handleActionDeniedException should return FORBIDDEN`() {
-        val ex = UserIsNotOwnerException.of<Topic>("123")
-
-        val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleActionDeniedException(ex)
-
-        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-        assertEquals(ErrorCode.USER_IS_NOT_OWNER.name, response.body?.error)
-        assertEquals("You are not the owner of Topic with id: 123.", response.body?.details)
-    }
 }

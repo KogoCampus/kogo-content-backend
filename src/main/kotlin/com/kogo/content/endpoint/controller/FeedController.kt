@@ -2,10 +2,10 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.AttachmentResponse
-import com.kogo.content.endpoint.model.OwnerInfoResponse
-import com.kogo.content.endpoint.model.PaginationRequest
+import com.kogo.content.endpoint.model.UserInfo
+import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.service.FeedService
+import com.kogo.content.service.entity.FeedService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -35,15 +35,13 @@ class FeedController @Autowired constructor(
             )
             )],
         )])
-    fun listLatestPosts(
-        @RequestParam("limit") limit: Int?,
-        @RequestParam("page") page: String?) = run {
-        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
-        val paginationResponse = feedService.listFeedsByLatest(paginationRequest)
+    fun listLatestPosts(@RequestParam requestParameters: Map<String, String>) = run {
+        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
+        val paginationResponse = feedService.listPostsByLatest(paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
-            headers = paginationResponse.toHeaders()
+            data = paginationResponse.items.map { PostResponse.from(it) },
+            headers = paginationResponse.toHttpHeaders()
         )
     }
 
@@ -60,58 +58,13 @@ class FeedController @Autowired constructor(
             )
             )],
         )])
-    fun listTrendingPosts(
-        @RequestParam("limit") limit: Int?,
-        @RequestParam("page") page: String?) = run {
-        val paginationRequest = if (limit != null) PaginationRequest(limit, page) else PaginationRequest(page = page)
-        val paginationResponse = feedService.listFeedsByPopular(paginationRequest)
+    fun listTrendingPosts(@RequestParam requestParameters: Map<String, String>) = run {
+        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
+        val paginationResponse = feedService.listPostsByPopularity(paginationRequest)
+
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { buildPostResponse(it) },
-            headers = paginationResponse.toHeaders()
-        )
-    }
-
-    private fun buildPostResponse(post: Post): PostResponse = with(post) {
-        PostResponse(
-            id = id!!,
-            topicId = post.topic.id,
-            owner = buildOwnerInfoResponse(owner),
-            title = title,
-            content = content,
-            attachments = attachments.map { buildAttachmentResponse(it) },
-            comments = comments.map { buildPostCommment(it) },
-            viewcount = viewcount,
-            likes = likes,
-            createdAt = createdAt!!,
-            updatedAt = updatedAt!!,
-            commentCount = commentCount,
-        )
-    }
-
-    private fun buildOwnerInfoResponse(owner: UserDetails): OwnerInfoResponse =  with(owner) {
-        OwnerInfoResponse(
-            ownerId = id,
-            username = username,
-            profileImage = profileImage?.let { buildAttachmentResponse(it) },
-            schoolShortenedName = schoolShortenedName
-        )
-    }
-
-    private fun buildAttachmentResponse(attachment: Attachment): AttachmentResponse = with(attachment) {
-        AttachmentResponse(
-            attachmentId = id,
-            name = name,
-            url = attachment.storeKey.toFileSourceUrl(),
-            contentType = contentType,
-            size = fileSize
-        )
-    }
-
-    private fun buildPostCommment(comment: Comment): PostResponse.PostComment = with(comment) {
-        PostResponse.PostComment(
-            commentId = id,
-            ownerId = buildOwnerInfoResponse(owner),
-            replyCount = repliesCount
+            data = paginationResponse.items.map { PostResponse.from(it) },
+            headers = paginationResponse.toHttpHeaders()
         )
     }
 }
