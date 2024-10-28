@@ -8,7 +8,6 @@ import jakarta.validation.ConstraintValidatorContext
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.web.multipart.MultipartFile
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

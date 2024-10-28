@@ -5,26 +5,26 @@ import java.time.Instant
 
 data class TopicResponse(
     var id: String,
-    var owner: UserInfo,
+    var owner: UserData.Public,
     var topicName: String,
     var description: String,
     var tags: List<String> = emptyList(),
     var profileImage: AttachmentResponse? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
-    var followingUserCount: Int,
+    var followerCount: Int,
 ) {
     companion object {
         fun from(topic: Topic): TopicResponse = TopicResponse(
             id = topic.id!!,
-            owner = UserInfo.from(topic.owner),
+            owner = UserData.Public.from(topic.owner),
             topicName = topic.topicName,
             description = topic.description,
             tags = topic.tags,
             profileImage = topic.profileImage?.let { AttachmentResponse.from(it) },
-            createdAt = topic.createdAt!!,
-            updatedAt = topic.updatedAt!!,
-            followingUserCount = topic.followingUserCount
+            createdAt = topic.createdAt,
+            updatedAt = topic.updatedAt,
+            followerCount = topic.followerCount
         )
     }
 }

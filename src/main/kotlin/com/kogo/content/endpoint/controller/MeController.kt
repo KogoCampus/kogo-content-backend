@@ -9,6 +9,7 @@ import com.kogo.content.service.entity.TopicService
 import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
@@ -32,11 +33,11 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )])
     fun getMe() = run {
         val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(UserInfo.from(me))
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
     }
 
     @RequestMapping(
@@ -50,14 +51,14 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserResponse::class))]
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )]
     )
     fun updateMe(
         @Valid meUpdate: UserUpdate) = run {
             val me = userService.getCurrentUserDetails()
             val updatedUser = userService.updateUserProfile(me, meUpdate)
-            HttpJsonResponse.successResponse(UserInfo.from(updatedUser))
+            HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
     @GetMapping("me/ownership/posts")
@@ -66,7 +67,8 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))]
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = PostResponse::class)))],
         )])
     fun getPostsAuthoredByUser() = run {
         val me = userService.getCurrentUserDetails()
@@ -79,7 +81,8 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = TopicResponse::class)))],
         )])
     fun getTopicsOwnedByUser() = run {
         val me = userService.getCurrentUserDetails()

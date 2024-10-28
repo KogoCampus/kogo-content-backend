@@ -6,6 +6,7 @@ import com.kogo.content.service.filehandler.FileHandler
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.entity.UserDetails
+import org.springframework.data.mongodb.core.aggregation.SelectionOperators.Top
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,9 +15,9 @@ import java.time.Instant
 
 @Service
 class TopicService(
+    private val topicRepository: TopicRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
-    private val topicRepository: TopicRepository,
 ) {
     fun find(topicId: String): Topic? = topicRepository.findByIdOrNull(topicId)
 
@@ -38,8 +39,7 @@ class TopicService(
             createdAt = Instant.now(),
             updatedAt = Instant.now(),
         )
-        val savedTopic = topicRepository.save(topic)
-        topicRepository.follow(followableId = topic.id!!, userId = owner.id!!)
+        val savedTopic = follow(topicRepository.save(topic), owner)
         return savedTopic
     }
 
@@ -58,21 +58,17 @@ class TopicService(
     @Transactional
     fun delete(topic: Topic) {
         topic.profileImage?.let { attachmentRepository.delete(it) }
-        topicRepository.deleteById(topic.id!!)
         topicRepository.unfollowAllByFollowableId(topic.id!!)
+        topicRepository.deleteById(topic.id!!)
     }
 
-    fun follow(topic: Topic, user: UserDetails) {
-        topicRepository.follow(topic.id!!, user.id!!)?.let {
-            topic.followingUserCount += 1
-            topicRepository.save(topic)
-        }
+    fun follow(topic: Topic, user: UserDetails): Topic {
+        topicRepository.follow(topic.id!!, user.id!!)?.let { topic.followerCount += 1 }
+        return topicRepository.save(topic)
     }
-    fun unfollow(topic: Topic, user: UserDetails) {
-        if(topicRepository.unfollow(topic.id!!, user.id!!)) {
-            topic.followingUserCount -= 1
-            topicRepository.save(topic)
-        }
+    fun unfollow(topic: Topic, user: UserDetails): Topic {
+        if(topicRepository.unfollow(topic.id!!, user.id!!)) { topic.followerCount -= 1 }
+        return topicRepository.save(topic)
     }
 
     fun transferOwnership(topic: Topic, user: UserDetails): Topic {

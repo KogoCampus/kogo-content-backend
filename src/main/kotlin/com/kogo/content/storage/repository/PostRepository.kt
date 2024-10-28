@@ -1,11 +1,11 @@
 package com.kogo.content.storage.repository
 
 import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.repository.traits.UserFeedback
+import com.kogo.content.storage.repository.traits.Likable
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.MongoRepository
 
-interface PostRepository: MongoRepository<Post, String>, UserFeedback, PostPopularity {
+interface PostRepository: MongoRepository<Post, String>, Likable, PostPopularity {
     fun findAllByOrderByIdDesc(pageable: Pageable): List<Post>
     fun findAllByIdLessThanOrderByIdDesc(id: String, pageable: Pageable): List<Post>
     fun findAllByTopicId(topicId: String, pageable: Pageable): List<Post>

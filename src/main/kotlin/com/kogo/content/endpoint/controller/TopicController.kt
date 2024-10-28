@@ -137,12 +137,12 @@ class TopicController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the topic")
 
         topicService.follow(topic, user)
-        HttpJsonResponse.successResponse(TopicResponse.from(topic))
+        HttpJsonResponse.successResponse(TopicResponse.from(topic), "User's follow added successfully to topic: $topicId")
     }
 
     @RequestMapping(
         path = ["topics/{id}/unfollow"],
-        method = [RequestMethod.POST]
+        method = [RequestMethod.PUT]
     )
     @Operation(
         summary = "unfollow a topic",
@@ -162,7 +162,7 @@ class TopicController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the topic")
 
         topicService.unfollow(topic, user)
-        HttpJsonResponse.successResponse(TopicResponse.from(topic))
+        HttpJsonResponse.successResponse(TopicResponse.from(topic), "User's follow successfully removed from topic: $topicId")
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)

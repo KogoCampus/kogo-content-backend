@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
-interface UserFeedback {
+interface Likable {
 
     fun addLike(likableId: String, userId: String): Like?
 
@@ -18,10 +18,7 @@ interface UserFeedback {
     fun addViewCount(viewableId: String, userId: String): View?
 }
 
-open class UserFeedbackImpl : UserFeedback {
-
-    @Autowired
-    lateinit var mongoTemplate: MongoTemplate
+open class LikableImpl @Autowired constructor(private val mongoTemplate: MongoTemplate) : Likable {
 
     override fun addLike(likableId: String, userId: String): Like? {
         val existingLike = findLike(likableId, userId)

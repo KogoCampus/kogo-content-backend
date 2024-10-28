@@ -5,7 +5,7 @@ import java.time.Instant
 
 data class ReplyResponse (
     var id: String,
-    var author: UserInfo,
+    var author: UserData.Public,
     var commentId: String,
     var content: String,
     val likes: Int,
@@ -15,7 +15,7 @@ data class ReplyResponse (
     companion object {
         fun from(reply: Reply): ReplyResponse = ReplyResponse(
             id = reply.id!!,
-            author = UserInfo.from(reply.author),
+            author = UserData.Public.from(reply.author),
             content = reply.content,
             commentId = reply.comment.id!!,
             createdAt = reply.createdAt!!,

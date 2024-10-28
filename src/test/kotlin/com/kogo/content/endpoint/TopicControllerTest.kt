@@ -5,9 +5,10 @@ import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.service.entity.TopicService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.entity.Topic
-import com.kogo.content.util.fixture
+import com.kogo.content.endpoint.`test-util`.Fixture
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -28,19 +29,27 @@ class TopicControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
 
+    companion object {
+        private const val TOPIC_API_BASE_URL = "/media/topics"
+    }
+
     @MockkBean
     lateinit var topicService: TopicService
 
     @MockkBean
     lateinit var userService: UserContextService
 
-    companion object {
-        private const val TOPIC_API_BASE_URL = "/media/topics"
+    lateinit var user: UserDetails
+    lateinit var topic: Topic
+
+    @BeforeEach
+    fun setup() {
+        user = Fixture.createUserFixture()
+        topic = Fixture.createTopicFixture(user)
     }
 
     @Test
     fun `should return a topic by id`() {
-        val topic = createTopicFixture()
         val topicId = topic.id!!
         every { topicService.find(topicId) } returns topic
         mockMvc.get(buildTopicApiUrl(topicId))
@@ -62,12 +71,9 @@ class TopicControllerTest @Autowired constructor(
 
     @Test
     fun `should create a new topic`() {
-        val topicOwner = createUserFixture()
-        val topic = createTopicFixture()
-        topic.owner = topicOwner
-        every { topicService.existsByTopicName(any()) } returns false
-        every { userService.getCurrentUserDetails() } returns topicOwner
-        every { topicService.create(any(), topicOwner) } returns topic
+        every { topicService.isTopicExist(any()) } returns false
+        every { userService.getCurrentUserDetails() } returns user
+        every { topicService.create(any(), user) } returns topic
         mockMvc.perform(
             multipart(buildTopicApiUrl())
                 .part(MockPart("topicName", topic.topicName.toByteArray()))
@@ -86,7 +92,7 @@ class TopicControllerTest @Autowired constructor(
     @Test
     fun `should return 400 when topic name is not unique`() {
         val topicName = "existing-topic"
-        every { topicService.existsByTopicName(topicName) } returns true
+        every { topicService.isTopicExist(topicName) } returns true
         mockMvc.perform(
             multipart(buildTopicApiUrl())
                 .part(MockPart("topicName", topicName.toByteArray()))
@@ -99,9 +105,7 @@ class TopicControllerTest @Autowired constructor(
 
     @Test
     fun `should update an existing topic`() {
-        val topic = createTopicFixture()
         val topicId = topic.id!!
-        val user = createUserFixture()
         val updatedAt = Instant.now()
         val updatedTopic = Topic(
             id = topicId,
@@ -115,7 +119,7 @@ class TopicControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.isTopicOwner(topic, user) } returns true
-        every { topicService.existsByTopicName("updated topic name") } returns false
+        every { topicService.isTopicExist("updated topic name") } returns false
         every { topicService.update(topic, any()) } returns updatedTopic
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId))
@@ -135,9 +139,7 @@ class TopicControllerTest @Autowired constructor(
 
     @Test
     fun `should return 400 when updating topic name is not unique`() {
-        val topic = createTopicFixture()
         val topicId = topic.id!!
-        val user = createUserFixture()
         val topicUpdate = TopicUpdate(
             topicName = "duplicate topic name",
             description = "updated description"
@@ -147,7 +149,7 @@ class TopicControllerTest @Autowired constructor(
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.isTopicOwner(topic, user) } returns true
-        every { topicService.existsByTopicName("duplicate topic name") } returns true // Duplicate topic name found
+        every { topicService.isTopicExist("duplicate topic name") } returns true // Duplicate topic name found
 
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId))
@@ -177,9 +179,7 @@ class TopicControllerTest @Autowired constructor(
 
     @Test
     fun `should delete a topic`() {
-        val topic = createTopicFixture()
         val topicId = topic.id!!
-        val user = createUserFixture()
 
         every { topicService.find(topicId) } returns topic
         every { userService.getCurrentUserDetails() } returns user
@@ -203,12 +203,4 @@ class TopicControllerTest @Autowired constructor(
     private fun buildTopicApiUrl(vararg paths: String) =
         if (paths.isNotEmpty()) "$TOPIC_API_BASE_URL/" + paths.joinToString("/")
         else TOPIC_API_BASE_URL
-
-    private fun createTopicFixture() = fixture<Topic> { mapOf(
-        "owner" to createUserFixture(),
-        "createdAt" to Instant.now(),
-        "updatedAt" to Instant.now()
-    ) }
-
-    private fun createUserFixture() = fixture<UserDetails>()
 }
