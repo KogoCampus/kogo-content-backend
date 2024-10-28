@@ -1,35 +1,27 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.service.entity.*
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
-import com.kogo.content.service.entity.CommentService
-import com.kogo.content.service.entity.PostService
-import com.kogo.content.service.entity.TopicService
-import com.kogo.content.service.entity.UserContextService
 import com.kogo.content.service.pagination.PageToken
-import com.kogo.content.storage.entity.*
-import com.kogo.content.storage.repository.CommentRepository
-import com.kogo.content.storage.repository.PostRepository
+import com.kogo.content.endpoint.`test-util`.Fixture
 import com.ninjasquad.springmockk.MockkBean
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.web.servlet.MockMvc
-import org.junit.jupiter.api.Test
-import com.kogo.content.util.fixture
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockPart
-import org.springframework.test.web.servlet.delete
-import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -37,7 +29,7 @@ class ReplyControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
     @MockkBean
-    lateinit var topicService: TopicService
+    lateinit var replyService: ReplyService
 
     @MockkBean
     lateinit var commentService: CommentService
@@ -46,496 +38,237 @@ class ReplyControllerTest @Autowired constructor(
     lateinit var postService: PostService
 
     @MockkBean
+    lateinit var topicService: TopicService
+
+    @MockkBean
     lateinit var userService: UserContextService
 
-    @MockkBean
-    lateinit var postRepository: PostRepository
+    private val user = Fixture.createUserFixture()
+    private val topic = Fixture.createTopicFixture(user)
+    private val post = Fixture.createPostFixture(topic = topic, author = user)
+    private val comment = Fixture.createCommentFixture(post = post, author = user)
+    private val reply = Fixture.createReplyFixture(comment = comment, author = user)
 
-    @MockkBean
-    lateinit var commentRepository: CommentRepository
+    private fun buildReplyApiUrl(
+        topicId: String,
+        postId: String,
+        commentId: String,
+        vararg paths: String,
+        params: Map<String, String> = emptyMap()
+    ): String {
+        val baseUrl = "/media/topics/$topicId/posts/$postId/comments/$commentId/replies"
+        val url = if (paths.isNotEmpty()) "$baseUrl/${paths.joinToString("/")}" else baseUrl
+        val paramBuilder = StringBuilder()
+        params.forEach { paramBuilder.append("${it.key}=${it.value}&") }
+        return if (paramBuilder.isNotEmpty()) "$url?$paramBuilder" else url
+    }
 
     @BeforeEach
-    fun setUp() {
-        every { postRepository.findByIdOrNull(any()) } returns createPostFixture(createTopicFixture()).apply {
-            createdAt = Instant.now()
-        }
-
-        every { commentRepository.findByIdOrNull(any()) } returns createCommentFixture(createPostFixture(createTopicFixture())).apply {
-            createdAt = Instant.now()
-        }
-    }
-
-    private fun buildCommentApiUrl(topicId: String, postId: String, vararg paths: String): String {
-        val baseUrl = "/media/topics/$topicId/posts/$postId/comments"
-
-        return if (paths.isNotEmpty()) "$baseUrl/" + paths.joinToString("/") else baseUrl
-    }
-
-    private fun buildReplyApiUrl(topicId: String, postId: String, commentId: String, vararg paths: String): String {
-        val baseUrl = "/media/topics/$topicId/posts/$postId/comments/$commentId"
-        return if (paths.isNotEmpty()) "$baseUrl/" + paths.joinToString("/") else baseUrl
-    }
-
-    private fun createTopicFixture() = fixture<Topic> {
-        mapOf(
-            "owner" to createUserFixture()
-        )
-    }
-
-    private fun createPostFixture(topic: Topic) = fixture<Post> {
-        mapOf(
-            "topic" to topic,
-            "owner" to createUserFixture(),
-            "comments" to emptyList<Any>(),
-            "attachments" to emptyList<Any>(),
-        )
-    }
-
-    private fun createCommentFixture(post: Post) = fixture<Comment> {
-        mapOf(
-            "parentId" to post.id,
-            "owner" to createUserFixture(),
-            "createdAt" to Instant.now(),
-            "updatedAt" to Instant.now()
-        )
-    }
-
-    private fun createUserFixture() = fixture<UserDetails>()
-
-
-
-    @Test
-    fun `should return a list of comments under post id`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comments = listOf(createCommentFixture(post), createCommentFixture(post))
-        val postId = post.id!!
-        val paginationRequest = PaginationRequest(limit = 10, pageToken = PageToken())
-        val paginationResponse = PaginationResponse(comments, paginationRequest.pageToken.nextPageToken("sample-next-page-token"))
-        val paginationRequestSlot = slot<PaginationRequest>()
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { commentService.listCommentsByPost(post, capture(paginationRequestSlot)) } returns paginationResponse
-
-        mockMvc.get(buildCommentApiUrl(topic.id!!, postId)) {
-            param("limit", paginationRequest.limit.toString())
-        }
-            .andExpect { status { isOk() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data.length()") { value(comments.size) } }
-            .andExpect { header { string("next_page", "sample-next-page-token") } }
-            .andExpect { header { string("item_count", "${comments.size}") } }
-
-        val capturedPaginationRequest = paginationRequestSlot.captured
-        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
-        assertThat(capturedPaginationRequest.pageToken).isEqualTo(paginationRequest.pageToken)
-    }
-
-    @Test
-    fun `should return a list of replies under comment id`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val parentComment = createCommentFixture(post)
-        val replies = listOf(createReplyFixture(parentComment), createReplyFixture(parentComment))
-        val parentCommentId = parentComment.id!!
-        val postId = post.id!!
-        val paginationRequest = PaginationRequest(limit = 10, pageToken = PageToken())
-        val paginationResponse = PaginationResponse(replies, paginationRequest.pageToken.nextPageToken("sample-next-page-token"))
-        val paginationRequestSlot = slot<PaginationRequest>()
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { commentService.findComment(parentCommentId) } returns parentComment
-        every { commentService.listRepliesByComment(parentComment, capture(paginationRequestSlot)) } returns paginationResponse
-
-        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, parentCommentId, "replies")) {
-            param("limit", paginationRequest.limit.toString())
-        }
-            .andExpect { status { isOk() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data.length()") { value(replies.size) } }
-            .andExpect { header { string("next_page", "sample-next-page-token") } }
-            .andExpect { header { string("item_count", "${replies.size}") } }
-
-        val capturedPaginationRequest = paginationRequestSlot.captured
-        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
-        assertThat(capturedPaginationRequest.page).isEqualTo(paginationRequest.page)
-    }
-
-    @Test
-    fun `should return 404 when comment is not found`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val postId = post.id!!
-        val commentId = "invalid"
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { commentService.findComment(commentId) } returns null
-        mockMvc.get(buildReplyApiUrl(topic.id!!, postId, commentId))
-            .andExpect { status { isNotFound() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-    }
-
-    @Test
-    fun `should create a new comment`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val postId = post.id!!
-        val user = createUserFixture()
-        val comment = createCommentFixture(post)
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
+    fun setup() {
         every { userService.getCurrentUserDetails() } returns user
-        every { commentService.create(postId, CommentParentType.POST, user, any()) } returns comment
-        every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
-        mockMvc.perform(
-            multipart(buildCommentApiUrl(topic.id!!, postId))
-                .part(MockPart("content", comment.content.toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with{ it.method = "POST"; it })
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.data.content").value(comment.content))
-            .andExpect(jsonPath("$.data.parentId").value(post.id))
-            .andExpect(jsonPath("$.data.createdAt").exists())
+        every { topicService.find(topic.id!!) } returns topic
+        every { postService.find(post.id!!) } returns post
+        every { commentService.find(comment.id!!) } returns comment
+        every { replyService.find(reply.id!!) } returns reply
+    }
+
+    @Test
+    fun `should return replies with pagination metadata by comment id`() {
+        val replies = listOf(
+            Fixture.createReplyFixture(comment = comment, author = user),
+            Fixture.createReplyFixture(comment = comment, author = user)
+        )
+
+        val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
+        val nextPageToken = paginationRequest.pageToken.nextPageToken("next-token")
+        val paginationResponse = PaginationResponse(replies, nextPageToken)
+        val paginationRequestSlot = slot<PaginationRequest>()
+
+        every { replyService.listRepliesByComment(comment, capture(paginationRequestSlot)) } returns paginationResponse
+
+        mockMvc.get(buildReplyApiUrl(
+            topicId = topic.id!!,
+            postId = post.id!!,
+            commentId = comment.id!!,
+            params = mapOf("limit" to "${paginationRequest.limit}")
+        ))
+            .andExpect {
+                status { isOk() }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                jsonPath("$.data.length()") { value(replies.size) }
+                header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) }
+                header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") }
+            }
+
+        val capturedRequest = paginationRequestSlot.captured
+        assertThat(capturedRequest.limit).isEqualTo(paginationRequest.limit)
+        assertThat(capturedRequest.pageToken.toString()).isEqualTo(paginationRequest.pageToken.toString())
     }
 
     @Test
     fun `should create a new reply`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val postId = post.id!!
-        val user = createUserFixture()
-        val parentComment = createCommentFixture(post)
-        val reply = createReplyFixture(parentComment)
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { commentService.findComment(parentComment.id!!)} returns parentComment
-        every { userService.getCurrentUserDetails() } returns user
-        every { commentService.create(parentComment.id!!, CommentParentType.COMMENT, user, any()) } returns reply
-        every { postRepository.findByIdOrNull(any()) } returns post.apply { createdAt = Instant.now() }
-        mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, postId, parentComment.id!!, "replies"))
-                .part(MockPart("content", reply.content.toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with{ it.method = "POST"; it })
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.data.content").value(reply.content))
-            .andExpect(jsonPath("$.data.parentId").value(parentComment.id))
-            .andExpect(jsonPath("$.data.createdAt").exists())
-    }
-
-    @Test
-    fun `should return 404 if post is not found`() {
-        val topic = createTopicFixture()
-        val postId = "invalid"
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns null
-        mockMvc.perform(
-            multipart(buildCommentApiUrl(topic.id!!, postId))
-                .part(MockPart("content", "testing".toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
-            .andExpect(status().isNotFound)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    }
-
-    @Test
-    fun `should return 404 if comment is not found`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val commentId = "invalid"
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(commentId) } returns null
-        mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, commentId, "replies"))
-                .part(MockPart("content", "testing".toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
-            .andExpect(status().isNotFound)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    }
-
-    @Test
-    fun `should delete an existing comment if user is the owner`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comment = createCommentFixture(post)
-        val reply1 = createReplyFixture(comment)
-        val reply2 = createReplyFixture(comment)
-        val replies = listOf(reply1, reply2)
-        val currentUser = createUserFixture()
-
-        // Mocking repository and service responses
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { commentService.isCommentAuthor(comment, currentUser) } returns true
-        every { commentService.delete(comment) } returns Unit
-
-        // Mocking recursive replies deletion
-        every { commentRepository.findAllById(comment.replies) } returns replies
-        every { commentRepository.findAllById(reply1.replies) } returns emptyList() // No further replies
-        every { commentRepository.findAllById(reply2.replies) } returns emptyList() // No further replies
-        every { commentRepository.deleteById(any()) } just Runs
-        every { userService.getCurrentUserDetails() } returns currentUser
-
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
-            .andExpect { status { isOk() } }
-    }
-
-    @Test
-    fun `should return 403 if user is not the comment owner`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comment = createCommentFixture(post)
-        val currentUser = createUserFixture() // The current user (not the owner)
-        val differentUser = createUserFixture() // Another user to simulate the owner
-
-        // Mocking repository and service responses
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { commentService.isCommentAuthor(comment, currentUser) } returns false // User is not the owner
-        every { userService.getCurrentUserDetails() } returns currentUser
-
-        // Perform delete request and expect 403 Forbidden
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
-            .andExpect { status { isForbidden() } }
-            .andExpect { jsonPath("$.error.reason").value("USER_IS_NOT_OWNER") }
-    }
-
-    @Test
-    fun `should return 404 if deleting the non-existing comment`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val commentId = "invalid"
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(commentId) } returns null
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, commentId))
-            .andExpect { status().isNotFound }
-    }
-
-    @Test
-    fun `should update an existing comment if user is the owner`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comment = createCommentFixture(post)
-        val currentUser = createUserFixture() // Simulate the owner of the comment
-        val updatedContent = "new content"
-        val updatedAt = Instant.now()
-        val commentUpdate = CommentUpdate(content = updatedContent)
-
-        val newComment = comment.copy(content = updatedContent, updatedAt = updatedAt)
-
-        // Mocking repository and service responses
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { commentService.isCommentAuthor(comment, currentUser) } returns true // User is the owner
-        every { commentService.update(comment, commentUpdate) } returns newComment
-        every { userService.getCurrentUserDetails() } returns currentUser
+        val newReply = reply.copy()
+        every { replyService.create(comment, user, any()) } returns newReply
 
         mockMvc.perform(
             multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
-                .part(MockPart("content", newComment.content.toByteArray()))
+                .part(MockPart("content", newReply.content.toByteArray()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it }
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.data.content").value(newReply.content))
+    }
+
+    @Test
+    fun `should return 404 when creating reply for non-existing comment`() {
+        val invalidCommentId = "invalid-comment-id"
+        every { commentService.find(invalidCommentId) } returns null
+
+        mockMvc.perform(
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, invalidCommentId))
+                .part(MockPart("content", "Test content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it }
+        )
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+    }
+
+    @Test
+    fun `should update an existing reply if user is the author`() {
+        val updatedReply = reply.copy()
+        updatedReply.content = "Updated content"
+
+        every { replyService.isUserAuthor(reply, user) } returns true
+        every { replyService.update(reply, any()) } returns updatedReply
+
+        mockMvc.perform(
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+                .part(MockPart("content", updatedReply.content.toByteArray()))
+                .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.data.content").value(newComment.content))
-            .andExpect(jsonPath("$.data.parentId").value(comment.parentId))
-            .andExpect(jsonPath("$.data.createdAt").value(comment.createdAt.toString())) // Ensure createdAt remains unchanged
-            .andExpect(jsonPath("$.data.updatedAt").value(updatedAt.toString()))
+            .andExpect(jsonPath("$.data.content").value(updatedReply.content))
     }
 
     @Test
-    fun `should return 403 if user is not the comment owner during update`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comment = createCommentFixture(post)
-        val currentUser = createUserFixture() // Simulate the current user
-        val updatedContent = "new content"
-        val commentUpdate = CommentUpdate(content = updatedContent)
-
-        // Mocking repository and service responses
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { commentService.isCommentAuthor(comment, currentUser) } returns false // User is not the owner
-        every { userService.getCurrentUserDetails() } returns currentUser // Mock the user as non-owner
+    fun `should return 403 when updating reply if user is not the author`() {
+        every { replyService.isUserAuthor(reply, user) } returns false
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
-                .part(MockPart("content", updatedContent.toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+                .part(MockPart("content", "Updated content".toByteArray()))
+                .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
             .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.error").value("USER_IS_NOT_OWNER"))
-            .andExpect(jsonPath("$.details").value("You are not the owner of Comment with id: ${comment.id}."))
+            .andExpect(jsonPath("$.error").value(ErrorCode.USER_ACTION_DENIED.name))
+            .andExpect(jsonPath("$.details").value("user is not the author of the reply"))
     }
 
     @Test
-    fun `should return 404 if updating non-existing comment`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val commentId = "invalid"
+    fun `should delete a reply if user is the author`() {
+        every { replyService.isUserAuthor(reply, user) } returns true
+        every { replyService.delete(reply) } returns Unit
 
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(commentId) } returns null
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+            .andExpect {
+                status { isOk() }
+            }
+
+        verify { replyService.delete(reply) }
+    }
+
+    @Test
+    fun `should return 403 when deleting reply if user is not the author`() {
+        every { replyService.isUserAuthor(reply, user) } returns false
+
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+            .andExpect {
+                status { isForbidden() }
+                jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
+                jsonPath("$.details") { value("user is not the author of the reply") }
+            }
+    }
+
+    @Test
+    fun `should add like to reply`() {
+        every { replyService.hasUserLikedReply(reply, user) } returns false
+        every { replyService.addLike(reply, user) } returns mockk()
+
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, commentId))
-                .part(MockPart("content", "testing".toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+                .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
-            .andExpect(status().isNotFound)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    }
-
-    @Test
-    fun `should create a like under the comment`() {
-        val topic = createTopicFixture()
-        val post = createPostFixture(topic)
-        val comment = createCommentFixture(post)
-        val user = createUserFixture()
-
-        val topicId = topic.id!!
-        val postId = post.id!!
-        val commentId = comment.id!!
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { userService.getCurrentUserDetails() } returns user
-        every { commentService.findLikeByUserIdAndParentId(user.id!!, comment.id!!)} returns null
-        every { commentService.addLike(comment.id!!, user) } returns Unit
-
-        mockMvc.perform(
-            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.error.reason").doesNotExist())
-            .andExpect(jsonPath("$.data").exists())
-            .andExpect(jsonPath("$.data.id").value(commentId))
+            .andExpect(jsonPath("$.message").value("User's like added successfully to comment ${reply.id}"))
     }
 
     @Test
-    fun `should return 404 if creating a like under non-existing comment`() {
-        val topic = createTopicFixture()
-        val topicId = topic.id!!
-        val post = createPostFixture(createTopicFixture())
-        val postId = post.id!!
-        val commentId = "invalid"
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(commentId) } returns null
-        mockMvc.perform(
-            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
-            .andExpect(status().isNotFound)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    }
-
-    @Test
-    fun `should return 400 when creating a duplicate like under the same comment`() {
-        val topic = createTopicFixture()
-        val topicId = topic.id!!
-        val post = createPostFixture(createTopicFixture())
-        val postId = post.id!!
-        val user = createUserFixture()
-        val comment = createCommentFixture(post)
-        val commentId = comment.id!!
-
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { userService.getCurrentUserDetails() } returns user
-        every { commentService.findLikeByUserIdAndParentId(user.id!!, commentId) } returns mockk()
+    fun `should return 400 when user has already liked the reply`() {
+        every { replyService.hasUserLikedReply(reply, user) } returns true
 
         mockMvc.perform(
-            multipart("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .with{ it.method = "POST"; it }
+                .with { it.method = "PUT"; it }
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error").value(ErrorCode.BAD_REQUEST.name))
-            .andExpect(jsonPath("$.details").value("user already liked this comment $commentId."))
+            .andExpect(jsonPath("$.details").value("user has already liked this reply Id: ${reply.id}"))
     }
 
     @Test
-    fun `should remove a like from the comment`() {
-        val topic = createTopicFixture()
-        val topicId = topic.id!!
-        val post = createPostFixture(createTopicFixture())
-        val postId = post.id!!
-        val user = createUserFixture()
-        val comment = createCommentFixture(post)
-        val commentId = comment.id!!
+    fun `should remove like from reply`() {
+        every { replyService.hasUserLikedReply(reply, user) } returns true
+        every { replyService.removeLike(reply, user) } returns Unit
 
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { userService.getCurrentUserDetails() } returns user
-        every { commentService.findLikeByUserIdAndParentId(user.id!!, postId) } returns mockk()
-        mockMvc.delete("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
-            .andExpect { status().isOk }
-            .andExpect { jsonPath("$.message").value("User's like removed successfully to comment $commentId.") }
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.message") { value("User's like removed successfully to reply ${reply.id}") }
+            }
     }
 
     @Test
-    fun `should return 404 when removing a like under non-existing comment`() {
-        val topic = createTopicFixture()
-        val topicId = topic.id!!
-        val post = createPostFixture(createTopicFixture())
-        val commentId = "invalid"
-        val postId = post.id!!
+    fun `should return 400 when removing like from reply user hasn't liked`() {
+        every { replyService.hasUserLikedReply(reply, user) } returns false
 
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(post.id!!) } returns post
-        every { commentService.findComment(commentId) } returns null
-
-        mockMvc.delete("/media/topics/$topicId/posts/$postId/comments/$commentId/likes")
-            .andExpect { status().isNotFound }
-
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+            .andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+                jsonPath("$.details") { value("user didn't put a like on this reply Id: ${reply.id}") }
+            }
     }
 
     @Test
-    fun `should return 400 if removing a non-existing like`() {
-        val topic = createTopicFixture()
-        val topicId = topic.id!!
-        val post = createPostFixture(createTopicFixture())
-        val postId = post.id!!
-        val user = createUserFixture()
-        val comment = createCommentFixture(post)
-        val commentId = comment.id!!
+    fun `should return 404 when adding like to non-existing reply`() {
+        val invalidReplyId = "invalid-reply-id"
+        every { replyService.find(invalidReplyId) } returns null
 
-        every { topicService.find(topic.id!!) } returns topic
-        every { postService.find(postId) } returns post
-        every { userService.getCurrentUserDetails() } returns user
-        every { commentService.findComment(comment.id!!) } returns comment
-        every { commentService.findLikeByUserIdAndParentId(user.id!!, postId) } returns null
+        mockMvc.perform(
+            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, invalidReplyId, "likes"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .with { it.method = "PUT"; it }
+        )
+            .andExpect(status().isNotFound)
+    }
 
-        mockMvc.delete("/media/topics/$topicId/posts/$postId/likes")
-            .andExpect { status().isBadRequest }
-            .andExpect { jsonPath("$.message").value("user haven't liked this comment $commentId.") }
+    @Test
+    fun `should return 404 when removing like from non-existing reply`() {
+        val invalidReplyId = "invalid-reply-id"
+        every { replyService.find(invalidReplyId) } returns null
+
+        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, invalidReplyId, "likes"))
+            .andExpect {
+                status { isNotFound() }
+            }
     }
 }
+

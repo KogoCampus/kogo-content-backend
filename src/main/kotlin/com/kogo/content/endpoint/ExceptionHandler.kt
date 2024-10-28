@@ -61,8 +61,8 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
             ), errorCode.httpStatus)
     }
 
-    @ExceptionHandler(Exception::class)
-    fun handleUnhandledException(ex: Exception): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(RuntimeException::class)
+    fun handleUnhandledRuntimeException(ex: RuntimeException): ResponseEntity<ErrorResponse> {
         val message = "Unhandled exception occurred; ${ex.message}"
         log.error (ex) { message }
         return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR, details = message)

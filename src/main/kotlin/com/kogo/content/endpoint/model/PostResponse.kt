@@ -5,7 +5,7 @@ import java.time.Instant
 
 data class PostResponse(
     var id: String,
-    var author: UserInfo,
+    var author: UserData.Public,
     var topicId: String? = null,
     var topicName: String?= null,
     var title: String,
@@ -21,7 +21,7 @@ data class PostResponse(
         fun from(post: Post): PostResponse = PostResponse(
             id = post.id!!,
             topicId = post.topic.id,
-            author = UserInfo.from(post.author),
+            author = UserData.Public.from(post.author),
             title = post.title,
             topicName = post.topic.topicName,
             content = post.content,

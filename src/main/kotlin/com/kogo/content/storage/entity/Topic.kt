@@ -26,8 +26,8 @@ data class Topic (
 
     var tags: List<String> = emptyList(),
 
-    var createdAt: Instant?=null,
-    var updatedAt: Instant?=null,
+    var createdAt: Instant = Instant.now(),
+    var updatedAt: Instant = Instant.now(),
 
-    var followingUserCount: Int = 1,
+    var followerCount: Int = 0,
 )

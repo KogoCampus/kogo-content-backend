@@ -17,23 +17,23 @@ import java.time.Instant
 
 @Service
 class PostService (
-    private val repository: PostRepository,
+    private val postRepository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
 ) {
-    fun find(postId: String): Post? = repository.findByIdOrNull(postId)
+    fun find(postId: String): Post? = postRepository.findByIdOrNull(postId)
 
     fun listPostsByTopicId(topicId: String, paginationRequest: PaginationRequest): PaginationResponse<Post> {
         val limit = paginationRequest.limit
         val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
         val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
-        val posts = if (pageLastResourceId != null) repository.findAllByTopicIdAndIdLessThan(topicId, pageLastResourceId, pageable)
-                    else repository.findAllByTopicId(topicId, pageable)
+        val posts = if (pageLastResourceId != null) postRepository.findAllByTopicIdAndIdLessThan(topicId, pageLastResourceId, pageable)
+                    else postRepository.findAllByTopicId(topicId, pageable)
         val nextPageToken = posts.lastOrNull()?.let { paginationRequest.pageToken.nextPageToken(it.id!!) }
         return PaginationResponse(posts, nextPageToken)
     }
 
-    fun listPostsByAuthorId(authorId: String): List<Post> = repository.findAllByAuthorId(authorId)
+    fun listPostsByAuthorId(authorId: String): List<Post> = postRepository.findAllByAuthorId(authorId)
 
     @Transactional
     fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {
@@ -48,7 +48,7 @@ class PostService (
             createdAt = Instant.now(),
             updatedAt = Instant.now(),
         )
-        return repository.save(post)
+        return postRepository.save(post)
     }
 
     @Transactional
@@ -61,42 +61,42 @@ class PostService (
         val attachmentAdded = (postUpdate.images!! + postUpdate.videos!!).map {
             attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) }
         post.attachments = attachmentMaintainedAfterDeletion + attachmentAdded
-        return repository.save(post)
+        return postRepository.save(post)
     }
 
     @Transactional
     fun delete(post: Post) {
         post.attachments.forEach { attachmentRepository.delete(it) }
-        repository.deleteById(post.id!!)
+        postRepository.deleteById(post.id!!)
     }
 
     @Transactional
     fun addLike(post: Post, user: UserDetails) = run {
-        repository.addLike(post.id!!, user.id!!)?.let {
+        postRepository.addLike(post.id!!, user.id!!)?.let {
             post.likes += 1
-            repository.save(post)
+            postRepository.save(post)
             it
         }
     }
 
     @Transactional
     fun removeLike(post: Post, user: UserDetails) = run {
-        if (repository.removeLike(post.id!!, user.id!!)) {
+        if (postRepository.removeLike(post.id!!, user.id!!)) {
             post.likes -= 1
-            repository.save(post)
+            postRepository.save(post)
         }
     }
 
     @Transactional
     fun addView(post: Post, user: UserDetails) = run {
-        repository.addViewCount(post.id!!, user.id!!)?.let {
+        postRepository.addViewCount(post.id!!, user.id!!)?.let {
             post.viewCount += 1
-            repository.save(post)
+            postRepository.save(post)
             it
         }
     }
 
     fun isPostAuthor(post: Post, user: UserDetails): Boolean = post.author == user
 
-    fun hasUserLikedPost(post: Post, user: UserDetails): Boolean = repository.findLike(post.id!!, user.id!!) != null
+    fun hasUserLikedPost(post: Post, user: UserDetails): Boolean = postRepository.findLike(post.id!!, user.id!!) != null
 }

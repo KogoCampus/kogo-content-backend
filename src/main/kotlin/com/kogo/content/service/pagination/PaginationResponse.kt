@@ -9,10 +9,15 @@ data class PaginationResponse<T> (
     private val itemCount: Int
         get() = items.size
 
+    companion object {
+        const val HEADER_NAME_PAGE_TOKEN = "X-Page-Token"
+        const val HEADER_NAME_PAGE_SIZE = "X-Page-Size"
+    }
+
     fun toHttpHeaders(): HttpHeaders {
         val headers = HttpHeaders()
-        headers.set("next_page_token", nextPage?.toString())
-        headers.set("page_item_count", itemCount.toString())
+        headers.set(HEADER_NAME_PAGE_TOKEN, nextPage?.toString())
+        headers.set(HEADER_NAME_PAGE_SIZE, itemCount.toString())
         return headers
     }
 }

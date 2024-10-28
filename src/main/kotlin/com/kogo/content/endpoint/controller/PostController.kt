@@ -44,7 +44,6 @@ class PostController @Autowired constructor(
         )])
     fun listPostsInTopic(
         @PathVariable("topicId") topicId: String, @RequestParam requestParameters: Map<String, String>): ResponseEntity<*> = run {
-        val topic = findTopicByIdOrThrow(topicId)
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
 
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
@@ -93,7 +92,7 @@ class PostController @Autowired constructor(
             val user = userContextService.getCurrentUserDetails()
 
             if (!topicService.isUserFollowingTopic(topic, user))
-                return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "Failed to create a post: user is not following ${topic.topicName}")
+                return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not following topic id: ${topic.id}")
 
             val post = postService.create(topic, userContextService.getCurrentUserDetails(), postDto)
             return HttpJsonResponse.successResponse(PostResponse.from(post))
@@ -116,7 +115,6 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String,
         @Valid postUpdate: PostUpdate): ResponseEntity<*> {
-        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
         val user = userContextService.getCurrentUserDetails()
 
@@ -124,7 +122,7 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the author of this post")
 
         val updatedPost = postService.update(post, postUpdate)
-        return HttpJsonResponse.successResponse(PostResponse.from(post))
+        return HttpJsonResponse.successResponse(PostResponse.from(updatedPost))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -164,7 +162,6 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String
     ): ResponseEntity<*> = run {
-        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
         val user = userContextService.getCurrentUserDetails()
 
@@ -187,11 +184,10 @@ class PostController @Autowired constructor(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String
     ): ResponseEntity<*> = run {
-        val topic = findTopicByIdOrThrow(topicId)
         val post = postService.find(postId) ?: throwPostNotFound(postId)
         val user = userContextService.getCurrentUserDetails()
 
-        if (postService.hasUserLikedPost(post, user))
+        if (!postService.hasUserLikedPost(post, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user never liked this post: $postId")
 
         postService.removeLike(post, user)

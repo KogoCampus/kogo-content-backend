@@ -48,7 +48,6 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @RequestParam requestParameters: Map<String, String>
     ): ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
         val post = findPostOrThrow(postId)
 
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
@@ -74,8 +73,6 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ) = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
 
         HttpJsonResponse.successResponse(CommentResponse.from(comment))
@@ -100,11 +97,10 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @Valid commentDto: CommentDto,
     ) = run {
-        val topic = findTopicOrThrow(topicId)
         val post = findPostOrThrow(postId)
 
         val author = userContextService.getCurrentUserDetails()
-        val newComment = commentService.createComment(post, author, commentDto)
+        val newComment = commentService.create(post, author, commentDto)
 
         HttpJsonResponse.successResponse(CommentResponse.from(newComment))
     }
@@ -128,17 +124,15 @@ class CommentController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @Valid commentUpdate: CommentUpdate,
     ): ResponseEntity<*> {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
 
-        if (!commentService.isCommentAuthor(comment, userContextService.getCurrentUserDetails())) {
+        if (!commentService.isUserAuthor(comment, userContextService.getCurrentUserDetails())) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the comment"
             )
         }
-        val updatedComment = commentService.updateComment(comment, commentUpdate)
+        val updatedComment = commentService.update(comment, commentUpdate)
 
         return HttpJsonResponse.successResponse(CommentResponse.from(updatedComment))
     }
@@ -159,17 +153,15 @@ class CommentController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @PathVariable("postId") postId: String,
     ): ResponseEntity<*> {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
 
-        if (!commentService.isCommentAuthor(comment, userContextService.getCurrentUserDetails())) {
+        if (!commentService.isUserAuthor(comment, userContextService.getCurrentUserDetails())) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the comment"
             )
         }
-        val deletedComment = commentService.deleteComment(comment)
+        val deletedComment = commentService.delete(comment)
 
         return HttpJsonResponse.successResponse(deletedComment)
     }
@@ -191,17 +183,15 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ) : ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
         val user = userContextService.getCurrentUserDetails()
 
         if (commentService.hasUserLikedComment(comment, user)) {
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this comment $commentId.")
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this comment Id: $commentId")
         }
 
-        commentService.addLikeToComment(comment, user)
-        HttpJsonResponse.successResponse(CommentResponse.from(comment), "User's like added successfully to comment $commentId.")
+        commentService.addLike(comment, user)
+        HttpJsonResponse.successResponse(CommentResponse.from(comment), "User's like added successfully to comment $commentId")
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/likes")
@@ -218,16 +208,14 @@ class CommentController @Autowired constructor(
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
     ): ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
         val user = userContextService.getCurrentUserDetails()
 
         if (!commentService.hasUserLikedComment(comment, user)) {
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user haven't liked this comment $commentId.")
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user didn't put a like on this comment Id: $commentId.")
         }
 
-        commentService.removeLikeFromComment(comment, user)
+        commentService.removeLike(comment, user)
         HttpJsonResponse.successResponse(CommentResponse.from(comment), "User's like removed successfully to comment $commentId.")
     }
 
@@ -240,6 +228,6 @@ class CommentController @Autowired constructor(
     }
 
     private fun findCommentOrThrow(commentId: String) = run {
-        commentService.findComment(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
+        commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
 }

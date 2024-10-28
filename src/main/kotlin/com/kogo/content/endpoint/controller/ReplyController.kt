@@ -4,10 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.service.entity.CommentService
-import com.kogo.content.service.entity.PostService
-import com.kogo.content.service.entity.TopicService
-import com.kogo.content.service.entity.UserContextService
+import com.kogo.content.service.entity.*
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid
@@ -27,6 +24,7 @@ import org.springframework.http.ResponseEntity
 @RequestMapping("media")
 class ReplyController @Autowired constructor(
     private val commentService: CommentService,
+    private val replyService: ReplyService,
     private val postService: PostService,
     private val userContextService: UserContextService,
     private val topicService: TopicService,
@@ -48,12 +46,10 @@ class ReplyController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @RequestParam requestParameters: Map<String, String>
     ): ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
 
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = commentService.listRepliesByComment(comment, paginationRequest)
+        val paginationResponse = replyService.listRepliesByComment(comment, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map{ ReplyResponse.from(it) },
@@ -81,12 +77,10 @@ class ReplyController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @Valid commentDto: CommentDto,
     ) = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
         val comment = findCommentOrThrow(commentId)
 
         val author = userContextService.getCurrentUserDetails()
-        val newComment = commentService.createReply(comment, author, commentDto)
+        val newComment = replyService.create(comment, author, commentDto)
 
         HttpJsonResponse.successResponse(ReplyResponse.from(newComment))
     }
@@ -111,18 +105,15 @@ class ReplyController @Autowired constructor(
         @PathVariable("replyId") replyId: String,
         @Valid commentUpdate: CommentUpdate,
     ): ResponseEntity<*> {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
-        val comment = findCommentOrThrow(commentId)
         val reply = findReplyOrThrow(replyId)
 
-        if (!commentService.isReplyAuthor(reply, userContextService.getCurrentUserDetails())) {
+        if (!replyService.isUserAuthor(reply, userContextService.getCurrentUserDetails())) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the reply"
             )
         }
-        val updatedReply = commentService.updateReply(reply, commentUpdate)
+        val updatedReply = replyService.update(reply, commentUpdate)
 
         return HttpJsonResponse.successResponse(ReplyResponse.from(updatedReply))
     }
@@ -144,18 +135,15 @@ class ReplyController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @PathVariable("replyId") replyId: String,
     ): ResponseEntity<*> {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
-        val comment = findCommentOrThrow(commentId)
         val reply = findReplyOrThrow(replyId)
 
-        if (!commentService.isReplyAuthor(reply, userContextService.getCurrentUserDetails())) {
+        if (!replyService.isUserAuthor(reply, userContextService.getCurrentUserDetails())) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the reply"
             )
         }
-        val deletedReply = commentService.deleteReply(reply)
+        val deletedReply = replyService.delete(reply)
 
         return HttpJsonResponse.successResponse(deletedReply)
     }
@@ -178,18 +166,15 @@ class ReplyController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @PathVariable("replyId") replyId: String,
     ) : ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
-        val comment = findCommentOrThrow(commentId)
         val reply = findReplyOrThrow(replyId)
         val user = userContextService.getCurrentUserDetails()
 
-        if (commentService.hasUserLikedReply(reply, user)) {
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this reply $replyId.")
+        if (replyService.hasUserLikedReply(reply, user)) {
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this reply Id: $replyId")
         }
 
-        commentService.addLikeToReply(reply, user)
-        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like added successfully to comment $replyId.")
+        replyService.addLike(reply, user)
+        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like added successfully to comment $replyId")
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/replies/{replyId}/likes")
@@ -207,18 +192,15 @@ class ReplyController @Autowired constructor(
         @PathVariable("commentId") commentId: String,
         @PathVariable("replyId") replyId: String,
     ): ResponseEntity<*> = run {
-        val topic = findTopicOrThrow(topicId)
-        val post = findPostOrThrow(postId)
-        val comment = findCommentOrThrow(commentId)
         val reply = findReplyOrThrow(replyId)
         val user = userContextService.getCurrentUserDetails()
 
-        if (commentService.hasUserLikedReply(reply, user)) {
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this reply $replyId.")
+        if (!replyService.hasUserLikedReply(reply, user)) {
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user didn't put a like on this reply Id: $replyId")
         }
 
-        commentService.removeLikeFromReply(reply, user)
-        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like removed successfully to reply $replyId.")
+        replyService.removeLike(reply, user)
+        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like removed successfully to reply $replyId")
     }
 
     private fun findTopicOrThrow(topicId: String) = run {
@@ -230,10 +212,10 @@ class ReplyController @Autowired constructor(
     }
 
     private fun findCommentOrThrow(commentId: String) = run {
-        commentService.findComment(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
+        commentService.find(commentId) ?: throw ResourceNotFoundException("Comment", commentId)
     }
 
     private fun findReplyOrThrow(replyId: String) = run {
-        commentService.findReply(replyId) ?: throw ResourceNotFoundException("Reply", replyId)
+        replyService.find(replyId) ?: throw ResourceNotFoundException("Reply", replyId)
     }
 }

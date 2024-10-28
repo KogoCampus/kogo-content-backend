@@ -1,11 +1,6 @@
-package com.kogo.content.util
+package com.kogo.content.endpoint.`test-util`
 
-import com.kogo.content.storage.entity.Comment
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.entity.UserDetails
-import org.springframework.mock.web.MockMultipartFile
-import org.springframework.web.multipart.MultipartFile
+import com.kogo.content.storage.entity.*
 import java.time.Instant
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -47,6 +42,7 @@ private fun getRandomParameterValue(type: KType): Any? {
         classifier == Byte::class -> Random.nextInt().toByte()
         classifier == Float::class -> Random.nextFloat()
         classifier == Double::class -> Random.nextDouble()
+        classifier == Instant::class -> Instant.now()
         classifier == List::class -> {
             val elementType = type.arguments.firstOrNull()?.type
                 ?: throw IllegalArgumentException("Cannot process types without type arguments: $type")
@@ -64,27 +60,31 @@ class Fixture {
     companion object {
         fun createUserFixture() = fixture<UserDetails>()
 
-        fun createTopicFixture() = fixture<Topic> {
+        fun createTopicFixture(owner: UserDetails? = null) = fixture<Topic> {
             mapOf(
-                "owner" to createUserFixture()
+                "owner" to (owner ?: createUserFixture())
             )
         }
 
-        fun createPostFixture(topic: Topic) = fixture<Post> {
+        fun createPostFixture(topic: Topic, author: UserDetails? = null) = fixture<Post> {
             mapOf(
                 "topic" to topic,
-                "owner" to createUserFixture(),
-                "comments" to emptyList<Any>(),
+                "author" to (author ?: createUserFixture()),
                 "attachments" to emptyList<Any>(),
             )
         }
 
-        fun createCommentFixture(post: Post) = fixture<Comment> {
+        fun createCommentFixture(post: Post, author: UserDetails? = null) = fixture<Comment> {
             mapOf(
-                "postId" to post.id,
-                "owner" to createUserFixture(),
-                "createdAt" to Instant.now(),
-                "updatedAt" to Instant.now()
+                "post" to post,
+                "author" to (author ?: createUserFixture()),
+            )
+        }
+
+        fun createReplyFixture(comment: Comment, author: UserDetails? = null) = fixture<Reply> {
+            mapOf(
+                "comment" to comment,
+                "author" to (author ?: createUserFixture()),
             )
         }
     }

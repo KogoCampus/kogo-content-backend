@@ -9,11 +9,14 @@ data class PaginationRequest (
     val limit: Int = 10
 ) {
     companion object {
+        const val PAGE_TOKEN_PARAM = "page_token"
+        const val PAGE_SIZE_PARAM = "limit"
+
         fun resolveFromRequestParameters(requestParameters: Map<String, String>): PaginationRequest {
-            val pageTokenValue = requestParameters.getOrDefault("pageToken", null)
-            val limitValue = requestParameters.getOrDefault("limit", "10").toInt()
-            val pageToken = PageToken(pageTokenValue)
-            return PaginationRequest(pageToken, limitValue)
+            val pageTokenParam = requestParameters.getOrDefault(PAGE_TOKEN_PARAM, null)
+            val limitParam = requestParameters.getOrDefault(PAGE_SIZE_PARAM, "10").toInt()
+            val pageToken = if (pageTokenParam != null) PageToken.fromString(pageTokenParam) else PageToken.create()
+            return PaginationRequest(pageToken, limitParam)
         }
     }
 }

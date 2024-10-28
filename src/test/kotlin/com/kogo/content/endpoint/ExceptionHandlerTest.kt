@@ -56,10 +56,10 @@ class ExceptionHandlerTest {
     }
 
     @Test
-    fun `handleUnhandledException should return INTERNAL_SERVER_ERROR`() {
-        val ex = Exception("Unknown error")
+    fun `handleUnhandledRuntimeException should return INTERNAL_SERVER_ERROR`() {
+        val ex = RuntimeException("Unknown error")
 
-        val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleUnhandledException(ex)
+        val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleUnhandledRuntimeException(ex)
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error)

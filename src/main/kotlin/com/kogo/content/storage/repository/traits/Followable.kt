@@ -1,5 +1,6 @@
 package com.kogo.content.storage.repository.traits
 
+import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.UserFollowing
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -21,10 +22,7 @@ interface Followable {
     fun findAllFollowingsByFollowableId(followableId: String): List<UserFollowing>
 }
 
-class FollowableImpl : Followable {
-
-    @Autowired
-    lateinit var mongoTemplate: MongoTemplate
+class FollowableImpl @Autowired constructor(private val mongoTemplate: MongoTemplate) : Followable {
 
     override fun follow(followableId: String, userId: String): UserFollowing? {
         val existing = findFollowing(followableId, userId)
@@ -35,6 +33,7 @@ class FollowableImpl : Followable {
             followableId = followableId,
         )
         mongoTemplate.insert(following)
+
         return following
     }
 
@@ -46,7 +45,9 @@ class FollowableImpl : Followable {
 
     override fun unfollowAllByFollowableId(followableId: String) {
         val followings = findAllFollowingsByFollowableId(followableId)
-        followings.forEach { mongoTemplate.remove(it) }
+        followings.forEach {
+            mongoTemplate.remove(it)
+        }
     }
 
     override fun findFollowing(followableId: String, userId: String): UserFollowing? {
