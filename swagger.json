@@ -796,6 +796,37 @@
         }
       }
     },
+    "/media/topics/{id}/unfollow": {
+      "put": {
+        "tags": [
+          "topic-controller"
+        ],
+        "summary": "unfollow a topic",
+        "operationId": "unfollowTopic",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/topics/{id}/follow": {
       "put": {
         "tags": [
@@ -840,7 +871,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
+                  "$ref": "#/components/schemas/IncludeCredentials"
                 }
               }
             }
@@ -868,7 +899,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
+                  "$ref": "#/components/schemas/IncludeCredentials"
                 }
               }
             }
@@ -1229,37 +1260,6 @@
         }
       }
     },
-    "/media/topics/{id}/unfollow": {
-      "post": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "unfollow a topic",
-        "operationId": "unfollowTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/me/ownership/topics/{topicId}/transfer": {
       "post": {
         "tags": [
@@ -1479,7 +1479,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopicResponse"
+                  }
                 }
               }
             }
@@ -1500,7 +1503,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
                 }
               }
             }
@@ -1578,7 +1584,7 @@
             "type": "string"
           },
           "author": {
-            "$ref": "#/components/schemas/UserInfo"
+            "$ref": "#/components/schemas/Public"
           },
           "topicId": {
             "type": "string"
@@ -1620,9 +1626,8 @@
           }
         }
       },
-      "UserInfo": {
+      "Public": {
         "required": [
-          "email",
           "id",
           "schoolName",
           "schoolShortenedName",
@@ -1634,9 +1639,6 @@
             "type": "string"
           },
           "username": {
-            "type": "string"
-          },
-          "email": {
             "type": "string"
           },
           "profileImage": {
@@ -1719,7 +1721,7 @@
             "type": "string"
           },
           "author": {
-            "$ref": "#/components/schemas/UserInfo"
+            "$ref": "#/components/schemas/Public"
           },
           "postId": {
             "type": "string"
@@ -1760,7 +1762,7 @@
         "required": [
           "createdAt",
           "description",
-          "followingUserCount",
+          "followerCount",
           "id",
           "owner",
           "tags",
@@ -1773,7 +1775,7 @@
             "type": "string"
           },
           "owner": {
-            "$ref": "#/components/schemas/UserInfo"
+            "$ref": "#/components/schemas/Public"
           },
           "topicName": {
             "type": "string"
@@ -1798,7 +1800,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "followingUserCount": {
+          "followerCount": {
             "type": "integer",
             "format": "int32"
           }
@@ -1826,13 +1828,21 @@
           }
         }
       },
-      "UserResponse": {
+      "IncludeCredentials": {
         "required": [
-          "id"
+          "email",
+          "id",
+          "idToken",
+          "schoolName",
+          "schoolShortenedName",
+          "username"
         ],
         "type": "object",
         "properties": {
           "id": {
+            "type": "string"
+          },
+          "idToken": {
             "type": "string"
           },
           "username": {
@@ -1841,14 +1851,14 @@
           "email": {
             "type": "string"
           },
+          "profileImage": {
+            "$ref": "#/components/schemas/AttachmentResponse"
+          },
           "schoolName": {
             "type": "string"
           },
           "schoolShortenedName": {
             "type": "string"
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/AttachmentResponse"
           }
         }
       },
