@@ -1299,71 +1299,6 @@
         }
       }
     },
-    "/media/topics/{topicId}/posts/search": {
-      "get": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "search posts containing the keyword",
-        "operationId": "searchPosts",
-        "parameters": [
-          {
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          },
-          {
-            "name": "q",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "pageToken",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "headers": {
-              "next_page": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PostResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/search/topics": {
       "get": {
         "tags": [
@@ -1430,7 +1365,7 @@
           "search-controller"
         ],
         "summary": "Search posts by keyword",
-        "operationId": "searchPosts_1",
+        "operationId": "searchPosts",
         "parameters": [
           {
             "name": "q",
@@ -1696,7 +1631,7 @@
           "likes",
           "title",
           "updatedAt",
-          "viewcount"
+          "viewCount"
         ],
         "type": "object",
         "properties": {
@@ -1736,13 +1671,39 @@
             "type": "string",
             "format": "date-time"
           },
-          "viewcount": {
+          "viewCount": {
             "type": "integer",
             "format": "int32"
           },
           "likes": {
             "type": "integer",
             "format": "int32"
+          },
+          "userActivity": {
+            "$ref": "#/components/schemas/PostUserActivity"
+          }
+        }
+      },
+      "PostUserActivity": {
+        "required": [
+          "liked",
+          "viewed"
+        ],
+        "type": "object",
+        "properties": {
+          "liked": {
+            "type": "boolean"
+          },
+          "likedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "viewed": {
+            "type": "boolean"
+          },
+          "viewedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -1808,6 +1769,7 @@
       },
       "Like": {
         "required": [
+          "createdAt",
           "likableId",
           "userId"
         ],
@@ -1821,6 +1783,10 @@
           },
           "likableId": {
             "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -1894,9 +1860,6 @@
           "id": {
             "type": "string"
           },
-          "owner": {
-            "$ref": "#/components/schemas/Public"
-          },
           "topicName": {
             "type": "string"
           },
@@ -1923,6 +1886,27 @@
           "followerCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "userActivity": {
+            "$ref": "#/components/schemas/TopicUserActivity"
+          }
+        }
+      },
+      "TopicUserActivity": {
+        "required": [
+          "followed"
+        ],
+        "type": "object",
+        "properties": {
+          "followed": {
+            "type": "boolean"
+          },
+          "followedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
