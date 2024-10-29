@@ -22,4 +22,5 @@ management:
 
 search-engine:
     index:
-        post: "posts"
+        post: "post"
+        topic: "topic"

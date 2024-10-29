@@ -3,6 +3,7 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.service.search.SearchService
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.entity.UserDetails
@@ -17,7 +18,9 @@ class TopicService(
     private val topicRepository: TopicRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
-) {
+    private val topicSearchService: SearchService<Topic>
+) : SearchService<Topic> by topicSearchService {
+
     fun find(topicId: String): Topic? = topicRepository.findByIdOrNull(topicId)
 
     fun listFollowingTopicsByUserId(userId: String): List<Topic> {

@@ -2,7 +2,7 @@ package com.kogo.content.service.search
 
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
-import com.kogo.content.storage.entity.Post
+import com.kogo.content.storage.entity.Topic
 import org.bson.Document
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -11,14 +11,14 @@ import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.stereotype.Component
 
 @Component
-internal class PostSearchService(private val mongoTemplate: MongoTemplate) : SearchService<Post> {
+internal class TopicSearchService(private val mongoTemplate: MongoTemplate) : SearchService<Topic> {
 
-    @Value("\${search-engine.index.post}")
+    @Value("\${search-engine.index.topic}")
     private lateinit var atlasSearchIndex: String
 
-    private val searchPaths = listOf("title", "content")
+    private val searchPath = listOf("topicName", "description", "tags")
 
-    override fun searchByKeyword(keyword: String, paginationRequest: PaginationRequest): PaginationResponse<Post> {
+    override fun searchByKeyword(keyword: String, paginationRequest: PaginationRequest): PaginationResponse<Topic> {
         val limit = paginationRequest.limit
         val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
 
@@ -28,7 +28,7 @@ internal class PostSearchService(private val mongoTemplate: MongoTemplate) : Sea
                 .append("index", atlasSearchIndex)
                 .append("text", Document()
                     .append("query", keyword)
-                    .append("path", searchPaths)
+                    .append("path", searchPath)
                     .append("fuzzy", Document()
                         .append("maxEdits", 2)
                         .append("prefixLength", 3)
@@ -53,11 +53,11 @@ internal class PostSearchService(private val mongoTemplate: MongoTemplate) : Sea
 
         // Create and execute the aggregation
         val aggregation = TypedAggregation(
-            Post::class.java,
+            Topic::class.java,
             operations
         )
 
-        val results = mongoTemplate.aggregate(aggregation, Post::class.java).mappedResults
+        val results = mongoTemplate.aggregate(aggregation, Topic::class.java).mappedResults
 
         // Create next page token if we have results and we got a full page
         val nextPageToken = if (results.size == limit) {

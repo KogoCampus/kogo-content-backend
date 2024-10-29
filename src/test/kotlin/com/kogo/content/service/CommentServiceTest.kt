@@ -1,8 +1,7 @@
-package com.kogo.content.service.entity
+package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.service.CommentService
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.storage.entity.Comment

@@ -2,7 +2,9 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.PostResponse
+import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.service.PostService
+import com.kogo.content.service.TopicService
 import com.kogo.content.service.pagination.PaginationRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -19,7 +21,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("media/search")
 class SearchController(
-    private val postService: PostService
+    private val postService: PostService,
+    private val topicService: TopicService
 ) {
 
     @GetMapping("posts")
@@ -53,6 +56,41 @@ class SearchController(
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it) },
+            headers = paginationResponse.toHttpHeaders()
+        )
+    }
+
+    @GetMapping("topics")
+    @Operation(
+        summary = "Search topics by keyword",
+        parameters = [
+            Parameter(
+                name = "q",
+                description = "Search keyword",
+                required = true,
+                schema = Schema(type = "string")
+            ),
+            Parameter(schema = Schema(implementation = PaginationRequest::class))
+        ],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+            content = [Content(
+                mediaType = "application/json",
+                array = ArraySchema(schema = Schema(implementation = TopicResponse::class))
+            )]
+        )]
+    )
+    fun searchTopics(
+        @RequestParam("q") keyword: String,
+        @RequestParam requestParameters: Map<String, String>
+    ) = run {
+        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
+        val paginationResponse = topicService.searchByKeyword(keyword, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { TopicResponse.from(it) },
             headers = paginationResponse.toHttpHeaders()
         )
     }

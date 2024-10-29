@@ -1,9 +1,9 @@
-package com.kogo.content.service.entity
+package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.service.TopicService
 import com.kogo.content.filehandler.FileHandler
+import com.kogo.content.service.search.SearchService
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
@@ -22,8 +22,13 @@ class TopicServiceTest {
     private val topicRepository: TopicRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
     private val fileHandler: FileHandler = mockk()
+    private val topicSearchService: SearchService<Topic> = mockk()
 
-    private val topicService: TopicService = TopicService(topicRepository, attachmentRepository, fileHandler)
+    private val topicService: TopicService = TopicService(
+        topicRepository = topicRepository,
+        attachmentRepository = attachmentRepository,
+        fileHandler = fileHandler,
+        topicSearchService = topicSearchService)
 
     @BeforeEach
     fun setup() {
