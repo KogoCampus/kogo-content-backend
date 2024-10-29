@@ -14,11 +14,12 @@ data class PostResponse(
     var commentCount: Int,
     var createdAt: Instant,
     var updatedAt: Instant,
-    val viewcount: Int,
+    val viewCount: Int,
     val likes: Int,
+    val userActivity: PostUserActivity?
 ) {
     companion object {
-        fun from(post: Post): PostResponse = PostResponse(
+        fun from(post: Post, userActivity: PostUserActivity? = null): PostResponse = PostResponse(
             id = post.id!!,
             topicId = post.topic.id,
             author = UserData.Public.from(post.author),
@@ -26,11 +27,19 @@ data class PostResponse(
             topicName = post.topic.topicName,
             content = post.content,
             attachments = post.attachments.map { AttachmentResponse.from(it) },
-            viewcount = post.viewCount,
+            viewCount = post.viewCount,
             commentCount = post.commentCount,
             likes = post.likes,
             createdAt = post.createdAt!!,
-            updatedAt = post.updatedAt!!
+            updatedAt = post.updatedAt!!,
+            userActivity = userActivity
         )
     }
+
+    data class PostUserActivity(
+        val liked: Boolean,
+        val likedAt: Instant?,
+        val viewed: Boolean,
+        val viewedAt: Instant?
+    )
 }

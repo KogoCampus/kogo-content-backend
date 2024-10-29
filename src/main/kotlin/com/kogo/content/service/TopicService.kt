@@ -7,6 +7,7 @@ import com.kogo.content.service.search.SearchService
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.storage.entity.UserFollowing
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -83,4 +84,5 @@ class TopicService(
         return topicRepository.findFollowing(topic.id!!, user.id!!) != null
     }
     fun isTopicOwner(topic: Topic, owner: UserDetails): Boolean = topic.owner == owner
+    fun findUserFollowing(topic: Topic, user: UserDetails): UserFollowing? = topicRepository.findFollowing(topic.id!!, user.id!!)
 }

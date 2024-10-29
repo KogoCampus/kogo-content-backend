@@ -92,7 +92,7 @@ class PostService (
 
     @Transactional
     fun addView(post: Post, user: UserDetails) = run {
-        postRepository.addViewCount(post.id!!, user.id!!)?.let {
+        postRepository.addView(post.id!!, user.id!!)?.let {
             post.viewCount += 1
             postRepository.save(post)
             it
@@ -100,6 +100,8 @@ class PostService (
     }
 
     fun isPostAuthor(post: Post, user: UserDetails): Boolean = post.author == user
-
     fun hasUserLikedPost(post: Post, user: UserDetails): Boolean = postRepository.findLike(post.id!!, user.id!!) != null
+
+    fun findLike(post: Post, user: UserDetails) = postRepository.findLike(post.id!!, user.id!!)
+    fun findView(post: Post, user: UserDetails) = postRepository.findView(post.id!!, user.id!!)
 }

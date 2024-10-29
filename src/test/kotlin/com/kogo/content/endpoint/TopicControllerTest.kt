@@ -46,11 +46,15 @@ class TopicControllerTest @Autowired constructor(
     fun setup() {
         user = Fixture.createUserFixture()
         topic = Fixture.createTopicFixture(user)
+
+        // temporary for building user activity response
+        every { topicService.findUserFollowing(any(), any()) } returns null
     }
 
     @Test
     fun `should return a topic by id`() {
         val topicId = topic.id!!
+        every { userService.getCurrentUserDetails() } returns user
         every { topicService.find(topicId) } returns topic
         mockMvc.get(buildTopicApiUrl(topicId))
             .andExpect { status { isOk() } }

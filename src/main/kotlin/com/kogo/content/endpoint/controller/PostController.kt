@@ -48,7 +48,7 @@ class PostController @Autowired constructor(
         val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { PostResponse.from(it) },
+            data = paginationResponse.items.map { PostResponse.from(it, createUserActivityResponse(it)) },
             headers = paginationResponse.toHttpHeaders()
         )
     }
@@ -64,11 +64,10 @@ class PostController @Autowired constructor(
     fun getPost(
         @PathVariable("topicId") topicId: String,
         @PathVariable("postId") postId: String) = run {
-        val topic = findTopicByIdOrThrow(topicId)
         val user = userContextService.getCurrentUserDetails()
         val post = postService.find(postId) ?: throwPostNotFound(postId)
         postService.addView(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post))
+        HttpJsonResponse.successResponse(PostResponse.from(post, createUserActivityResponse(post)))
     }
 
     @RequestMapping(
@@ -94,7 +93,7 @@ class PostController @Autowired constructor(
                 return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not following topic id: ${topic.id}")
 
             val post = postService.create(topic, userContextService.getCurrentUserDetails(), postDto)
-            return HttpJsonResponse.successResponse(PostResponse.from(post))
+            return HttpJsonResponse.successResponse(PostResponse.from(post, createUserActivityResponse(post)))
         }
 
     @RequestMapping(
@@ -121,7 +120,7 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the author of this post")
 
         val updatedPost = postService.update(post, postUpdate)
-        return HttpJsonResponse.successResponse(PostResponse.from(updatedPost))
+        return HttpJsonResponse.successResponse(PostResponse.from(updatedPost, createUserActivityResponse(updatedPost)))
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}")
@@ -168,7 +167,7 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this post: $postId")
 
         postService.addLike(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post), "User's like added successfully to post: $postId")
+        HttpJsonResponse.successResponse(PostResponse.from(post, createUserActivityResponse(post)), "User's like added successfully to post: $postId")
     }
 
     @DeleteMapping("topics/{topicId}/posts/{postId}/likes")
@@ -190,40 +189,20 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user never liked this post: $postId")
 
         postService.removeLike(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post), "User's like deleted successfully to post: $postId")
-    }
-
-    @GetMapping("topics/{topicId}/posts/search")
-    @Operation(
-        summary = "search posts containing the keyword",
-        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
-            content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = PostResponse::class)))],
-        )])
-    fun searchPosts(
-        @RequestParam("q") keyword: String,
-        @RequestParam("limit") limit: Int?,
-        @RequestParam("pageToken") page: String?): Nothing = run {
-        throwPostNotFound("")
-        TODO("" +
-            "1. remove return type Nothing" +
-            "2. use(create) a function inside postService to get Post Pagination using the keyword" +
-            "3. return the successResponse with the pagination result"
-        )
-
-//        val paginationResponse = postService.listPostsByKeyword(keyword, paginationRequest)
-//        HttpJsonResponse.successResponse(
-//            data = paginationResponse.items.map { buildPostResponse(it, it.topic) },
-//            headers = paginationResponse.toHeaders()
-//        )
-
+        HttpJsonResponse.successResponse(PostResponse.from(post, createUserActivityResponse(post)), "User's like deleted successfully to post: $postId")
     }
 
     private fun findTopicByIdOrThrow(topicId: String): Topic = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
-
     private fun throwPostNotFound(postId: String): Nothing = throw ResourceNotFoundException.of<Post>(postId)
+
+    private fun createUserActivityResponse(post: Post): PostResponse.PostUserActivity {
+        val like = postService.findLike(post, userContextService.getCurrentUserDetails())
+        val view = postService.findView(post, userContextService.getCurrentUserDetails())
+        return PostResponse.PostUserActivity(
+            liked = like != null,
+            likedAt = like?.createdAt,
+            viewed = view != null,
+            viewedAt = view?.createdAt,
+        )
+    }
 }

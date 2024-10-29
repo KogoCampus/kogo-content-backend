@@ -5,8 +5,11 @@ import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.content.service.UserContextService
+import com.kogo.content.storage.entity.UserDetails
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -37,11 +40,6 @@ class FeedControllerTest @Autowired constructor(
         val paramBuilder = StringBuilder()
         params.forEach { paramBuilder.append("${it.key}=${it.value}&") }
         return if (paramBuilder.isNotEmpty()) "$baseUrl?$paramBuilder" else baseUrl
-    }
-
-    @BeforeEach
-    fun setup() {
-        // Setup any common mock behavior here
     }
 
     @Test

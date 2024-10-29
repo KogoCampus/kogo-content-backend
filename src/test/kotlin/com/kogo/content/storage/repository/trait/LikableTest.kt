@@ -108,46 +108,4 @@ class LikableTest @Autowired constructor(
         assertThat(result?.userId).isEqualTo(userId)
         assertThat(result?.likableId).isEqualTo(likableId)
     }
-
-    @Test
-    fun `should add view when user hasn't viewed before`() {
-        val userId = "test-user-id"
-        val viewableId = "test-viewable-id"
-
-        val result = likable.addViewCount(viewableId, userId)
-
-        assertThat(result).isNotNull
-        assertThat(result?.userId).isEqualTo(userId)
-        assertThat(result?.viewableId).isEqualTo(viewableId)
-
-        // Verify view exists in database
-        val savedView = mongoTemplate.findOne(
-            Query(Criteria.where("userId").`is`(userId).and("viewableId").`is`(viewableId)),
-            View::class.java
-        )
-        assertThat(savedView).isNotNull
-        assertThat(savedView?.userId).isEqualTo(userId)
-        assertThat(savedView?.viewableId).isEqualTo(viewableId)
-    }
-
-    @Test
-    fun `should not add view when user has already viewed`() {
-        val userId = "test-user-id"
-        val viewableId = "test-viewable-id"
-
-        // Add initial view
-        likable.addViewCount(viewableId, userId)
-
-        // Try to add view again
-        val result = likable.addViewCount(viewableId, userId)
-
-        assertThat(result).isNull()
-
-        // Verify only one view exists in database
-        val views = mongoTemplate.find(
-            Query(Criteria.where("userId").`is`(userId).and("viewableId").`is`(viewableId)),
-            View::class.java
-        )
-        assertThat(views).hasSize(1)
-    }
 }

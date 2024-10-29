@@ -64,6 +64,10 @@ class PostControllerTest @Autowired constructor(
         every { userService.getCurrentUserDetails() } returns user
         every { topicService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
+
+        // temporary for building user activity response
+        every { postService.findLike(any(), any()) } returns null
+        every { postService.findView(any(), any()) } returns null
     }
 
     @Test

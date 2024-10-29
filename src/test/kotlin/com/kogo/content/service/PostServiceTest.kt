@@ -152,14 +152,14 @@ class PostServiceTest {
             createdAt = Instant.now()
         )
 
-        every { postRepository.addViewCount("test-post-id", "test-user-id") } returns mockk()
+        every { postRepository.addView("test-post-id", "test-user-id") } returns mockk()
         every { postRepository.save(any()) } returns post
 
         postService.addView(post, user)
 
         assertThat(post.viewCount).isEqualTo(1)
         verify {
-            postRepository.addViewCount("test-post-id", "test-user-id")
+            postRepository.addView("test-post-id", "test-user-id")
             postRepository.save(post)
         }
     }

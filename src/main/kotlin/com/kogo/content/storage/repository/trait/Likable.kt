@@ -14,8 +14,6 @@ interface Likable {
     fun removeLike(likableId: String, userId: String): Boolean
 
     fun findLike(likableId: String, userId: String): Like?
-
-    fun addViewCount(viewableId: String, userId: String): View?
 }
 
 open class LikableImpl @Autowired constructor(private val mongoTemplate: MongoTemplate) : Likable {
@@ -45,22 +43,5 @@ open class LikableImpl @Autowired constructor(private val mongoTemplate: MongoTe
                 .and("userId").`is`(userId)
         )
         return mongoTemplate.findOne(query, Like::class.java)
-    }
-
-    override fun addViewCount(viewableId: String, userId: String): View? {
-        val existingView = mongoTemplate.findOne(
-            Query(
-                Criteria.where("userId").`is`(userId)
-                    .and("viewableId").`is`(viewableId)
-            ), View::class.java)
-        if (existingView != null) { return null }
-
-        val view = View(
-            userId = userId,
-            viewableId = viewableId
-        )
-        mongoTemplate.insert(view)
-
-        return view
     }
 }

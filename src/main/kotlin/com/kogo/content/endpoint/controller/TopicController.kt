@@ -38,7 +38,7 @@ class TopicController @Autowired constructor(
         )])
     fun getTopic(@PathVariable("id") topicId: String) = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-        HttpJsonResponse.successResponse(TopicResponse.from(topic))
+        HttpJsonResponse.successResponse(TopicResponse.from(topic, createUserActivityResponse(topic)))
     }
 
     @RequestMapping(
@@ -58,7 +58,7 @@ class TopicController @Autowired constructor(
         if (topicService.isTopicExist(topicDto.topicName))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
         val topic = topicService.create(topicDto, userContextService.getCurrentUserDetails())
-        HttpJsonResponse.successResponse(TopicResponse.from(topic))
+        HttpJsonResponse.successResponse(TopicResponse.from(topic, createUserActivityResponse(topic)))
     }
 
     @RequestMapping(
@@ -91,7 +91,7 @@ class TopicController @Autowired constructor(
             if (topicUpdate.topicName != null && topicService.isTopicExist(topicUpdate.topicName!!))
                 return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicUpdate.topicName}")
             val updatedTopic = topicService.update(topic, topicUpdate)
-            HttpJsonResponse.successResponse(TopicResponse.from(updatedTopic))
+            HttpJsonResponse.successResponse(TopicResponse.from(updatedTopic, createUserActivityResponse(topic)))
     }
 
     @DeleteMapping("topics/{id}")
@@ -137,7 +137,7 @@ class TopicController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the topic")
 
         topicService.follow(topic, user)
-        HttpJsonResponse.successResponse(TopicResponse.from(topic), "User's follow added successfully to topic: $topicId")
+        HttpJsonResponse.successResponse(TopicResponse.from(topic, createUserActivityResponse(topic)), "User's follow added successfully to topic: $topicId")
     }
 
     @RequestMapping(
@@ -162,8 +162,16 @@ class TopicController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the topic")
 
         topicService.unfollow(topic, user)
-        HttpJsonResponse.successResponse(TopicResponse.from(topic), "User's follow successfully removed from topic: $topicId")
+        HttpJsonResponse.successResponse(TopicResponse.from(topic, createUserActivityResponse(topic)), "User's follow successfully removed from topic: $topicId")
     }
 
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
+
+    private fun createUserActivityResponse(topic: Topic): TopicResponse.TopicUserActivity {
+        val following = topicService.findUserFollowing(topic, userContextService.getCurrentUserDetails())
+        return TopicResponse.TopicUserActivity(
+            followed = following != null,
+            followedAt = following?.createdAt
+        )
+    }
 }
