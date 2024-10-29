@@ -1364,6 +1364,66 @@
         }
       }
     },
+    "/media/search/posts": {
+      "get": {
+        "tags": [
+          "search-controller"
+        ],
+        "summary": "Search posts by keyword",
+        "operationId": "searchPosts_1",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search keyword",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          },
+          {
+            "name": "requestParameters",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/feeds/trending": {
       "get": {
         "tags": [
