@@ -1,7 +1,7 @@
 package com.kogo.content.storage.repository
 
 import com.kogo.content.storage.entity.Reply
-import com.kogo.content.storage.repository.traits.Likable
+import com.kogo.content.storage.repository.trait.Likable
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.MongoRepository
 

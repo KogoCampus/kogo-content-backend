@@ -1,6 +1,6 @@
 package com.kogo.content.storage.converter
 
-import com.kogo.content.filesystem.FileStoreKey
+import com.kogo.content.filehandler.FileStoreKey
 import org.springframework.stereotype.Component
 import org.springframework.core.convert.converter.Converter
 

@@ -4,7 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.service.entity.*
+import com.kogo.content.service.*
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid

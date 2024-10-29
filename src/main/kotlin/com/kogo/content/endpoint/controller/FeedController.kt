@@ -3,7 +3,7 @@ package com.kogo.content.endpoint.controller
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.service.entity.FeedService
+import com.kogo.content.service.FeedService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header

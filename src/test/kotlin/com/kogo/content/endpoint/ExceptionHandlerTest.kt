@@ -63,6 +63,5 @@ class ExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error)
-        assertEquals("Unhandled exception occurred; ${ex.message}", response.body?.details)
     }
 }

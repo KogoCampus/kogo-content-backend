@@ -1,4 +1,4 @@
-package com.kogo.content.storage.repository.traits
+package com.kogo.content.storage.repository.trait
 
 import com.kogo.content.storage.entity.UserFollowing
 import org.assertj.core.api.Assertions.assertThat

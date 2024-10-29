@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.service.entity.FeedService
+import com.kogo.content.service.FeedService
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
 import com.kogo.content.service.pagination.PageToken

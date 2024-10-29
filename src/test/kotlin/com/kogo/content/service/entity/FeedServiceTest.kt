@@ -1,5 +1,6 @@
 package com.kogo.content.service.entity
 
+import com.kogo.content.service.FeedService
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.storage.entity.Post

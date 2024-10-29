@@ -2,7 +2,8 @@ package com.kogo.content.service.entity
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.service.TopicService
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails

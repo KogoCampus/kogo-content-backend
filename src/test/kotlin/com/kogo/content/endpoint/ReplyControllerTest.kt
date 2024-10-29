@@ -1,11 +1,11 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.service.entity.*
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.content.service.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk

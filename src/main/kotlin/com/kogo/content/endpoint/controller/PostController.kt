@@ -3,11 +3,10 @@ package com.kogo.content.endpoint.controller
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
-import com.kogo.content.endpoint.model.AttachmentResponse
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.service.entity.UserContextService
-import com.kogo.content.service.entity.PostService
-import com.kogo.content.service.entity.TopicService
+import com.kogo.content.service.UserContextService
+import com.kogo.content.service.PostService
+import com.kogo.content.service.TopicService
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation

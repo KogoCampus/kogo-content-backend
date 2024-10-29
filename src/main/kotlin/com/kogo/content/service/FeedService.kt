@@ -1,4 +1,4 @@
-package com.kogo.content.service.entity
+package com.kogo.content.service
 
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse

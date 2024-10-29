@@ -1,7 +1,7 @@
-package com.kogo.content.service.entity
+package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.UserUpdate
-import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic

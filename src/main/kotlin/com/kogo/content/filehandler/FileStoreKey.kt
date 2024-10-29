@@ -1,7 +1,6 @@
-package com.kogo.content.filesystem
+package com.kogo.content.filehandler
 
 import com.kogo.content.SpringContext
-import com.kogo.content.service.filehandler.FileHandler
 
 data class FileStoreKey (
     val key: String

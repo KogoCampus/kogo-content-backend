@@ -1,7 +1,7 @@
 package com.kogo.content.storage.repository
 
 import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.repository.traits.Followable
+import com.kogo.content.storage.repository.trait.Followable
 import org.springframework.data.mongodb.repository.MongoRepository
 
 interface TopicRepository : MongoRepository<Topic, String>, Followable {

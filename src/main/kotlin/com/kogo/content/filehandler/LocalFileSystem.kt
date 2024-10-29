@@ -1,4 +1,4 @@
-package com.kogo.content.filesystem
+package com.kogo.content.filehandler
 
 import com.kogo.content.logging.Logger
 import org.springframework.web.multipart.MultipartFile

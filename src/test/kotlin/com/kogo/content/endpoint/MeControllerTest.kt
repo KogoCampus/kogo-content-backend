@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint
 
-import com.kogo.content.service.entity.UserContextService
+import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.ninjasquad.springmockk.MockkBean

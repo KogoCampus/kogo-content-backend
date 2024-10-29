@@ -1,4 +1,4 @@
-package com.kogo.content.service.filehandler
+package com.kogo.content.filehandler
 
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

@@ -5,8 +5,8 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
-import com.kogo.content.service.entity.TopicService
-import com.kogo.content.service.entity.UserContextService
+import com.kogo.content.service.TopicService
+import com.kogo.content.service.UserContextService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.ArraySchema

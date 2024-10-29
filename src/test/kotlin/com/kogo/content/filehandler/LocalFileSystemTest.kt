@@ -1,4 +1,4 @@
-package com.kogo.content.filesystem
+package com.kogo.content.filehandler
 
 import java.io.IOException
 import org.junit.jupiter.api.*

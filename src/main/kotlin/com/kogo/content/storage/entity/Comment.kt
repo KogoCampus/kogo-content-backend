@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.DocumentReference
 import java.time.Instant
 
-@Document(collection = "comments")
+@Document
 data class Comment (
     @Id
     var id: String? = null,

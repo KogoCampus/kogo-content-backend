@@ -6,6 +6,7 @@ import org.bson.Document
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -44,13 +45,19 @@ class PostPopularityImpl @Autowired constructor(private val mongoTemplate: Mongo
             )
             .build()
 
-        val pipeline = Aggregation.newAggregation(
+        val operations = listOf(
             matchStage,
             addPopularityFieldStage,
             Aggregation.sort(Sort.by(Sort.Order.desc("popularityScore"))),
             Aggregation.skip(offset.toLong()),
             Aggregation.limit(pageSize.toLong())
         )
-        return mongoTemplate.aggregate(pipeline, "posts", Post::class.java).mappedResults
+
+        val typedAggregation = TypedAggregation(
+            Post::class.java,
+            operations
+        )
+
+        return mongoTemplate.aggregate(typedAggregation, Post::class.java).mappedResults
     }
 }

@@ -2,6 +2,7 @@ package com.kogo.content.service.entity
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.service.ReplyService
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.storage.entity.Comment
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
-import java.time.Instant
 
 class ReplyServiceTest {
     private val replyRepository: ReplyRepository = mockk()

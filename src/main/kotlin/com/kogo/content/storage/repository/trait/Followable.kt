@@ -1,6 +1,5 @@
-package com.kogo.content.storage.repository.traits
+package com.kogo.content.storage.repository.trait
 
-import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.UserFollowing
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate

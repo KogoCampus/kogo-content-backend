@@ -1,4 +1,4 @@
-package com.kogo.content.storage.repository.traits
+package com.kogo.content.storage.repository.trait
 
 import com.kogo.content.storage.entity.Like
 import com.kogo.content.storage.entity.View

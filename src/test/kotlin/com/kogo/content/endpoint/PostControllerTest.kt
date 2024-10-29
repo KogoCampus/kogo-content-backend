@@ -3,9 +3,9 @@ package com.kogo.content.endpoint
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.service.pagination.PaginationResponse
-import com.kogo.content.service.entity.PostService
-import com.kogo.content.service.entity.TopicService
-import com.kogo.content.service.entity.UserContextService
+import com.kogo.content.service.PostService
+import com.kogo.content.service.TopicService
+import com.kogo.content.service.UserContextService
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic

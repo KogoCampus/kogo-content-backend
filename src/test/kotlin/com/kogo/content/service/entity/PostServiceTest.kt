@@ -1,8 +1,10 @@
 package com.kogo.content.service.entity
 
+import com.kogo.content.service.PostService
 import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.filehandler.FileHandler
+import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.service.pagination.PageToken
+import com.kogo.content.service.search.SearchService
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
@@ -19,8 +21,14 @@ class PostServiceTest {
     private val postRepository: PostRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
     private val fileHandler: FileHandler = mockk()
+    private val postSearchService: SearchService<Post> = mockk()
 
-    private val postService: PostService = PostService(postRepository, attachmentRepository, fileHandler)
+    private val postService: PostService = PostService(
+        postRepository = postRepository,
+        attachmentRepository = attachmentRepository,
+        fileHandler = fileHandler,
+        postSearchService = postSearchService
+    )
 
     @Test
     fun `should find post by id`() {

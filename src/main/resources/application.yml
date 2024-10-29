@@ -19,3 +19,7 @@ management:
             base-path: /-
             exposure:
                 include: health
+
+search-engine:
+    index:
+        post: "posts"

@@ -1,8 +1,5 @@
-package com.kogo.content.service.filehandler
+package com.kogo.content.filehandler
 
-import com.kogo.content.filesystem.FileStoreKey
-import com.kogo.content.filesystem.FileStoreMetadata
-import com.kogo.content.filesystem.LocalFileSystem
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
