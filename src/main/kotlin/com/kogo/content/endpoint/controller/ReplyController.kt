@@ -5,19 +5,15 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.service.*
-import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 
 @RestController

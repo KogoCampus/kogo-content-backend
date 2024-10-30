@@ -57,7 +57,7 @@ class ReplyServiceTest {
 
         every { replyRepository.findAllByCommentId("test-comment-id", pageable) } returns replies
 
-        val result = replyService.listRepliesByComment(comment, paginationRequest)
+        val result = replyService.getAllRepliesByComment(comment, paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("reply-2")

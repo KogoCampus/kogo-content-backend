@@ -34,7 +34,7 @@ class FeedController @Autowired constructor(
         )])
     fun listLatestPosts(@RequestParam requestParameters: Map<String, String>) = run {
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = feedService.listPostsByLatest(paginationRequest)
+        val paginationResponse = feedService.getAllPostsByLatest(paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it) },
@@ -57,7 +57,7 @@ class FeedController @Autowired constructor(
         )])
     fun listTrendingPosts(@RequestParam requestParameters: Map<String, String>) = run {
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = feedService.listPostsByPopularity(paginationRequest)
+        val paginationResponse = feedService.getAllPostsByPopularity(paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it) },

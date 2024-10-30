@@ -3,7 +3,7 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.service.search.SearchService
+import com.kogo.content.service.search.SearchQueryDao
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.UserDetails
@@ -22,13 +22,13 @@ class TopicServiceTest {
     private val topicRepository: TopicRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
     private val fileHandler: FileHandler = mockk()
-    private val topicSearchService: SearchService<Topic> = mockk()
+    private val topicSearchDao: SearchQueryDao<Topic> = mockk()
 
     private val topicService: TopicService = TopicService(
         topicRepository = topicRepository,
         attachmentRepository = attachmentRepository,
         fileHandler = fileHandler,
-        topicSearchService = topicSearchService)
+        topicSearchDao = topicSearchDao)
 
     @BeforeEach
     fun setup() {
@@ -62,7 +62,7 @@ class TopicServiceTest {
         every { topicRepository.findByIdOrNull("topic-1") } returns topic1
         every { topicRepository.findByIdOrNull("topic-2") } returns topic2
 
-        val result = topicService.listFollowingTopicsByUserId(userId)
+        val result = topicService.getAllTopicsUserFollowingByUserId(userId)
 
         assertThat(result).containsExactly(topic1, topic2)
         verify { topicRepository.findAllFollowingsByUserId(userId) }

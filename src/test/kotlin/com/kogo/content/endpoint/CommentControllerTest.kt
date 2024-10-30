@@ -2,7 +2,7 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.pagination.PaginationSlice
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.*
@@ -233,10 +233,10 @@ class CommentControllerTest @Autowired constructor(
 
         val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
         val nextPageToken = paginationRequest.pageToken.nextPageToken("next-token")
-        val paginationResponse = PaginationResponse(replies, nextPageToken)
+        val paginationSlice = PaginationSlice(replies, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { replyService.listRepliesByComment(comment, capture(paginationRequestSlot)) } returns paginationResponse
+        every { replyService.getAllRepliesByComment(comment, capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildCommentApiUrl(commentId, "replies",
             params = mapOf("limit" to "${paginationRequest.limit}")
@@ -245,8 +245,8 @@ class CommentControllerTest @Autowired constructor(
                 status { isOk() }
                 content { contentType(MediaType.APPLICATION_JSON) }
                 jsonPath("$.data.length()") { value(replies.size) }
-                header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) }
-                header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") }
+                header { string(PaginationSlice.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) }
+                header { string(PaginationSlice.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") }
             }
 
         val capturedRequest = paginationRequestSlot.captured

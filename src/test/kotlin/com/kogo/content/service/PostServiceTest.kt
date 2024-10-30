@@ -3,7 +3,7 @@ package com.kogo.content.service
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.filehandler.FileHandler
 import com.kogo.content.service.pagination.PageToken
-import com.kogo.content.service.search.SearchService
+import com.kogo.content.service.search.SearchQueryDao
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.repository.AttachmentRepository
@@ -20,13 +20,13 @@ class PostServiceTest {
     private val postRepository: PostRepository = mockk()
     private val attachmentRepository: AttachmentRepository = mockk()
     private val fileHandler: FileHandler = mockk()
-    private val postSearchService: SearchService<Post> = mockk()
+    private val postSearchDao: SearchQueryDao<Post> = mockk()
 
     private val postService: PostService = PostService(
         postRepository = postRepository,
         attachmentRepository = attachmentRepository,
         fileHandler = fileHandler,
-        postSearchService = postSearchService
+        postSearchDao = postSearchDao
     )
 
     @Test
@@ -54,7 +54,7 @@ class PostServiceTest {
 
         every { postRepository.findAllByTopicId(topicId, pageable) } returns posts
 
-        val result = postService.listPostsByTopicId(topicId, paginationRequest)
+        val result = postService.getAllPostsByTopicId(topicId, paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage!!.pageLastResourceId).isEqualTo("sample-post-id-2")
@@ -68,7 +68,7 @@ class PostServiceTest {
 
         every { postRepository.findAllByAuthorId(authorId) } returns expectedPosts
 
-        val result = postService.listPostsByAuthorId(authorId)
+        val result = postService.getAllPostsByAuthorId(authorId)
 
         assertThat(result).isEqualTo(expectedPosts)
         verify { postRepository.findAllByAuthorId(authorId) }

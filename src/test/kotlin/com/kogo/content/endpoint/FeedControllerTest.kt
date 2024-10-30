@@ -2,17 +2,13 @@ package com.kogo.content.endpoint
 
 import com.kogo.content.service.FeedService
 import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.pagination.PaginationSlice
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.endpoint.`test-util`.Fixture
-import com.kogo.content.service.UserContextService
-import com.kogo.content.storage.entity.UserDetails
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.slot
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -46,17 +42,17 @@ class FeedControllerTest @Autowired constructor(
     fun `should return latest posts with pagination metadata`() {
         val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
         val nextPageToken = paginationRequest.pageToken.nextPageToken("sample-next-page-token")
-        val paginationResponse = PaginationResponse(posts, nextPageToken)
+        val paginationSlice = PaginationSlice(posts, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { feedService.listPostsByLatest(capture(paginationRequestSlot)) } returns paginationResponse
+        every { feedService.getAllPostsByLatest(capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildFeedApiUrl("latest", mapOf("limit" to "${paginationRequest.limit}")))
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
 
         val capturedPaginationRequest = paginationRequestSlot.captured
         assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
@@ -67,17 +63,17 @@ class FeedControllerTest @Autowired constructor(
     fun `should return trending posts with pagination metadata`() {
         val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
         val nextPageToken = paginationRequest.pageToken.nextPageToken("sample-next-page-token")
-        val paginationResponse = PaginationResponse(posts, nextPageToken)
+        val paginationSlice = PaginationSlice(posts, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { feedService.listPostsByPopularity(capture(paginationRequestSlot)) } returns paginationResponse
+        every { feedService.getAllPostsByPopularity(capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildFeedApiUrl("trending", mapOf("limit" to "${paginationRequest.limit}")))
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
 
         val capturedPaginationRequest = paginationRequestSlot.captured
         assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)

@@ -1,17 +1,12 @@
 package com.kogo.content.endpoint
 
 import com.kogo.content.endpoint.common.ErrorCode
-import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
-import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

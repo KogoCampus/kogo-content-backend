@@ -54,7 +54,7 @@ class CommentServiceTest {
 
         every { commentRepository.findAllByPostId("test-post-id", pageable) } returns comments
 
-        val result = commentService.listCommentsByPost(post, paginationRequest)
+        val result = commentService.getAllCommentsByPost(post, paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("comment-2")

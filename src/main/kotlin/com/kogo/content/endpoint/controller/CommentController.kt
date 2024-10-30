@@ -166,7 +166,7 @@ class CommentController @Autowired constructor(
         val comment = findCommentOrThrow(commentId)
 
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = replyService.listRepliesByComment(comment, paginationRequest)
+        val paginationResponse = replyService.getAllRepliesByComment(comment, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map{ ReplyResponse.from(it) },

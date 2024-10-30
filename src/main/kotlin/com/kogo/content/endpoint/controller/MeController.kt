@@ -129,7 +129,7 @@ class MeController @Autowired constructor(
         )])
     fun getMeFollowing() = run {
         val me = userService.getCurrentUserDetails()
-        val followingTopics = topicService.listFollowingTopicsByUserId(me.id!!)
+        val followingTopics = topicService.getAllTopicsUserFollowingByUserId(me.id!!)
         HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.from(it) })
     }
 

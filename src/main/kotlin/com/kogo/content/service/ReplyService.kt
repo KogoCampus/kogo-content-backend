@@ -3,7 +3,7 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.pagination.PaginationSlice
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.PostRepository
@@ -27,14 +27,14 @@ class ReplyService @Autowired constructor(
         return replyRepository.findByIdOrNull(replyId)
     }
 
-    fun listRepliesByComment(comment: Comment, paginationRequest: PaginationRequest): PaginationResponse<Reply> {
+    fun getAllRepliesByComment(comment: Comment, paginationRequest: PaginationRequest): PaginationSlice<Reply> {
         val limit = paginationRequest.limit
         val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
         val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
         val posts = if (pageLastResourceId != null) replyRepository.findAllByCommentIdAndIdLessThan(comment.id!!, pageLastResourceId, pageable)
                     else replyRepository.findAllByCommentId(comment.id!!, pageable)
         val nextPageToken = posts.lastOrNull()?.let { paginationRequest.pageToken.nextPageToken(it.id!!) }
-        return PaginationResponse(posts, nextPageToken)
+        return PaginationSlice(posts, nextPageToken)
     }
 
     @Transactional

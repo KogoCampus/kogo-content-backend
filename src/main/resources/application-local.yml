@@ -15,3 +15,6 @@ kogo-api:
 
 filehandler:
     prefix: tmp/files
+
+search-engine:
+    enabled: false

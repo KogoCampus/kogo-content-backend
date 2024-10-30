@@ -200,7 +200,7 @@ class TopicController @Autowired constructor(
         @PathVariable("topicId") topicId: String, @RequestParam requestParameters: Map<String, String>): ResponseEntity<*> = run {
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
 
-        val paginationResponse = postService.listPostsByTopicId(topicId, paginationRequest)
+        val paginationResponse = postService.getAllPostsByTopicId(topicId, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it, createPostUserActivityResponse(it)) },

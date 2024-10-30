@@ -162,7 +162,7 @@ class PostController @Autowired constructor(
         val post = findPostByIdOrThrow(postId)
 
         val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = commentService.listCommentsByPost(post, paginationRequest)
+        val paginationResponse = commentService.getAllCommentsByPost(post, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map{ CommentResponse.from(it) },

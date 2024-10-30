@@ -1,12 +1,6 @@
 ---
 compile-version-key: ${compile-version-key}
 
-kogo-api:
-    base-url: "https://api.staging.kogocampus.com"
-
-filehandler:
-    prefix: files
-
 spring:
     config:
         import: aws-secretsmanager:/staging/kogo-content/application.properties
@@ -26,3 +20,16 @@ aws:
 sentry:
     dsn: ${sentry.dsn}
     traces-sample-rate: 1.0
+
+kogo-api:
+    base-url: "https://api.staging.kogocampus.com"
+
+filehandler:
+    prefix: files
+
+search-engine:
+    enabled: false
+    index:
+        post: "post"
+        topic: "topic"
+

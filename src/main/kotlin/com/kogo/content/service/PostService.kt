@@ -1,11 +1,11 @@
 package com.kogo.content.service
 
-import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.pagination.PaginationSlice
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.service.search.SearchService
+import com.kogo.content.service.pagination.PaginationRequest
+import com.kogo.content.service.search.SearchQueryDao
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.*
 import org.springframework.data.domain.PageRequest
@@ -21,22 +21,22 @@ class PostService (
     private val postRepository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val fileHandler: FileHandler,
-    private val postSearchService: SearchService<Post>,
-) : SearchService<Post> by postSearchService {
+    private val postSearchDao: SearchQueryDao<Post>,
+) : SearchQueryDao<Post> by postSearchDao {
 
     fun find(postId: String): Post? = postRepository.findByIdOrNull(postId)
 
-    fun listPostsByTopicId(topicId: String, paginationRequest: PaginationRequest): PaginationResponse<Post> {
+    fun getAllPostsByTopicId(topicId: String, paginationRequest: PaginationRequest): PaginationSlice<Post> {
         val limit = paginationRequest.limit
         val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
         val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
         val posts = if (pageLastResourceId != null) postRepository.findAllByTopicIdAndIdLessThan(topicId, pageLastResourceId, pageable)
                     else postRepository.findAllByTopicId(topicId, pageable)
         val nextPageToken = posts.lastOrNull()?.let { paginationRequest.pageToken.nextPageToken(it.id!!) }
-        return PaginationResponse(posts, nextPageToken)
+        return PaginationSlice(posts, nextPageToken)
     }
 
-    fun listPostsByAuthorId(authorId: String): List<Post> = postRepository.findAllByAuthorId(authorId)
+    fun getAllPostsByAuthorId(authorId: String): List<Post> = postRepository.findAllByAuthorId(authorId)
 
     @Transactional
     fun create(topic: Topic, author: UserDetails, dto: PostDto): Post {

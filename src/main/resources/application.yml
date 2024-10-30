@@ -20,7 +20,3 @@ management:
             exposure:
                 include: health
 
-search-engine:
-    index:
-        post: "post"
-        topic: "topic"

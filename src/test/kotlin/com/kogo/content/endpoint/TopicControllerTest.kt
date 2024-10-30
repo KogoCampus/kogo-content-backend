@@ -10,7 +10,7 @@ import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.PostService
 import com.kogo.content.service.pagination.PageToken
 import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationResponse
+import com.kogo.content.service.pagination.PaginationSlice
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.slot
@@ -227,10 +227,10 @@ class TopicControllerTest @Autowired constructor(
 
         val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
         val nextPageToken = paginationRequest.pageToken.nextPageToken("sample-next-page-token")
-        val paginationResponse = PaginationResponse(posts, nextPageToken)
+        val paginationSlice = PaginationSlice(posts, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { postService.listPostsByTopicId(topicId, capture(paginationRequestSlot)) } returns paginationResponse
+        every { postService.getAllPostsByTopicId(topicId, capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildTopicApiUrl(topicId, "posts", params = mapOf(
             "limit" to "${paginationRequest.limit}"
@@ -238,8 +238,8 @@ class TopicControllerTest @Autowired constructor(
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
             .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
-            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
+            .andExpect { header { string(PaginationSlice.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
 
         val capturedPaginationRequest = paginationRequestSlot.captured
         assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)

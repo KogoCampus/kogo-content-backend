@@ -31,7 +31,7 @@ class FeedServiceTest {
 
         every { postRepository.findAllByOrderByIdDesc(pageable) } returns posts
 
-        val result = feedService.listPostsByLatest(paginationRequest)
+        val result = feedService.getAllPostsByLatest(paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("post-2")
@@ -50,7 +50,7 @@ class FeedServiceTest {
 
         every { postRepository.findAllByIdLessThanOrderByIdDesc("post-2", pageable) } returns posts
 
-        val result = feedService.listPostsByLatest(paginationRequest)
+        val result = feedService.getAllPostsByLatest(paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("post-4")
@@ -68,7 +68,7 @@ class FeedServiceTest {
 
         every { postRepository.findAllPopular(0, 2) } returns posts
 
-        val result = feedService.listPostsByPopularity(paginationRequest)
+        val result = feedService.getAllPostsByPopularity(paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("1")
@@ -86,7 +86,7 @@ class FeedServiceTest {
 
         every { postRepository.findAllPopular(1, 2) } returns posts
 
-        val result = feedService.listPostsByPopularity(paginationRequest)
+        val result = feedService.getAllPostsByPopularity(paginationRequest)
 
         assertThat(result.items).hasSize(2)
         assertThat(result.nextPage?.pageLastResourceId).isEqualTo("2")

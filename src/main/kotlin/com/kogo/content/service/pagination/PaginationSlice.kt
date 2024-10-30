@@ -2,7 +2,7 @@ package com.kogo.content.service.pagination
 
 import org.springframework.http.HttpHeaders
 
-data class PaginationResponse<T> (
+data class PaginationSlice<T> (
     val items: List<T>,
     val nextPage: PageToken?
 ) {
