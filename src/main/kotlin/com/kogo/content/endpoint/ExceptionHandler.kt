@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.WebRequest
+import org.springframework.web.servlet.NoHandlerFoundException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 @ControllerAdvice
@@ -61,9 +62,25 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
             ), errorCode.httpStatus)
     }
 
+    override fun handleNoHandlerFoundException(
+        ex: NoHandlerFoundException,
+        headers: HttpHeaders,
+        status: HttpStatusCode,
+        request: WebRequest
+    ): ResponseEntity<Any>? {
+        val errorCode = ErrorCode.NOT_FOUND
+        val message = "Unhandled request: ${ex.message}"
+        log.error (ex) { message }
+        return ResponseEntity(
+            ErrorResponse(
+                error = errorCode.name,
+                details = message
+            ), errorCode.httpStatus)
+    }
+
     @ExceptionHandler(RuntimeException::class)
     fun handleUnhandledRuntimeException(ex: RuntimeException): ResponseEntity<ErrorResponse> {
-        val message = "Unhandled exception occurred; ${ex.message}"
+        val message = "Unhandled exception occurred: ${ex.message}"
         log.error (ex) { message }
         return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR)
     }
