@@ -1,13 +1,20 @@
 package com.kogo.content.endpoint
 
+import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.service.UserContextService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.UserDetails
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.content.service.PostService
+import com.kogo.content.service.pagination.PageToken
+import com.kogo.content.service.pagination.PaginationRequest
+import com.kogo.content.service.pagination.PaginationResponse
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.slot
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -37,6 +44,9 @@ class TopicControllerTest @Autowired constructor(
     lateinit var topicService: TopicService
 
     @MockkBean
+    lateinit var postService: PostService
+
+    @MockkBean
     lateinit var userService: UserContextService
 
     lateinit var user: UserDetails
@@ -47,8 +57,12 @@ class TopicControllerTest @Autowired constructor(
         user = Fixture.createUserFixture()
         topic = Fixture.createTopicFixture(user)
 
+        every { userService.getCurrentUserDetails() } returns user
+
         // temporary for building user activity response
         every { topicService.findUserFollowing(any(), any()) } returns null
+        every { postService.findLike(any(), any()) } returns null
+        every { postService.findView(any(), any()) } returns null
     }
 
     @Test
@@ -204,7 +218,143 @@ class TopicControllerTest @Autowired constructor(
             .andExpect { status { isNotFound() } }
     }
 
-    private fun buildTopicApiUrl(vararg paths: String) =
-        if (paths.isNotEmpty()) "$TOPIC_API_BASE_URL/" + paths.joinToString("/")
-        else TOPIC_API_BASE_URL
+    @Test
+    fun `should return posts with pagination metadata by topic id`() {
+        val topicId = topic.id!!
+        val posts = listOf(
+            Fixture.createPostFixture(topic = topic, author = user),
+            Fixture.createPostFixture(topic = topic, author = user))
+
+        val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
+        val nextPageToken = paginationRequest.pageToken.nextPageToken("sample-next-page-token")
+        val paginationResponse = PaginationResponse(posts, nextPageToken)
+        val paginationRequestSlot = slot<PaginationRequest>()
+
+        every { postService.listPostsByTopicId(topicId, capture(paginationRequestSlot)) } returns paginationResponse
+
+        mockMvc.get(buildTopicApiUrl(topicId, "posts", params = mapOf(
+            "limit" to "${paginationRequest.limit}"
+        )))
+            .andExpect { status { isOk() } }
+            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
+            .andExpect { jsonPath("$.data.length()") { value(posts.size) } }
+            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) } }
+            .andExpect { header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") } }
+
+        val capturedPaginationRequest = paginationRequestSlot.captured
+        assertThat(capturedPaginationRequest.limit).isEqualTo(paginationRequest.limit)
+        assertThat(capturedPaginationRequest.pageToken.toString()).isEqualTo(paginationRequest.pageToken.toString())
+    }
+
+    @Test
+    fun `should create a new post in topic if user is following the topic`() {
+        val topicId = topic.id!!
+        val newPost = Fixture.createPostFixture(topic = topic, author = user)
+
+        every { topicService.find(topicId) } returns topic
+        every { topicService.isUserFollowingTopic(topic, user) } returns true
+        every { postService.create(topic, user, any()) } returns newPost
+
+        mockMvc.perform(
+            multipart(buildTopicApiUrl(topicId, "posts"))
+                .part(MockPart("title", newPost.title.toByteArray()))
+                .part(MockPart("content", newPost.content.toByteArray()))
+                .file(MockMultipartFile("images", "image.png", "image/png", "some image".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it })
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.data.title").value(newPost.title))
+            .andExpect(jsonPath("$.data.content").value(newPost.content))
+            .andExpect(jsonPath("$.data.topicId").value(topic.id))
+            .andExpect { jsonPath("$.data.createdAt").exists() }
+    }
+
+    @Test
+    fun `should return 403 when creating post if user is not following the topic`() {
+        val topicId = topic.id!!
+
+        every { topicService.find(topicId) } returns topic
+        every { topicService.isUserFollowingTopic(topic, user) } returns false
+
+        mockMvc.perform(
+            multipart(buildTopicApiUrl(topicId, "posts"))
+                .part(MockPart("title", "new post".toByteArray()))
+                .part(MockPart("content", "post content".toByteArray()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .with { it.method = "POST"; it }
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error").value(ErrorCode.USER_ACTION_DENIED.name))
+            .andExpect(jsonPath("$.details").value("user is not following topic id: $topicId"))
+    }
+
+    @Test
+    fun `should delete post if user is topic owner`() {
+        val topicId = topic.id!!
+        val postId = "post-id"
+        val post = Fixture.createPostFixture(topic = topic, author = user)
+
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { postService.isPostAuthor(post, user) } returns false
+        every { topicService.isTopicOwner(topic, user) } returns true
+        every { postService.delete(post) } returns Unit
+
+        mockMvc.delete(buildTopicApiUrl(topicId, "posts", postId))
+            .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `should delete post if user is post author`() {
+        val topicId = topic.id!!
+        val postId = "post-id"
+        val post = Fixture.createPostFixture(topic = topic, author = user)
+
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { postService.isPostAuthor(post, user) } returns true
+        every { topicService.isTopicOwner(topic, user) } returns false
+        every { postService.delete(post) } returns Unit
+
+        mockMvc.delete(buildTopicApiUrl(topicId, "posts", postId))
+            .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `should return 403 when deleting post if user is neither post author nor topic owner`() {
+        val topicId = topic.id!!
+        val postId = "post-id"
+        val post = Fixture.createPostFixture(topic = topic, author = user)
+
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(postId) } returns post
+        every { postService.isPostAuthor(post, user) } returns false
+        every { topicService.isTopicOwner(topic, user) } returns false
+
+        mockMvc.delete(buildTopicApiUrl(topicId, "posts", postId))
+            .andExpect { status { isForbidden() } }
+            .andExpect { jsonPath("$.error").value(ErrorCode.USER_ACTION_DENIED.name) }
+            .andExpect { jsonPath("$.details").value("user is not the author of this post or the topic owner") }
+    }
+
+    @Test
+    fun `should return 404 when deleting non-existing post in topic`() {
+        val topicId = topic.id!!
+        val invalidPostId = "invalid-post-id"
+
+        every { topicService.find(topicId) } returns topic
+        every { postService.find(invalidPostId) } returns null
+
+        mockMvc.delete(buildTopicApiUrl(topicId, "posts", invalidPostId))
+            .andExpect { status { isNotFound() } }
+    }
+
+    private fun buildTopicApiUrl(vararg paths: String, params: Map<String, String> = emptyMap()): String {
+        val baseUrl = TOPIC_API_BASE_URL
+        val url = if (paths.isNotEmpty()) "$baseUrl/${paths.joinToString("/")}" else baseUrl
+        val paramBuilder = StringBuilder()
+        params.forEach { paramBuilder.append("${it.key}=${it.value}&") }
+        return if (paramBuilder.isNotEmpty()) "$url?$paramBuilder" else url
+    }
 }

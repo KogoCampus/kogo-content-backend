@@ -4,10 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.service.CommentService
-import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.*
 import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid
@@ -26,40 +23,11 @@ import org.springframework.http.ResponseEntity
 @RestController
 @RequestMapping("media")
 class CommentController @Autowired constructor(
-    private val commentService: CommentService,
-    private val postService: PostService,
     private val userContextService: UserContextService,
-    private val topicService: TopicService,
+    private val commentService: CommentService,
+    private val replyService: ReplyService
 ) {
-    @GetMapping("topics/{topicId}/posts/{postId}/comments")
-    @Operation(
-        summary = "Get all comments from the post",
-        parameters = [Parameter(schema = Schema(implementation = PaginationRequest::class))],
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok - All comments",
-            content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = CommentResponse::class)
-            ))],
-        )]
-    )
-    fun getComments(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @RequestParam requestParameters: Map<String, String>
-    ): ResponseEntity<*> = run {
-        val post = findPostOrThrow(postId)
-
-        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = commentService.listCommentsByPost(post, paginationRequest)
-
-        HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map{ CommentResponse.from(it) },
-            headers = paginationResponse.toHttpHeaders()
-        )
-    }
-
-    @GetMapping("topics/{topicId}/posts/{postId}/comments/{commentId}")
+    @GetMapping("comments/{commentId}")
     @Operation(
         summary = "Get a comment from the post or comment",
         responses = [ApiResponse(
@@ -68,45 +36,14 @@ class CommentController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentResponse::class))],
         )]
     )
-    fun getComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @PathVariable("commentId") commentId: String,
-    ) = run {
+    fun getComment(@PathVariable("commentId") commentId: String) = run {
         val comment = findCommentOrThrow(commentId)
 
         HttpJsonResponse.successResponse(CommentResponse.from(comment))
     }
 
     @RequestMapping(
-        path = ["topics/{topicId}/posts/{postId}/comments"],
-        method = [RequestMethod.POST],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
-    )
-    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = CommentDto::class))])
-    @Operation(
-        summary = "Create a new comment",
-        responses = [ApiResponse(
-            responseCode = "201",
-            description = "Created a new comment",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentResponse::class))],
-        )]
-    )
-    fun createComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @Valid commentDto: CommentDto,
-    ) = run {
-        val post = findPostOrThrow(postId)
-
-        val author = userContextService.getCurrentUserDetails()
-        val newComment = commentService.create(post, author, commentDto)
-
-        HttpJsonResponse.successResponse(CommentResponse.from(newComment))
-    }
-
-    @RequestMapping(
-        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}"],
+        path = ["comments/{commentId}"],
         method = [RequestMethod.PUT],
     )
     @Operation(
@@ -118,12 +55,7 @@ class CommentController @Autowired constructor(
         )]
     )
     @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentUpdate::class))])
-    fun updateComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @PathVariable("commentId") commentId: String,
-        @Valid commentUpdate: CommentUpdate,
-    ): ResponseEntity<*> {
+    fun updateComment(@PathVariable("commentId") commentId: String, @Valid commentUpdate: CommentUpdate): ResponseEntity<*> {
         val comment = findCommentOrThrow(commentId)
 
         if (!commentService.isUserAuthor(comment, userContextService.getCurrentUserDetails())) {
@@ -138,7 +70,7 @@ class CommentController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}"],
+        path = ["comments/{commentId}"],
         method = [RequestMethod.DELETE],
     )
     @Operation(
@@ -148,11 +80,7 @@ class CommentController @Autowired constructor(
             description = "The comment is deleted.",
         )]
     )
-    fun deleteComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("commentId") commentId: String,
-        @PathVariable("postId") postId: String,
-    ): ResponseEntity<*> {
+    fun deleteComment(@PathVariable("commentId") commentId: String): ResponseEntity<*> {
         val comment = findCommentOrThrow(commentId)
 
         if (!commentService.isUserAuthor(comment, userContextService.getCurrentUserDetails())) {
@@ -167,7 +95,7 @@ class CommentController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["topics/{topicId}/posts/{postId}/comments/{commentId}/likes"],
+        path = ["comments/{commentId}/likes"],
         method = [RequestMethod.PUT],
     )
     @Operation(
@@ -178,11 +106,7 @@ class CommentController @Autowired constructor(
             content = [Content(schema = Schema(implementation = Like::class))]
         )]
     )
-    fun addLikeToComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @PathVariable("commentId") commentId: String,
-    ) : ResponseEntity<*> = run {
+    fun addLikeToComment(@PathVariable("commentId") commentId: String) : ResponseEntity<*> = run {
         val comment = findCommentOrThrow(commentId)
         val user = userContextService.getCurrentUserDetails()
 
@@ -194,7 +118,7 @@ class CommentController @Autowired constructor(
         HttpJsonResponse.successResponse(CommentResponse.from(comment), "User's like added successfully to comment $commentId")
     }
 
-    @DeleteMapping("topics/{topicId}/posts/{postId}/comments/{commentId}/likes")
+    @DeleteMapping("comments/{commentId}/likes")
     @Operation(
         summary = "Delete a like under the comment",
         responses = [ApiResponse(
@@ -203,11 +127,7 @@ class CommentController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = Like::class))],
         )]
     )
-    fun deleteLikeFromComment(
-        @PathVariable("topicId") topicId: String,
-        @PathVariable("postId") postId: String,
-        @PathVariable("commentId") commentId: String,
-    ): ResponseEntity<*> = run {
+    fun deleteLikeFromComment(@PathVariable("commentId") commentId: String): ResponseEntity<*> = run {
         val comment = findCommentOrThrow(commentId)
         val user = userContextService.getCurrentUserDetails()
 
@@ -219,12 +139,62 @@ class CommentController @Autowired constructor(
         HttpJsonResponse.successResponse(CommentResponse.from(comment), "User's like removed successfully to comment $commentId.")
     }
 
-    private fun findTopicOrThrow(topicId: String) = run {
-        topicService.find(topicId) ?: throw ResourceNotFoundException(resourceName = "Topic", resourceId = topicId)
+    @GetMapping("comments/{commentId}/replies")
+    @Operation(
+        summary = "Get all replies of the comment",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok - Replies",
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = CommentResponse::class)))],
+        )]
+    )
+    fun getRepliesOfComment(@PathVariable("commentId") commentId: String, @RequestParam requestParameters: Map<String, String>): ResponseEntity<*> = run {
+        val comment = findCommentOrThrow(commentId)
+
+        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
+        val paginationResponse = replyService.listRepliesByComment(comment, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map{ ReplyResponse.from(it) },
+            headers = paginationResponse.toHttpHeaders()
+        )
     }
 
-    private fun findPostOrThrow(postId: String) = run {
-        postService.find(postId) ?: throw ResourceNotFoundException(resourceName = "Post", resourceId = postId)
+    @RequestMapping(
+        path = ["comments/{commentId}/replies"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
+    )
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = CommentDto::class))])
+    @Operation(
+        summary = "Create a new reply under the comment",
+        responses = [ApiResponse(
+            responseCode = "201",
+            description = "Created a new comment",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentResponse::class))],
+        )]
+    )
+    fun createReplyToComment(@PathVariable("commentId") commentId: String, @Valid commentDto: CommentDto) = run {
+        val comment = findCommentOrThrow(commentId)
+
+        val author = userContextService.getCurrentUserDetails()
+        val newComment = replyService.create(comment, author, commentDto)
+
+        HttpJsonResponse.successResponse(ReplyResponse.from(newComment))
     }
 
     private fun findCommentOrThrow(commentId: String) = run {

@@ -35,7 +35,18 @@ class SearchController(
                 required = true,
                 schema = Schema(type = "string")
             ),
-            Parameter(schema = Schema(implementation = PaginationRequest::class))
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )
         ],
         responses = [ApiResponse(
             responseCode = "200",
@@ -70,7 +81,18 @@ class SearchController(
                 required = true,
                 schema = Schema(type = "string")
             ),
-            Parameter(schema = Schema(implementation = PaginationRequest::class))
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )
         ],
         responses = [ApiResponse(
             responseCode = "200",

@@ -49,14 +49,8 @@ class ReplyControllerTest @Autowired constructor(
     private val comment = Fixture.createCommentFixture(post = post, author = user)
     private val reply = Fixture.createReplyFixture(comment = comment, author = user)
 
-    private fun buildReplyApiUrl(
-        topicId: String,
-        postId: String,
-        commentId: String,
-        vararg paths: String,
-        params: Map<String, String> = emptyMap()
-    ): String {
-        val baseUrl = "/media/topics/$topicId/posts/$postId/comments/$commentId/replies"
+    private fun buildReplyApiUrl(vararg paths: String, params: Map<String, String> = emptyMap()): String {
+        val baseUrl = "/media/replies"
         val url = if (paths.isNotEmpty()) "$baseUrl/${paths.joinToString("/")}" else baseUrl
         val paramBuilder = StringBuilder()
         params.forEach { paramBuilder.append("${it.key}=${it.value}&") }
@@ -73,70 +67,6 @@ class ReplyControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should return replies with pagination metadata by comment id`() {
-        val replies = listOf(
-            Fixture.createReplyFixture(comment = comment, author = user),
-            Fixture.createReplyFixture(comment = comment, author = user)
-        )
-
-        val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
-        val nextPageToken = paginationRequest.pageToken.nextPageToken("next-token")
-        val paginationResponse = PaginationResponse(replies, nextPageToken)
-        val paginationRequestSlot = slot<PaginationRequest>()
-
-        every { replyService.listRepliesByComment(comment, capture(paginationRequestSlot)) } returns paginationResponse
-
-        mockMvc.get(buildReplyApiUrl(
-            topicId = topic.id!!,
-            postId = post.id!!,
-            commentId = comment.id!!,
-            params = mapOf("limit" to "${paginationRequest.limit}")
-        ))
-            .andExpect {
-                status { isOk() }
-                content { contentType(MediaType.APPLICATION_JSON) }
-                jsonPath("$.data.length()") { value(replies.size) }
-                header { string(PaginationResponse.HEADER_NAME_PAGE_TOKEN, nextPageToken.toString()) }
-                header { string(PaginationResponse.HEADER_NAME_PAGE_SIZE, "${paginationRequest.limit}") }
-            }
-
-        val capturedRequest = paginationRequestSlot.captured
-        assertThat(capturedRequest.limit).isEqualTo(paginationRequest.limit)
-        assertThat(capturedRequest.pageToken.toString()).isEqualTo(paginationRequest.pageToken.toString())
-    }
-
-    @Test
-    fun `should create a new reply`() {
-        val newReply = reply.copy()
-        every { replyService.create(comment, user, any()) } returns newReply
-
-        mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!))
-                .part(MockPart("content", newReply.content.toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.data.content").value(newReply.content))
-    }
-
-    @Test
-    fun `should return 404 when creating reply for non-existing comment`() {
-        val invalidCommentId = "invalid-comment-id"
-        every { commentService.find(invalidCommentId) } returns null
-
-        mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, invalidCommentId))
-                .part(MockPart("content", "Test content".toByteArray()))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .with { it.method = "POST"; it }
-        )
-            .andExpect(status().isNotFound)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    }
-
-    @Test
     fun `should update an existing reply if user is the author`() {
         val updatedReply = reply.copy()
         updatedReply.content = "Updated content"
@@ -145,7 +75,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.update(reply, any()) } returns updatedReply
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+            multipart(buildReplyApiUrl(reply.id!!))
                 .part(MockPart("content", updatedReply.content.toByteArray()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
@@ -160,7 +90,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.isUserAuthor(reply, user) } returns false
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+            multipart(buildReplyApiUrl(reply.id!!))
                 .part(MockPart("content", "Updated content".toByteArray()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
@@ -175,7 +105,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.isUserAuthor(reply, user) } returns true
         every { replyService.delete(reply) } returns Unit
 
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+        mockMvc.delete(buildReplyApiUrl(reply.id!!))
             .andExpect {
                 status { isOk() }
             }
@@ -187,7 +117,7 @@ class ReplyControllerTest @Autowired constructor(
     fun `should return 403 when deleting reply if user is not the author`() {
         every { replyService.isUserAuthor(reply, user) } returns false
 
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!))
+        mockMvc.delete(buildReplyApiUrl(reply.id!!))
             .andExpect {
                 status { isForbidden() }
                 jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
@@ -201,7 +131,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.addLike(reply, user) } returns mockk()
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+            multipart(buildReplyApiUrl(reply.id!!, "likes"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
@@ -214,7 +144,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.hasUserLikedReply(reply, user) } returns true
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+            multipart(buildReplyApiUrl(reply.id!!, "likes"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
@@ -228,7 +158,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.hasUserLikedReply(reply, user) } returns true
         every { replyService.removeLike(reply, user) } returns Unit
 
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+        mockMvc.delete(buildReplyApiUrl(reply.id!!, "likes"))
             .andExpect {
                 status { isOk() }
                 jsonPath("$.message") { value("User's like removed successfully to reply ${reply.id}") }
@@ -239,7 +169,7 @@ class ReplyControllerTest @Autowired constructor(
     fun `should return 400 when removing like from reply user hasn't liked`() {
         every { replyService.hasUserLikedReply(reply, user) } returns false
 
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, reply.id!!, "likes"))
+        mockMvc.delete(buildReplyApiUrl(reply.id!!, "likes"))
             .andExpect {
                 status { isBadRequest() }
                 jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
@@ -253,7 +183,7 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.find(invalidReplyId) } returns null
 
         mockMvc.perform(
-            multipart(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, invalidReplyId, "likes"))
+            multipart(buildReplyApiUrl(invalidReplyId, "likes"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .with { it.method = "PUT"; it }
         )
@@ -265,7 +195,7 @@ class ReplyControllerTest @Autowired constructor(
         val invalidReplyId = "invalid-reply-id"
         every { replyService.find(invalidReplyId) } returns null
 
-        mockMvc.delete(buildReplyApiUrl(topic.id!!, post.id!!, comment.id!!, invalidReplyId, "likes"))
+        mockMvc.delete(buildReplyApiUrl(invalidReplyId, "likes"))
             .andExpect {
                 status { isNotFound() }
             }
