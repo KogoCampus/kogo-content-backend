@@ -39,10 +39,10 @@ class RequestInterceptor: HandlerInterceptor {
     ) {
         val startTime = request.getAttribute("startTime") as Long
         log.info {
-            "Request URL:" + request.requestURL.toString() + "; " + "End Time=" + System.currentTimeMillis()
+            "Request Method: ${request.method}; URL: ${request.requestURL}; End Time=${System.currentTimeMillis()}"
         }
         log.info {
-            "Request URL:" + request.requestURL.toString() + "; " + "Time Taken=" + (System.currentTimeMillis() - startTime)
+            "Request Method: ${request.method}; URL: ${request.requestURL}; Time Taken=${System.currentTimeMillis() - startTime}"
         }
         super.afterCompletion(request, response, handler, ex)
     }
