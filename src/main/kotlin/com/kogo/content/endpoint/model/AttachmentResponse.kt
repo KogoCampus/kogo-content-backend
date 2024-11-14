@@ -8,7 +8,7 @@ data class AttachmentResponse (
     val url: String
 ) {
     companion object {
-        fun from(attachment: com.kogo.content.storage.entity.Attachment): AttachmentResponse = AttachmentResponse (
+        fun create(attachment: com.kogo.content.storage.entity.Attachment): AttachmentResponse = AttachmentResponse (
             attachmentId = attachment.id,
             name = attachment.name,
             url = attachment.storeKey.toFileSourceUrl(),

@@ -21,7 +21,7 @@ data class S3Object (
     val content: MultipartFile
 )
 
-@Profile("!local")
+@Profile("!local & !test")
 @Component
 class S3FileHandler() : FileHandler {
 

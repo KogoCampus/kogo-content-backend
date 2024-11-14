@@ -5,8 +5,9 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.UserService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.ArraySchema
@@ -22,8 +23,9 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 class MeController @Autowired constructor(
-    private val userService: UserContextService,
+    private val userService: UserService,
     private val topicService: TopicService,
+    private val postService: PostService
 ) {
     companion object: Logger()
 
@@ -36,7 +38,7 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )])
     fun getMe() = run {
-        val me = userService.getCurrentUserDetails()
+        val me = userService.getCurrentUser()
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
     }
 
@@ -56,7 +58,7 @@ class MeController @Autowired constructor(
     )
     fun updateMe(
         @Valid meUpdate: UserUpdate) = run {
-            val me = userService.getCurrentUserDetails()
+            val me = userService.getCurrentUser()
             val updatedUser = userService.updateUserProfile(me, meUpdate)
             HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
@@ -71,8 +73,8 @@ class MeController @Autowired constructor(
                 schema = Schema(implementation = PostResponse::class)))],
         )])
     fun getPostsAuthoredByUser() = run {
-        val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(userService.getUserPosts(me).map { PostResponse.from(it) })
+        val me = userService.getCurrentUser()
+        HttpJsonResponse.successResponse(postService.findPostsByAuthor(me).map { PostResponse.create(postService.findAggregate(it.id!!), me) })
     }
 
     @GetMapping("me/ownership/topics")
@@ -85,8 +87,8 @@ class MeController @Autowired constructor(
                 schema = Schema(implementation = TopicResponse::class)))],
         )])
     fun getTopicsOwnedByUser() = run {
-        val me = userService.getCurrentUserDetails()
-        HttpJsonResponse.successResponse(userService.getUserTopics(me).map { TopicResponse.from(it) })
+        val me = userService.getCurrentUser()
+        HttpJsonResponse.successResponse(topicService.findTopicsByOwner(me).map { TopicResponse.create(topicService.findAggregate(it.id!!), me) })
     }
 
     @RequestMapping(
@@ -106,9 +108,9 @@ class MeController @Autowired constructor(
         @RequestParam("transfer_to") newOwnerId: String): ResponseEntity<*> = run {
         val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
         val newOwner = userService.find(newOwnerId) ?: throwUserNotFound(newOwnerId)
-        val originalOwner = userService.getCurrentUserDetails()
+        val originalOwner = userService.getCurrentUser()
 
-        if(!topicService.isTopicOwner(topic, originalOwner))
+        if(!topicService.isUserTopicOwner(topic, originalOwner))
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this topic")
 
         if(originalOwner.id!! == newOwnerId)
@@ -116,7 +118,7 @@ class MeController @Autowired constructor(
         val transferredTopic = topicService.transferOwnership(topic, newOwner)
         topicService.follow(topic, newOwner)
 
-        HttpJsonResponse.successResponse(TopicResponse.from(transferredTopic))
+        HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(transferredTopic.id!!), originalOwner))
     }
 
     @GetMapping("me/following")
@@ -128,12 +130,12 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
         )])
     fun getMeFollowing() = run {
-        val me = userService.getCurrentUserDetails()
-        val followingTopics = topicService.getAllTopicsUserFollowingByUserId(me.id!!)
-        HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.from(it) })
+        val me = userService.getCurrentUser()
+        val followingTopics = topicService.getAllFollowingTopicsByUserId(me.id!!)
+        HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.create(topicService.findAggregate(it.id!!), me) })
     }
 
-    private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<UserDetails>(userId)
+    private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<User>(userId)
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
 }
 

@@ -22,12 +22,10 @@ data class Topic (
     var profileImage: Attachment? = null,
 
     @DocumentReference
-    var owner: UserDetails,
+    var owner: User,
 
     var tags: List<String> = emptyList(),
 
     var createdAt: Instant = Instant.now(),
     var updatedAt: Instant = Instant.now(),
-
-    var followerCount: Int = 0,
 )

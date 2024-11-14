@@ -4,6 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.lib.PaginationRequest
 import com.kogo.content.service.*
 import com.kogo.content.storage.entity.*
 import jakarta.validation.Valid
@@ -11,9 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 
 @RestController
@@ -21,8 +25,81 @@ import org.springframework.http.ResponseEntity
 class ReplyController @Autowired constructor(
     private val commentService: CommentService,
     private val replyService: ReplyService,
-    private val userContextService: UserContextService,
+    private val userService: UserService,
 ) {
+    @GetMapping("comments/{commentId}/replies")
+    @Operation(
+        summary = "Get all replies of the comment",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.SORT_PARAM,
+                description = "sort fields (format: field1:asc,field2:desc)",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.FILTER_PARAM,
+                description = "filter fields (format: field1:value1,field2:value2)",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )
+        ],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok - Replies",
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = CommentResponse::class))
+            )],
+        )]
+    )
+    fun getRepliesOfComment(
+        @PathVariable("commentId") commentId: String,
+        paginationRequest: PaginationRequest
+    ): ResponseEntity<*> = run {
+        val comment = findCommentOrThrow(commentId)
+        val user = userService.getCurrentUser()
+        val paginationResponse = replyService.findReplyAggregatesByComment(comment, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { ReplyResponse.create(it, user) },
+            headers = paginationResponse.toHttpHeaders()
+        )
+    }
+
+    @RequestMapping(
+        path = ["comments/{commentId}/replies"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
+    )
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = CommentDto::class))])
+    @Operation(
+        summary = "Create a new reply under the comment",
+        responses = [ApiResponse(
+            responseCode = "201",
+            description = "Created a new comment",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentResponse::class))],
+        )]
+    )
+    fun createReplyToComment(@PathVariable("commentId") commentId: String, @Valid commentDto: CommentDto) = run {
+        val comment = findCommentOrThrow(commentId)
+        val author = userService.getCurrentUser()
+        val newReply = replyService.create(comment, author, commentDto)
+
+        HttpJsonResponse.successResponse(ReplyResponse.create(replyService.findAggregate(newReply.id!!), author))
+    }
+
     @RequestMapping(
         path = ["replies/{replyId}"],
         method = [RequestMethod.PUT],
@@ -38,8 +115,9 @@ class ReplyController @Autowired constructor(
     @RequestBody(content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentUpdate::class))])
     fun updateReply(@PathVariable("replyId") replyId: String, @Valid commentUpdate: CommentUpdate): ResponseEntity<*> {
         val reply = findReplyOrThrow(replyId)
+        val user = userService.getCurrentUser()
 
-        if (!replyService.isUserAuthor(reply, userContextService.getCurrentUserDetails())) {
+        if (!replyService.isUserAuthor(reply, user)) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the reply"
@@ -47,7 +125,7 @@ class ReplyController @Autowired constructor(
         }
         val updatedReply = replyService.update(reply, commentUpdate)
 
-        return HttpJsonResponse.successResponse(ReplyResponse.from(updatedReply))
+        return HttpJsonResponse.successResponse(ReplyResponse.create(replyService.findAggregate(updatedReply.id!!), user))
     }
 
     @RequestMapping(
@@ -64,7 +142,7 @@ class ReplyController @Autowired constructor(
     fun deleteReply(@PathVariable("replyId") replyId: String): ResponseEntity<*> {
         val reply = findReplyOrThrow(replyId)
 
-        if (!replyService.isUserAuthor(reply, userContextService.getCurrentUserDetails())) {
+        if (!replyService.isUserAuthor(reply, userService.getCurrentUser())) {
             return HttpJsonResponse.errorResponse(
                 errorCode = ErrorCode.USER_ACTION_DENIED,
                 "user is not the author of the reply"
@@ -89,14 +167,17 @@ class ReplyController @Autowired constructor(
     )
     fun addLikeToReply(@PathVariable("replyId") replyId: String) : ResponseEntity<*> = run {
         val reply = findReplyOrThrow(replyId)
-        val user = userContextService.getCurrentUserDetails()
+        val user = userService.getCurrentUser()
 
         if (replyService.hasUserLikedReply(reply, user)) {
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this reply Id: $replyId")
         }
 
         replyService.addLike(reply, user)
-        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like added successfully to comment $replyId")
+        HttpJsonResponse.successResponse(
+           ReplyResponse.create(replyService.findAggregate(reply.id!!), user),
+            "User's like added successfully to reply $replyId"
+        )
     }
 
     @DeleteMapping("replies/{replyId}/likes")
@@ -108,16 +189,19 @@ class ReplyController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = Like::class))],
         )]
     )
-    fun deleteLikeFromComment(@PathVariable("replyId") replyId: String): ResponseEntity<*> = run {
+    fun deleteLikeFromReply(@PathVariable("replyId") replyId: String): ResponseEntity<*> = run {
         val reply = findReplyOrThrow(replyId)
-        val user = userContextService.getCurrentUserDetails()
+        val user = userService.getCurrentUser()
 
         if (!replyService.hasUserLikedReply(reply, user)) {
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user didn't put a like on this reply Id: $replyId")
         }
 
         replyService.removeLike(reply, user)
-        HttpJsonResponse.successResponse(ReplyResponse.from(reply), "User's like removed successfully to reply $replyId")
+        HttpJsonResponse.successResponse(
+            ReplyResponse.create(replyService.findAggregate(reply.id!!), user),
+            "User's like removed successfully to reply $replyId"
+        )
     }
 
     private fun findCommentOrThrow(commentId: String) = run {

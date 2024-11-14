@@ -5,7 +5,8 @@ import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
-import com.kogo.content.service.pagination.PaginationRequest
+import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("media/search")
 class SearchController(
     private val postService: PostService,
-    private val topicService: TopicService
+    private val topicService: TopicService,
+    private val userService: UserService
 ) {
 
     @GetMapping("posts")
@@ -60,13 +62,15 @@ class SearchController(
     )
     fun searchPosts(
         @RequestParam("q") keyword: String,
-        @RequestParam requestParameters: Map<String, String>
+        paginationRequest: PaginationRequest
     ) = run {
-        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = postService.searchByKeyword(keyword, paginationRequest)
+        val user = userService.getCurrentUser()
+        val paginationResponse = postService.searchPostAggregatesByKeywordAndPopularity(keyword, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { PostResponse.from(it) },
+            data = paginationResponse.items.map { post ->
+                PostResponse.create(post, user)
+            },
             headers = paginationResponse.toHttpHeaders()
         )
     }
@@ -106,13 +110,15 @@ class SearchController(
     )
     fun searchTopics(
         @RequestParam("q") keyword: String,
-        @RequestParam requestParameters: Map<String, String>
+        paginationRequest: PaginationRequest
     ) = run {
-        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = topicService.searchByKeyword(keyword, paginationRequest)
+        val user = userService.getCurrentUser()
+        val paginationResponse = topicService.searchTopicAggregatesByKeyword(keyword, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { TopicResponse.from(it) },
+            data = paginationResponse.items.map { topic ->
+                TopicResponse.create(topic, user)
+            },
             headers = paginationResponse.toHttpHeaders()
         )
     }

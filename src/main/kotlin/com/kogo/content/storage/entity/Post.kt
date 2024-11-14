@@ -10,24 +10,18 @@ data class Post (
     @Id
     var id : String? = null,
 
-    var title: String = "",
+    var title: String,
+
+    var content: String,
 
     @DocumentReference
     var topic: Topic,
 
     @DocumentReference
-    var author: UserDetails,
+    var author: User,
 
-    var content: String = "",
-
-    @DocumentReference
     var attachments: List<Attachment> = emptyList(),
 
-    var viewCount: Int = 0,
-    var commentCount: Int = 0,
-
-    var likes: Int = 0,
-
-    var createdAt: Instant?=null,
-    var updatedAt: Instant?=null,
+    var createdAt: Instant = Instant.now(),
+    var updatedAt: Instant = Instant.now(),
 )

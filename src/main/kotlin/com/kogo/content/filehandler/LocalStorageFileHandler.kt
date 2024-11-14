@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.Calendar
 import java.util.UUID
 
-@Profile("local")
+@Profile("local | test")
 @Component
 class LocalStorageFileHandler : FileHandler {
 

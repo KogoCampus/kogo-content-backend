@@ -1,6 +1,7 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.view.TopicAggregate
 import java.time.Instant
 
 data class TopicResponse(
@@ -9,29 +10,26 @@ data class TopicResponse(
     var description: String,
     var tags: List<String> = emptyList(),
     var profileImage: AttachmentResponse? = null,
+    var followerCount: Int,
+    var postCount: Int,
+    var owner: UserData.Public,
+    var followedByCurrentUser: Boolean,
     var createdAt: Instant,
     var updatedAt: Instant,
-    var followerCount: Int,
-    var owner: UserData.Public,
-    var userActivity: TopicUserActivity?,
 ) {
     companion object {
-        fun from(topic: Topic, userActivity: TopicUserActivity? = null): TopicResponse = TopicResponse(
-            id = topic.id!!,
-            owner = UserData.Public.from(topic.owner),
-            topicName = topic.topicName,
-            description = topic.description,
-            tags = topic.tags,
-            profileImage = topic.profileImage?.let { AttachmentResponse.from(it) },
-            createdAt = topic.createdAt,
-            updatedAt = topic.updatedAt,
-            followerCount = topic.followerCount,
-            userActivity = userActivity
+        fun create(topicAggregate: TopicAggregate, currentUser: User) = TopicResponse(
+            id = topicAggregate.topicId,
+            owner = UserData.Public.from(topicAggregate.topic.owner),
+            topicName = topicAggregate.topic.topicName,
+            description = topicAggregate.topic.description,
+            tags = topicAggregate.topic.tags,
+            profileImage = topicAggregate.topic.profileImage?.let { AttachmentResponse.create(it) },
+            postCount = topicAggregate.postCount,
+            followedByCurrentUser = false,
+            followerCount = topicAggregate.followerCount,
+            createdAt = topicAggregate.topic.createdAt,
+            updatedAt = topicAggregate.topic.updatedAt,
         )
     }
-
-    data class TopicUserActivity(
-        val followed: Boolean,
-        val followedAt: Instant?,
-    )
 }

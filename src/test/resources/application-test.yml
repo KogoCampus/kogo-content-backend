@@ -1,4 +1,17 @@
+---
+compileVersionKey: "1.0.0"
+
+server:
+    port: 8081
+
 spring:
-    mongodb:
-        embedded:
-            version: "3.6.5"
+    data:
+        mongodb:
+            uri: mongodb://testuser:testpass@localhost:27018/test?authSource=admin
+            database: test
+            username: testuser
+            password: testpass
+            auto-index-creation: true
+
+filehandler:
+    prefix: tmp/files

@@ -21,15 +21,5 @@ sentry:
     dsn: ${sentry.dsn}
     traces-sample-rate: 1.0
 
-kogo-api:
-    base-url: "https://api.staging.kogocampus.com"
-
 filehandler:
     prefix: files
-
-search-engine:
-    enabled: false
-    index:
-        post: "post"
-        topic: "topic"
-

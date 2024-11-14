@@ -78,6 +78,13 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
             ), errorCode.httpStatus)
     }
 
+    @ExceptionHandler(InvalidFieldException::class)
+    fun handleInvalidFieldException(ex: InvalidFieldException): ResponseEntity<ErrorResponse> {
+        val message = "Invalid field '${ex.field}' for ${ex.operation} in ${ex.entityName}"
+        log.error (ex) { message }
+        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, details = message)
+    }
+
     @ExceptionHandler(RuntimeException::class)
     fun handleUnhandledRuntimeException(ex: RuntimeException): ResponseEntity<ErrorResponse> {
         val message = "Unhandled exception occurred: ${ex.message}"

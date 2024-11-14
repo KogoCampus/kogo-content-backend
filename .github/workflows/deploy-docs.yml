@@ -30,7 +30,7 @@ jobs:
                   aws-region: us-west-2
 
             - name: Generate OpenAPI Documentation
-              run: ./gradlew generateOpenApiDocs
+              run: ./gradlew generateOpenApiDocs -x test
 
             #- name: Upload Swagger UI and JSON to S3
             #  run: |

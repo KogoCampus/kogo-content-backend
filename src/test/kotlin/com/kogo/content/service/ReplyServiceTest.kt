@@ -2,184 +2,117 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PageToken
+import com.kogo.content.lib.*
 import com.kogo.content.storage.entity.Comment
+import com.kogo.content.storage.entity.Like
 import com.kogo.content.storage.entity.Reply
-import com.kogo.content.storage.entity.UserDetails
-import com.kogo.content.storage.repository.CommentRepository
-import com.kogo.content.storage.repository.PostRepository
+import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ReplyRepository
+import com.kogo.content.storage.view.ReplyAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.boot.test.context.SpringBootTest
+import java.time.Instant
 
+@SpringBootTest
 class ReplyServiceTest {
     private val replyRepository: ReplyRepository = mockk()
-    private val commentRepository: CommentRepository = mockk()
-    private val postRepository: PostRepository = mockk()
+    private val likeRepository: LikeRepository = mockk()
+    private val replyAggregateView: ReplyAggregateView = mockk()
 
-    private val replyService = ReplyService(replyRepository, commentRepository, postRepository)
-
-    @BeforeEach
-    fun setup() {
-        clearMocks(replyRepository)
-        clearMocks(commentRepository)
-        clearMocks(postRepository)
-    }
+    private val replyService = ReplyService(
+        replyRepository = replyRepository,
+        likeRepository = likeRepository,
+        replyAggregateView = replyAggregateView
+    )
 
     @Test
-    fun `should find reply by id`() {
-        val replyId = "test-reply-id"
-        val expectedReply = mockk<Reply>()
-
-        every { replyRepository.findByIdOrNull(replyId) } returns expectedReply
-
-        val result = replyService.find(replyId)
-
-        assertThat(result).isEqualTo(expectedReply)
-        verify { replyRepository.findByIdOrNull(replyId) }
-    }
-
-    @Test
-    fun `should return paginated list of replies by comment`() {
+    fun `should create new reply and refresh aggregate view`() {
         val comment = mockk<Comment> { every { id } returns "test-comment-id" }
-        val reply1 = mockk<Reply> { every { id } returns "reply-1" }
-        val reply2 = mockk<Reply> { every { id } returns "reply-2" }
-        val replies = listOf(reply1, reply2)
-
-        val paginationRequest = PaginationRequest(limit = 2, pageToken = PageToken())
-        val pageable = PageRequest.of(0, paginationRequest.limit, Sort.by(Sort.Direction.DESC, "_id"))
-
-        every { replyRepository.findAllByCommentId("test-comment-id", pageable) } returns replies
-
-        val result = replyService.getAllRepliesByComment(comment, paginationRequest)
-
-        assertThat(result.items).hasSize(2)
-        assertThat(result.nextPage?.pageLastResourceId).isEqualTo("reply-2")
-        verify { replyRepository.findAllByCommentId("test-comment-id", pageable) }
-    }
-
-    @Test
-    fun `should create a new reply`() {
-        val comment = Comment(
-            id = "test-comment-id",
-            content = "Test Comment",
-            author = mockk(),
-            post = mockk(),
-            replyCount = 0
+        val author = mockk<User> { every { id } returns "test-user-id" }
+        val replyDto = CommentDto(content = "Test reply content")
+        val savedReply = Reply(
+            id = "test-reply-id",
+            content = replyDto.content,
+            comment = comment,
+            author = author,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
         )
-        val author = mockk<UserDetails>()
-        val replyDto = CommentDto(content = "Test Reply")
 
-        every { commentRepository.save(any()) } returns comment
-        every { replyRepository.save(any()) } answers { firstArg() }
+        every { replyRepository.save(any()) } returns savedReply
+        every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
 
         val result = replyService.create(comment, author, replyDto)
 
-        assertThat(result.content).isEqualTo(replyDto.content)
-        assertThat(result.author).isEqualTo(author)
-        assertThat(comment.replyCount).isEqualTo(1)
+        assertThat(result).isEqualTo(savedReply)
         verify {
-            commentRepository.save(comment)
-            replyRepository.save(any())
+            replyRepository.save(match {
+                it.content == replyDto.content &&
+                it.comment == comment &&
+                it.author == author
+            })
+            replyAggregateView.refreshView("test-reply-id")
         }
     }
 
     @Test
-    fun `should update an existing reply`() {
+    fun `should update existing reply and refresh aggregate view`() {
         val reply = Reply(
             id = "test-reply-id",
-            content = "Old Content",
+            content = "Original content",
             comment = mockk(),
-            author = mockk()
-        )
-        val replyUpdate = CommentUpdate(content = "Updated Content")
-
-        every { replyRepository.save(any()) } returns reply
-
-        val result = replyService.update(reply, replyUpdate)
-
-        assertThat(result.content).isEqualTo("Updated Content")
-        verify { replyRepository.save(reply) }
-    }
-
-    @Test
-    fun `should delete a reply`() {
-        val comment = Comment(
-            id = "test-comment-id",
-            content = "Test Comment",
             author = mockk(),
-            post = mockk(),
-            replyCount = 1
+            createdAt = Instant.now().minusSeconds(3600),
+            updatedAt = Instant.now().minusSeconds(3600)
         )
-        val reply = Reply(
-            id = "test-reply-id",
-            content = "Test Content",
-            comment = comment,
-            author = mockk()
-        )
+        val update = CommentUpdate(content = "Updated content")
 
-        every { commentRepository.save(any()) } returns comment
-        every { replyRepository.deleteById("test-reply-id") } just Runs
+        every { replyRepository.save(any()) } answers { firstArg() }
+        every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
 
-        replyService.delete(reply)
+        val result = replyService.update(reply, update)
 
-        assertThat(comment.replyCount).isEqualTo(0)
+        assertThat(result.content).isEqualTo(update.content)
+        assertThat(result.updatedAt).isAfter(reply.createdAt)
         verify {
-            commentRepository.save(comment)
-            replyRepository.deleteById("test-reply-id")
+            replyRepository.save(match {
+                it.id == reply.id &&
+                it.content == update.content
+            })
+            replyAggregateView.refreshView("test-reply-id")
         }
     }
 
     @Test
-    fun `should add like to reply`() {
-        val user = mockk<UserDetails>() { every { id } returns "test-user-id" }
-        val reply = Reply(
-            id = "test-reply-id",
-            content = "Test Content",
-            comment = mockk(),
-            author = mockk(),
-            likes = 0
-        )
+    fun `should find replies by comment with pagination`() {
+        val comment = mockk<Comment> { every { id } returns "test-comment-id" }
+        val paginationRequest = PaginationRequest(limit = 10)
+        val expectedRequest = paginationRequest.withFilter("comment", comment.id!!)
 
-        every { replyRepository.addLike("test-reply-id", "test-user-id") } returns mockk()
-        every { replyRepository.save(any()) } returns reply
+        every { replyAggregateView.findAll(expectedRequest) } returns mockk()
 
+        replyService.findReplyAggregatesByComment(comment, paginationRequest)
+
+        verify { replyAggregateView.findAll(expectedRequest) }
+    }
+
+    @Test
+    fun `should handle like operations`() {
+        val reply = mockk<Reply> { every { id } returns "test-reply-id" }
+        val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test adding like
+        every { likeRepository.addLike("test-reply-id", "test-user-id") } returns mockk()
         replyService.addLike(reply, user)
+        verify { likeRepository.addLike("test-reply-id", "test-user-id") }
 
-        assertThat(reply.likes).isEqualTo(1)
-        verify {
-            replyRepository.addLike("test-reply-id", "test-user-id")
-            replyRepository.save(reply)
-        }
-    }
-
-    @Test
-    fun `should remove like from reply`() {
-        val user = mockk<UserDetails>() { every { id } returns "test-user-id" }
-        val reply = Reply(
-            id = "test-reply-id",
-            content = "Test Content",
-            comment = mockk(),
-            author = mockk(),
-            likes = 1
-        )
-
-        every { replyRepository.removeLike("test-reply-id", "test-user-id") } returns true
-        every { replyRepository.save(any()) } returns reply
-
+        // Test removing like
+        every { likeRepository.removeLike("test-reply-id", "test-user-id") } returns true
         replyService.removeLike(reply, user)
-
-        assertThat(reply.likes).isEqualTo(0)
-        verify {
-            replyRepository.removeLike("test-reply-id", "test-user-id")
-            replyRepository.save(reply)
-        }
+        verify { likeRepository.removeLike("test-reply-id", "test-user-id") }
     }
 }
 

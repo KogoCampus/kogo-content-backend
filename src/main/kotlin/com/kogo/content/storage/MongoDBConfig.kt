@@ -1,6 +1,6 @@
 package com.kogo.content.storage
 
-import com.kogo.content.storage.converter.ConverterScan
+import com.kogo.content.storage.entity.converter.ConverterScan
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

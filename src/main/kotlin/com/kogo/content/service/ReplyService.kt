@@ -2,16 +2,14 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationSlice
+import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.lib.PaginationSlice
 import com.kogo.content.storage.entity.*
-import com.kogo.content.storage.repository.CommentRepository
-import com.kogo.content.storage.repository.PostRepository
 import com.kogo.content.storage.repository.ReplyRepository
+import com.kogo.content.storage.repository.LikeRepository
+import com.kogo.content.storage.view.ReplyAggregate
+import com.kogo.content.storage.view.ReplyAggregateView
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,63 +18,56 @@ import java.time.Instant
 @Service
 class ReplyService @Autowired constructor(
     private val replyRepository: ReplyRepository,
-    private val commentRepository: CommentRepository,
-    private val postRepository: PostRepository,
+    private val likeRepository: LikeRepository,
+    private val replyAggregateView: ReplyAggregateView
 ) {
-    fun find(replyId: String): Reply? {
-        return replyRepository.findByIdOrNull(replyId)
-    }
+    fun find(replyId: String) = replyRepository.findByIdOrNull(replyId)
+    fun findAggregate(replyId: String) = replyAggregateView.find(replyId)
 
-    fun getAllRepliesByComment(comment: Comment, paginationRequest: PaginationRequest): PaginationSlice<Reply> {
-        val limit = paginationRequest.limit
-        val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
-        val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
-        val posts = if (pageLastResourceId != null) replyRepository.findAllByCommentIdAndIdLessThan(comment.id!!, pageLastResourceId, pageable)
-                    else replyRepository.findAllByCommentId(comment.id!!, pageable)
-        val nextPageToken = posts.lastOrNull()?.let { paginationRequest.pageToken.nextPageToken(it.id!!) }
-        return PaginationSlice(posts, nextPageToken)
+    fun findReplyAggregatesByComment(comment: Comment, paginationRequest: PaginationRequest): PaginationSlice<ReplyAggregate>
+        = replyAggregateView.findAll(
+            paginationRequest.withFilter("comment", comment.id!!)
+        )
+
+    @Transactional
+    fun create(comment: Comment, author: User, dto: CommentDto): Reply {
+        val reply = replyRepository.save(
+            Reply(
+                comment = comment,
+                author = author,
+                content = dto.content,
+            )
+        )
+        replyAggregateView.refreshView(reply.id!!)
+        return reply
     }
 
     @Transactional
-    fun create(comment: Comment, author: UserDetails, reply: CommentDto) = run {
-        comment.replyCount += 1
-        commentRepository.save(comment)
-        replyRepository.save(Reply(
-            comment = comment,
-            author = author,
-            content = reply.content,
-        ))
-    }
-
-    @Transactional
-    fun update(reply: Reply, commentUpdate: CommentUpdate) = run {
+    fun update(reply: Reply, commentUpdate: CommentUpdate): Reply {
         commentUpdate.let { reply.content = it.content }
         reply.updatedAt = Instant.now()
-        replyRepository.save(reply)
+        val updatedReply = replyRepository.save(reply)
+        replyAggregateView.refreshView(reply.id!!)
+        return updatedReply
     }
 
-    fun delete(reply: Reply) = run {
-        val comment = reply.comment
-        comment.replyCount -= 1
-        commentRepository.save(comment)
+    fun delete(reply: Reply) {
         replyRepository.deleteById(reply.id!!)
     }
 
-    fun addLike(reply: Reply, user: UserDetails) = run {
-        replyRepository.addLike(reply.id!!, user.id!!)?.let {
-            reply.likes += 1
-            replyRepository.save(reply)
-            it
-        }
+    @Transactional
+    fun addLike(reply: Reply, user: User): Like? {
+        return likeRepository.addLike(reply.id!!, user.id!!)
     }
 
-    fun removeLike(reply: Reply, user: UserDetails) = run {
-        if (replyRepository.removeLike(reply.id!!, user.id!!)) {
-            reply.likes -= 1
-            replyRepository.save(reply)
-        }
+    @Transactional
+    fun removeLike(reply: Reply, user: User) {
+        likeRepository.removeLike(reply.id!!, user.id!!)
     }
 
-    fun isUserAuthor(reply: Reply, user: UserDetails): Boolean = reply.author == user
-    fun hasUserLikedReply(reply: Reply, user: UserDetails) = commentRepository.findLike(reply.id!!, user.id!!) != null
+    fun hasUserLikedReply(reply: Reply, user: User): Boolean {
+        return likeRepository.findLike(reply.id!!, user.id!!) != null
+    }
+
+    fun isUserAuthor(reply: Reply, user: User): Boolean = reply.author == user
 }

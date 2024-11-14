@@ -3,7 +3,7 @@ package com.kogo.content.security
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kogo.content.logging.Logger
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.UserService
 import com.kogo.content.storage.entity.UserIdToken
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -26,7 +26,7 @@ import org.springframework.web.client.HttpServerErrorException
 
 @Component
 class ExternalAuthRequestFilter (
-    val userContextService: UserContextService
+    val userService: UserService
 ) : OncePerRequestFilter() {
 
     @Value("\${kogo-api.base-url}")
@@ -61,14 +61,14 @@ class ExternalAuthRequestFilter (
 
             val username = userInfoJson.get(USERNAME).toString().removeSurrounding("\"")
 
-            if (userContextService.findUserProfileByUsername(username) == null) {
+            if (userService.findUserProfileByUsername(username) == null) {
                 val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
                 val schoolInfoJson = userInfoJson.get(SCHOOLINFO)
 
                 val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
                 val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
 
-                userContextService.createUserProfile(
+                userService.createUserProfile(
                     idToken = UserIdToken(username, email),
                     username = username,
                     email = email,

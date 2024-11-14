@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.validator.ValidFile
+import com.kogo.content.endpoint.validator.ValidFile
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank

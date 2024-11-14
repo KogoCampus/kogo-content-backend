@@ -20,3 +20,10 @@ management:
             exposure:
                 include: health
 
+kogo-api:
+    base-url: "https://api.staging.kogocampus.com"
+
+search-engine:
+    index:
+        post: "post"
+        topic: "topic"

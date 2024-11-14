@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.UserDetails
+import com.kogo.content.storage.entity.User
 
 
 class UserData {
@@ -14,12 +14,12 @@ class UserData {
         var schoolShortenedName: String
     ) {
         companion object {
-            fun from(user: UserDetails) = IncludeCredentials(
+            fun from(user: User) = IncludeCredentials(
                 id = user.id!!,
                 idToken = user.idToken.toString(),
                 username = user.username,
                 email = user.email!!,
-                profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
+                profileImage = user.profileImage?.let { AttachmentResponse.create(it) },
                 schoolName = user.schoolName!!,
                 schoolShortenedName = user.schoolShortenedName!!
             )
@@ -34,10 +34,10 @@ class UserData {
         val schoolShortenedName: String,
     ) {
         companion object {
-            fun from(user: UserDetails) = Public(
+            fun from(user: User) = Public(
                 id = user.id!!,
                 username = user.username,
-                profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
+                profileImage = user.profileImage?.let { AttachmentResponse.create(it) },
                 schoolName = user.schoolName!!,
                 schoolShortenedName = user.schoolShortenedName!!
             )

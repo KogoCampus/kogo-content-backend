@@ -2,47 +2,65 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.filehandler.FileHandler
-import com.kogo.content.service.search.SearchQueryDao
+import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*
-import com.kogo.content.storage.entity.UserDetails
-import com.kogo.content.storage.entity.UserFollowing
+import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.view.TopicAggregate
+import com.kogo.content.storage.view.TopicAggregateView
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
-
 @Service
 class TopicService(
     private val topicRepository: TopicRepository,
     private val attachmentRepository: AttachmentRepository,
-    private val fileHandler: FileHandler,
-    private val topicSearchDao: SearchQueryDao<Topic>
-) : SearchQueryDao<Topic> by topicSearchDao {
+    private val followerRepository: FollowerRepository,
+    private val topicAggregateSearchIndex: SearchIndex<TopicAggregate>,
+    private val topicAggregateView: TopicAggregateView
+) {
 
-    fun find(topicId: String): Topic? = topicRepository.findByIdOrNull(topicId)
+    fun find(topicId: String) = topicRepository.findByIdOrNull(topicId)
+    fun findAggregate(topicId: String) = topicAggregateView.find(topicId)
 
-    fun getAllTopicsUserFollowingByUserId(userId: String): List<Topic> {
-        val followings = topicRepository.findAllFollowingsByUserId(userId)
-        val topics = followings.mapNotNull { following -> find(following.followableId) }
-        return topics
+    fun findTopicByTopicName(topicName: String): Topic? = topicRepository.findByTopicName(topicName)
+    fun findTopicsByOwner(owner: User) = topicRepository.findAllByOwnerId(owner.id!!)
+
+    fun getAllFollowingTopicsByUserId(userId: String): List<Topic> {
+        val followings = followerRepository.findAllFollowingsByUserId(userId)
+        return followings.map { following -> find(following.followableId) }.filterNotNull()
+    }
+
+    fun searchTopicAggregatesByKeyword(
+        searchText: String,
+        paginationRequest: PaginationRequest
+    ): PaginationSlice<TopicAggregate> {
+        return topicAggregateSearchIndex.search(
+            searchText = searchText,
+            paginationRequest = paginationRequest,
+            boost = 1.0  // Normal relevance boost
+        )
     }
 
     @Transactional
-    fun create(dto: TopicDto, owner: UserDetails): Topic {
-        val topic = Topic(
-            topicName = dto.topicName,
-            description = dto.description,
-            owner = owner,
-            profileImage = dto.profileImage?.let {
-                attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) },
-            tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now(),
+    fun create(dto: TopicDto, owner: User): Topic {
+        val savedTopic = topicRepository.save(
+            Topic(
+                topicName = dto.topicName,
+                description = dto.description,
+                owner = owner,
+                profileImage = dto.profileImage?.let { attachmentRepository.saveFile(it) },
+                tags = if (dto.tags.isNullOrEmpty()) emptyList() else dto.tags!!,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+            )
         )
-        val savedTopic = follow(topicRepository.save(topic), owner)
+        follow(savedTopic, owner)
+        topicAggregateView.refreshView(savedTopic.id!!)
         return savedTopic
     }
 
@@ -52,37 +70,43 @@ class TopicService(
             topicName?.let { topic.topicName = it }
             description?.let { topic.description = it }
             tags!!.takeIf { it.isNotEmpty() }?.let { topic.tags = it }
-            profileImage?.let { topic.profileImage = attachmentRepository.saveFileAndReturnAttachment(it, fileHandler, attachmentRepository) }
+            profileImage?.let { topic.profileImage = attachmentRepository.saveFile(it) }
         }
         topic.updatedAt = Instant.now()
-        return topicRepository.save(topic)
+        val updatedTopic = topicRepository.save(topic)
+        topicAggregateView.refreshView(topic.id!!)
+        return updatedTopic
     }
 
     @Transactional
     fun delete(topic: Topic) {
         topic.profileImage?.let { attachmentRepository.delete(it) }
-        topicRepository.unfollowAllByFollowableId(topic.id!!)
+        followerRepository.unfollowAllByFollowableId(topic.id!!)
         topicRepository.deleteById(topic.id!!)
     }
 
-    fun follow(topic: Topic, user: UserDetails): Topic {
-        topicRepository.follow(topic.id!!, user.id!!)?.let { topic.followerCount += 1 }
-        return topicRepository.save(topic)
-    }
-    fun unfollow(topic: Topic, user: UserDetails): Topic {
-        if(topicRepository.unfollow(topic.id!!, user.id!!)) { topic.followerCount -= 1 }
-        return topicRepository.save(topic)
+    @Transactional
+    fun follow(topic: Topic, user: User): Topic {
+        followerRepository.follow(topic.id!!, user.id!!)
+        return topic
     }
 
-    fun transferOwnership(topic: Topic, user: UserDetails): Topic {
+    @Transactional
+    fun unfollow(topic: Topic, user: User): Topic {
+        followerRepository.unfollow(topic.id!!, user.id!!)
+        return topic
+    }
+
+    fun transferOwnership(topic: Topic, user: User): Topic {
         topic.owner = user
-        return topicRepository.save(topic)
+        topicRepository.save(topic)
+        topicAggregateView.refreshView(topic.id!!)
+        return topic
     }
 
-    fun isTopicExist(topicName: String): Boolean = topicRepository.existsByTopicName(topicName)
-    fun isUserFollowingTopic(topic: Topic, user: UserDetails): Boolean {
-        return topicRepository.findFollowing(topic.id!!, user.id!!) != null
+    fun hasUserFollowedTopic(topic: Topic, user: User): Boolean {
+        return followerRepository.findFollowing(topic.id!!, user.id!!) != null
     }
-    fun isTopicOwner(topic: Topic, owner: UserDetails): Boolean = topic.owner == owner
-    fun findUserFollowing(topic: Topic, user: UserDetails): UserFollowing? = topicRepository.findFollowing(topic.id!!, user.id!!)
+
+    fun isUserTopicOwner(topic: Topic, owner: User): Boolean = topic.owner == owner
 }

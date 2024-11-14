@@ -5,13 +5,14 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.service.CommentService
-import com.kogo.content.service.UserContextService
+import com.kogo.content.service.UserService
 import com.kogo.content.service.PostService
+import com.kogo.content.lib.PaginationRequest
 import com.kogo.content.service.TopicService
-import com.kogo.content.service.pagination.PaginationRequest
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -26,11 +27,97 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("media")
 class PostController @Autowired constructor(
-    private val topicService: TopicService,
     private val postService: PostService,
     private val commentService: CommentService,
-    private val userContextService: UserContextService
+    private val userService: UserService,
+    private val topicService: TopicService
 ) {
+    @GetMapping("topics/{topicId}/posts")
+    @Operation(
+        summary = "return a list of posts in the given topic",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = PostResponse::class))
+            )],
+        )])
+    fun listPostsInTopic(
+        @PathVariable("topicId") topicId: String,
+        paginationRequest: PaginationRequest
+    ): ResponseEntity<*> = run {
+        val topic = findTopicByIdOrThrow(topicId)
+        val user = userService.getCurrentUser()
+        val paginationResponse = postService.findPostsByTopic(topic, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { PostResponse.create(it, user) },
+            headers = paginationResponse.toHttpHeaders()
+        )
+    }
+
+    @RequestMapping(
+        path = ["topics/{topicId}/posts"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
+    )
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = PostDto::class))])
+    @Operation(
+        summary = "create a post under the given topic",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))],
+        )])
+    fun createPostToTopic(
+        @PathVariable("topicId") topicId: String,
+        @Valid postDto: PostDto): ResponseEntity<*> {
+        val topic = findTopicByIdOrThrow(topicId)
+        val user = userService.getCurrentUser()
+
+        if (!topicService.hasUserFollowedTopic(topic, user))
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not following topic id: ${topic.id!!}")
+
+        val post = postService.create(topic, userService.getCurrentUser(), postDto)
+        return HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user))
+    }
+
+    @DeleteMapping("topics/{topicId}/posts/{postId}")
+    @Operation(
+        summary = "delete a post",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+        )])
+    fun deletePostInTopic(
+        @PathVariable("topicId") topicId: String,
+        @PathVariable("postId") postId: String
+    ): ResponseEntity<*> {
+        val topic = findTopicByIdOrThrow(topicId)
+        val post = findPostByIdOrThrow(postId)
+        val user = userService.getCurrentUser()
+
+        if(!postService.isPostAuthor(post, user) && !topicService.isUserTopicOwner(topic, user))
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the author of this post or the topic owner")
+
+        val deletedPost = postService.delete(post)
+        return HttpJsonResponse.successResponse(deletedPost)
+    }
+
     @GetMapping("posts/{postId}")
     @Operation(
         summary = "return a post",
@@ -40,10 +127,11 @@ class PostController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))],
         )])
     fun getPost(@PathVariable("postId") postId: String) = run {
-        val user = userContextService.getCurrentUserDetails()
-        val post = postService.find(postId) ?: findPostByIdOrThrow(postId)
-        postService.addView(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post, createPostUserActivityResponse(post)))
+        val user = userService.getCurrentUser()
+        val post = findPostByIdOrThrow(postId)
+        postService.addViewer(post, user)
+
+        HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user))
     }
 
     @RequestMapping(
@@ -61,13 +149,13 @@ class PostController @Autowired constructor(
         )])
     fun updatePost(@PathVariable("postId") postId: String, @Valid postUpdate: PostUpdate): ResponseEntity<*> {
         val post = postService.find(postId) ?: findPostByIdOrThrow(postId)
-        val user = userContextService.getCurrentUserDetails()
+        val user = userService.getCurrentUser()
 
         if(!postService.isPostAuthor(post, user))
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the author of this post")
 
         val updatedPost = postService.update(post, postUpdate)
-        return HttpJsonResponse.successResponse(PostResponse.from(updatedPost, createPostUserActivityResponse(updatedPost)))
+        return HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(updatedPost.id!!), user))
     }
 
     @RequestMapping(
@@ -83,13 +171,13 @@ class PostController @Autowired constructor(
         )])
     fun addLike(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
         val post = postService.find(postId) ?: findPostByIdOrThrow(postId)
-        val user = userContextService.getCurrentUserDetails()
+        val user = userService.getCurrentUser()
 
         if (postService.hasUserLikedPost(post, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this post: $postId")
 
         postService.addLike(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post, createPostUserActivityResponse(post)), "User's like added successfully to post: $postId")
+        HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user), "User's like added successfully to post: $postId")
     }
 
     @DeleteMapping("posts/{postId}/likes")
@@ -102,85 +190,15 @@ class PostController @Autowired constructor(
         )])
     fun deleteLike(@PathVariable("postId") postId: String): ResponseEntity<*> = run {
         val post = postService.find(postId) ?: findPostByIdOrThrow(postId)
-        val user = userContextService.getCurrentUserDetails()
+        val user = userService.getCurrentUser()
 
         if (!postService.hasUserLikedPost(post, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user never liked this post: $postId")
 
         postService.removeLike(post, user)
-        HttpJsonResponse.successResponse(PostResponse.from(post, createPostUserActivityResponse(post)), "User's like deleted successfully to post: $postId")
+        HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user), "User's like deleted successfully to post: $postId")
     }
 
-    @RequestMapping(
-        path = ["posts/{postId}/comments"],
-        method = [RequestMethod.POST],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
-    )
-    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = CommentDto::class))])
-    @Operation(
-        summary = "Create a new comment",
-        responses = [ApiResponse(
-            responseCode = "201",
-            description = "Created a new comment",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = CommentResponse::class))],
-        )]
-    )
-    fun createCommentToPost(@PathVariable("postId") postId: String, @Valid commentDto: CommentDto) = run {
-        val post = findPostByIdOrThrow(postId)
-
-        val author = userContextService.getCurrentUserDetails()
-        val newComment = commentService.create(post, author, commentDto)
-
-        HttpJsonResponse.successResponse(CommentResponse.from(newComment))
-    }
-
-    @GetMapping("posts/{postId}/comments")
-    @Operation(
-        summary = "Get all comments from the post",
-        parameters = [
-            Parameter(
-                name = PaginationRequest.PAGE_TOKEN_PARAM,
-                description = "page token",
-                schema = Schema(type = "string"),
-                required = false
-            ),
-            Parameter(
-                name = PaginationRequest.PAGE_SIZE_PARAM,
-                description = "limit for pagination",
-                schema = Schema(type = "integer", defaultValue = "10"),
-                required = false
-            )],
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok - All comments",
-            content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = CommentResponse::class)
-            ))],
-        )]
-    )
-    fun getCommentsOfPost(@PathVariable("postId") postId: String, @RequestParam requestParameters: Map<String, String>): ResponseEntity<*> = run {
-        val post = findPostByIdOrThrow(postId)
-
-        val paginationRequest = PaginationRequest.resolveFromRequestParameters(requestParameters)
-        val paginationResponse = commentService.getAllCommentsByPost(post, paginationRequest)
-
-        HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map{ CommentResponse.from(it) },
-            headers = paginationResponse.toHttpHeaders()
-        )
-    }
-
-
-    private fun findPostByIdOrThrow(postId: String): Post = postService.find(postId) ?: throw ResourceNotFoundException.of<Post>(postId)
-
-    private fun createPostUserActivityResponse(post: Post): PostResponse.PostUserActivity {
-        val like = postService.findLike(post, userContextService.getCurrentUserDetails())
-        val view = postService.findView(post, userContextService.getCurrentUserDetails())
-        return PostResponse.PostUserActivity(
-            liked = like != null,
-            likedAt = like?.createdAt,
-            viewed = view != null,
-            viewedAt = view?.createdAt,
-        )
-    }
+    private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
+    private fun findPostByIdOrThrow(postId: String) = postService.find(postId) ?: throw ResourceNotFoundException.of<Post>(postId)
 }

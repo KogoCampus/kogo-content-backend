@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.validator.ValidFile
+import com.kogo.content.endpoint.validator.ValidFile
 import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
 

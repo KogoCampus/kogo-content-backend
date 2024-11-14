@@ -2,15 +2,14 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.service.pagination.PaginationRequest
-import com.kogo.content.service.pagination.PaginationSlice
+import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.lib.SortDirection
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.CommentRepository
-import com.kogo.content.storage.repository.PostRepository
+import com.kogo.content.storage.repository.LikeRepository
+import com.kogo.content.storage.view.CommentAggregate
+import com.kogo.content.storage.view.CommentAggregateView
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,63 +18,56 @@ import java.time.Instant
 @Service
 class CommentService @Autowired constructor(
     private val commentRepository: CommentRepository,
-    private val postRepository: PostRepository,
+    private val likeRepository: LikeRepository,
+    private val commentAggregateView: CommentAggregateView
 ) {
-    fun find(commentId: String): Comment? {
-        return commentRepository.findByIdOrNull(commentId)
-    }
+    fun find(commentId: String): Comment? = commentRepository.findByIdOrNull(commentId)
+    fun findAggregate(commentId: String): CommentAggregate = commentAggregateView.find(commentId)
 
-    fun getAllCommentsByPost(post: Post, paginationRequest: PaginationRequest): PaginationSlice<Comment> {
-        val limit = paginationRequest.limit
-        val pageLastResourceId = paginationRequest.pageToken.pageLastResourceId
-        val pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "_id")) as Pageable
-        val comments = if (pageLastResourceId != null) commentRepository.findAllByPostIdAndIdLessThan(post.id!!, pageLastResourceId, pageable)
-                        else commentRepository.findAllByPostId(post.id!!, pageable)
+    fun findAggregatesByPost(post: Post, paginationRequest: PaginationRequest) = commentAggregateView.findAll(
+        paginationRequest.withFilter("post", post.id!!)
+            .withSort("createdAt", SortDirection.DESC)
+    )
 
-        val nextPageToken = comments.lastOrNull()?.let { paginationRequest.pageToken.nextPageToken(it.id!!) }
-        return PaginationSlice(comments, nextPageToken)
+    @Transactional
+    fun create(post: Post, author: User, dto: CommentDto): Comment {
+        val comment = commentRepository.save(
+            Comment(
+                post = post,
+                author = author,
+                content = dto.content,
+            )
+        )
+        commentAggregateView.refreshView(comment.id!!)
+        return comment;
     }
 
     @Transactional
-    fun create(post: Post, author: UserDetails, comment: CommentDto) = run {
-        post.commentCount += 1
-        postRepository.save(post)
-        commentRepository.save(Comment(
-            post = post,
-            author = author,
-            content = comment.content,
-        ))
-    }
-
-    @Transactional
-    fun update(comment: Comment, commentUpdate: CommentUpdate) = run {
+    fun update(comment: Comment, commentUpdate: CommentUpdate): Comment {
         commentUpdate.let { comment.content = it.content }
         comment.updatedAt = Instant.now()
-        commentRepository.save(comment)
+        val updatedComment = commentRepository.save(comment)
+        commentAggregateView.refreshView(comment.id!!)
+        return updatedComment
     }
 
     fun delete(comment: Comment) = run {
-        val post = comment.post
-        post.commentCount -= 1
-        postRepository.save(post)
         commentRepository.deleteById(comment.id!!)
     }
 
-    fun addLike(comment: Comment, user: UserDetails) = run {
-        commentRepository.addLike(comment.id!!, user.id!!)?.let {
-            comment.likes += 1
-            commentRepository.save(comment)
-            it
-        }
+    @Transactional
+    fun addLike(comment: Comment, user: User): Like? {
+        return likeRepository.addLike(comment.id!!, user.id!!)
     }
 
-    fun removeLike(comment: Comment, user: UserDetails) = run {
-        if (commentRepository.removeLike(comment.id!!, user.id!!)) {
-            comment.likes -= 1
-            commentRepository.save(comment)
-        }
+    @Transactional
+    fun removeLike(comment: Comment, user: User) {
+        likeRepository.removeLike(comment.id!!, user.id!!)
     }
 
-    fun isUserAuthor(comment: Comment, user: UserDetails): Boolean = comment.author == user
-    fun hasUserLikedComment(comment: Comment, user: UserDetails) = commentRepository.findLike(comment.id!!, user.id!!) != null
+    fun isUserAuthor(comment: Comment, user: User): Boolean = comment.author == user
+
+    fun hasUserLikedComment(commentId: String, user: User): Boolean {
+        return likeRepository.findLike(commentId, user.id!!) != null
+    }
 }

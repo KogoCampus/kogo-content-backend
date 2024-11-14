@@ -10,11 +10,5 @@ spring:
             password: password
             auto-index-creation: true
 
-kogo-api:
-    base-url: "https://api.staging.kogocampus.com"
-
 filehandler:
     prefix: tmp/files
-
-search-engine:
-    enabled: false

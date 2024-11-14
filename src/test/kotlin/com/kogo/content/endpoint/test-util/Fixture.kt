@@ -1,6 +1,7 @@
 package com.kogo.content.endpoint.`test-util`
 
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.view.*
 import java.time.Instant
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -58,15 +59,15 @@ private fun getRandomParameterValue(type: KType): Any? {
 
 class Fixture {
     companion object {
-        fun createUserFixture() = fixture<UserDetails>()
+        fun createUserFixture() = fixture<User>()
 
-        fun createTopicFixture(owner: UserDetails? = null) = fixture<Topic> {
+        fun createTopicFixture(owner: User? = null) = fixture<Topic> {
             mapOf(
                 "owner" to (owner ?: createUserFixture())
             )
         }
 
-        fun createPostFixture(topic: Topic, author: UserDetails? = null) = fixture<Post> {
+        fun createPostFixture(topic: Topic, author: User? = null) = fixture<Post> {
             mapOf(
                 "topic" to topic,
                 "author" to (author ?: createUserFixture()),
@@ -74,18 +75,61 @@ class Fixture {
             )
         }
 
-        fun createCommentFixture(post: Post, author: UserDetails? = null) = fixture<Comment> {
+        fun createCommentFixture(post: Post, author: User? = null) = fixture<Comment> {
             mapOf(
                 "post" to post,
                 "author" to (author ?: createUserFixture()),
             )
         }
 
-        fun createReplyFixture(comment: Comment, author: UserDetails? = null) = fixture<Reply> {
+        fun createReplyFixture(comment: Comment, author: User? = null) = fixture<Reply> {
             mapOf(
                 "comment" to comment,
                 "author" to (author ?: createUserFixture()),
             )
         }
+
+        fun createPostAggregateFixture(post: Post) = PostAggregate(
+            postId = post.id!!,
+            post = post,
+            viewCount = Random.nextInt(0, 1000),
+            likeCount = Random.nextInt(0, 1000),
+            commentCount = Random.nextInt(0, 1000),
+            popularityScore = Random.nextDouble(0.0, 100.0),
+            lastUpdated = Instant.now()
+        )
+
+        fun createTopicAggregateFixture(topic: Topic) = TopicAggregate(
+            topicId = topic.id!!,
+            topic = topic,
+            followerIds = (1..Random.nextInt(0, 100)).map { "user$it" }.toSet(),
+            followerCount = Random.nextInt(0, 1000),
+            postCount = Random.nextInt(0, 1000),
+            lastUpdated = Instant.now()
+        )
+
+        fun createCommentAggregateFixture(
+            comment: Comment? = null,
+            likeCount: Int = Random.nextInt(0, 1000),
+            replyCount: Int = Random.nextInt(0, 1000)
+        ) = CommentAggregate(
+            commentId = comment?.id ?: "comment-${Random.nextInt(1000)}",
+            comment = comment ?: createCommentFixture(
+                createPostFixture(
+                    createTopicFixture(createUserFixture())
+                )
+            ),
+            likeCount = likeCount,
+            replyCount = replyCount,
+            likedUserIds = (1..likeCount).map { "user-$it" }.toSet(),
+            lastUpdated = Instant.now()
+        )
+
+        fun createReplyAggregateFixture(reply: Reply) = ReplyAggregate(
+            replyId = reply.id!!,
+            reply = reply,
+            likeCount = Random.nextInt(0, 1000),
+            lastUpdated = Instant.now()
+        )
     }
 }
