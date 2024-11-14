@@ -3,17 +3,15 @@ services:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         volumes:
             - keys:/keys
-            - ./localkeyfile:/keys/localkeyfile
+            - ./keyfile:/keys/keyfile
         entrypoint:
             - /bin/sh
             - -c
             - |
-                if [ -f /keys/localkeyfile ]; then
-                    sudo mv /keys/localkeyfile /keys/keyfile
-                else
-                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
+                if [ ! -f /keys/keyfile ]; then
+                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
+                    chmod 600 /keys/keyfile
                 fi
-                chmod 600 /keys/keyfile
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
@@ -34,6 +32,7 @@ services:
             - /bin/sh
             - -c
             - |
+                ls /keys/keyfile && \
                 python3 /usr/local/bin/docker-entrypoint.py \
                   --dbpath "/data/db" \
                   --keyFile "/keys/keyfile" \
