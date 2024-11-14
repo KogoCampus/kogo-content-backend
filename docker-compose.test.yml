@@ -72,11 +72,6 @@ volumes:
     mongot_test:
     mongodb_test:
     keys:
-        driver: local
-        driver_opts:
-            type: none
-            device: .
-            o: bind
 
 networks:
     local-atlas-network:
