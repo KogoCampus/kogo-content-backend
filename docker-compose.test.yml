@@ -1,12 +1,23 @@
 services:
+    key-file:
+        image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
+        volumes:
+            - mongodb_vol:/data/db
+        entrypoint:
+            - /bin/sh
+            - -c
+            - |
+                mkdir -p /data/db/keys
+                openssl rand -base64 741 | tr -d "+/=\n" > /data/db/keys/keyfile && \
+                chmod 600 /data/db/keys/keyfile
+
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         hostname: mongod
         ports:
             - "127.0.0.1:27018:27017"
         volumes:
-            - mongodb_test:/data/db
-            - ./src/test/resources/mongo-keyfile:/keys/keyfile:ro
+            - mongodb_vol:/data/db
         environment:
             MONGODB_INITDB_ROOT_USERNAME: testuser
             MONGODB_INITDB_ROOT_PASSWORD: testpass
@@ -17,7 +28,7 @@ services:
             - |
                 python3 /usr/local/bin/docker-entrypoint.py \
                   --dbpath "/data/db" \
-                  --keyFile "/keys/keyfile" \
+                  --keyFile "/data/db/keys/keyfile" \
                   --replSet "rs-localdev" \
                   --maxConns 32200 \
                   --setParameter "mongotHost=mongot:27027" \
@@ -47,16 +58,16 @@ services:
             mongod-init-rs:
                 condition: service_completed_successfully
         volumes:
-            - mongot_test:/var/lib/mongot
-            - ./src/test/resources/mongo-keyfile:/keys/keyfile:ro
+            - mongodb_vol:/data/db
+            - mongot_vol:/var/lib/mongot
         environment:
             - MONGOD_HOST_AND_PORT=mongod:27017
-            - KEY_FILE=/keys/keyfile
+            - KEY_FILE=/data/db/keys/keyfile
             - DATA_DIR=/var/lib/mongot
 
 volumes:
-    mongot_test:
-    mongodb_test:
+    mongot_vol:
+    mongodb_vol:
 
 networks:
     local-atlas-network:
