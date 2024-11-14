@@ -7,6 +7,7 @@ services:
             - /bin/sh
             - -c
             - |
+                chown -R $(id -u):$(id -g) /keys && \
                 mkdir -p /keys && \
                 openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
                 chmod 600 /keys/keyfile
