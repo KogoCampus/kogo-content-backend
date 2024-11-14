@@ -33,11 +33,11 @@ jobs:
             - name: Create Keyfile
               run: |
                 openssl rand -base64 741 | tr -d "+/=\n" > ./keyfile
-                chmod 600 ./keyfile
+                chmod 777 ./keyfile
 
             - name: Start docker compose services
               run: |
-                docker compose -f docker-compose.test.yml up
+                docker compose -f docker-compose.test.yml up -d
                 # Wait for MongoDB to be ready
                 timeout 30s bash -c 'until docker compose -f docker-compose.test.yml exec -T mongod mongosh --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do sleep 1; done'
 
