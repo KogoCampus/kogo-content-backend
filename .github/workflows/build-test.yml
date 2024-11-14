@@ -30,9 +30,15 @@ jobs:
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: us-west-2
 
+            - name: Create Keyfile
+              run: |
+                mkdir -p keys
+                openssl rand -base64 741 | tr -d "+/=\n" > keys/keyfile
+                chmod 600 keys/keyfile
+
             - name: Start docker compose services
               run: |
-                docker compose -f docker-compose.test.yml up -d
+                docker compose -f docker-compose.test.yml up
                 # Wait for MongoDB to be ready
                 timeout 30s bash -c 'until docker compose -f docker-compose.test.yml exec -T mongod mongosh --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do sleep 1; done'
 

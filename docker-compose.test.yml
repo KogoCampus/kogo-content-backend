@@ -7,7 +7,13 @@ services:
             - /bin/sh
             - -c
             - |
-                openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
+                if [ ! -f /keys/keyfile ]; then
+                    echo "Keyfile not found, generating..."
+                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
+                    chmod 600 /keys/keyfile
+                else
+                    echo "Using existing keyfile."
+                fi
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
