@@ -7,10 +7,7 @@ services:
             - /bin/sh
             - -c
             - |
-                chown -R $(id -u):$(id -g) /keys && \
-                mkdir -p /keys && \
                 openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
-                chmod 600 /keys/keyfile
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
