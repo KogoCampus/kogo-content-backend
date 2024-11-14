@@ -1,24 +1,7 @@
 services:
-    key-file:
-        image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
-        volumes:
-            - keys:/keys
-            - ./keyfile:/keys/keyfile
-        entrypoint:
-            - /bin/sh
-            - -c
-            - |
-                if [ ! -f /keys/keyfile ]; then
-                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
-                    chmod 600 /keys/keyfile
-                fi
-
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         hostname: mongod
-        depends_on:
-            key-file:
-                condition: service_completed_successfully
         ports:
             - "127.0.0.1:27018:27017"
         volumes:
