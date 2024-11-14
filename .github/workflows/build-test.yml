@@ -33,7 +33,7 @@ jobs:
             - name: Create Keyfile
               run: |
                 openssl rand -base64 741 | tr -d "+/=\n" > ./keyfile
-                chmod 777 ./keyfile
+                chmod 600 ./keyfile
 
             - name: Start docker compose services
               run: |

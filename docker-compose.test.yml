@@ -32,7 +32,6 @@ services:
             - /bin/sh
             - -c
             - |
-                ls /keys/keyfile && \
                 python3 /usr/local/bin/docker-entrypoint.py \
                   --dbpath "/data/db" \
                   --keyFile "/keys/keyfile" \
