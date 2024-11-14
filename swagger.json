@@ -46,7 +46,7 @@
           "topic-controller"
         ],
         "summary": "update topic attributes",
-        "operationId": "updateGroup",
+        "operationId": "updateTopic",
         "parameters": [
           {
             "name": "id",
@@ -301,7 +301,7 @@
           "reply-controller"
         ],
         "summary": "Delete a like under the comment",
-        "operationId": "deleteLikeFromComment",
+        "operationId": "deleteLikeFromReply",
         "parameters": [
           {
             "name": "replyId",
@@ -588,7 +588,7 @@
           "comment-controller"
         ],
         "summary": "Delete a like under the comment",
-        "operationId": "deleteLikeFromComment_1",
+        "operationId": "deleteLikeFromComment",
         "parameters": [
           {
             "name": "commentId",
@@ -695,7 +695,7 @@
     "/media/topics/{topicId}/posts": {
       "get": {
         "tags": [
-          "topic-controller"
+          "post-controller"
         ],
         "summary": "return a list of posts in the given topic",
         "operationId": "listPostsInTopic",
@@ -726,14 +726,11 @@
             }
           },
           {
-            "name": "requestParameters",
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -763,7 +760,7 @@
       },
       "post": {
         "tags": [
-          "topic-controller"
+          "post-controller"
         ],
         "summary": "create a post under the given topic",
         "operationId": "createPostToTopic",
@@ -803,7 +800,7 @@
     "/media/posts/{postId}/comments": {
       "get": {
         "tags": [
-          "post-controller"
+          "comment-controller"
         ],
         "summary": "Get all comments from the post",
         "operationId": "getCommentsOfPost",
@@ -834,14 +831,11 @@
             }
           },
           {
-            "name": "requestParameters",
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -863,7 +857,7 @@
       },
       "post": {
         "tags": [
-          "post-controller"
+          "comment-controller"
         ],
         "summary": "Create a new comment",
         "operationId": "createCommentToPost",
@@ -903,7 +897,7 @@
     "/media/comments/{commentId}/replies": {
       "get": {
         "tags": [
-          "comment-controller"
+          "reply-controller"
         ],
         "summary": "Get all replies of the comment",
         "operationId": "getRepliesOfComment",
@@ -912,6 +906,22 @@
             "name": "page_token",
             "in": "query",
             "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "sort fields (format: field1:asc,field2:desc)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "filter fields (format: field1:value1,field2:value2)",
             "schema": {
               "type": "string"
             }
@@ -934,14 +944,11 @@
             }
           },
           {
-            "name": "requestParameters",
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -963,7 +970,7 @@
       },
       "post": {
         "tags": [
-          "comment-controller"
+          "reply-controller"
         ],
         "summary": "Create a new reply under the comment",
         "operationId": "createReplyToComment",
@@ -1074,14 +1081,11 @@
             }
           },
           {
-            "name": "requestParameters",
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -1145,14 +1149,11 @@
             }
           },
           {
-            "name": "requestParameters",
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -1190,20 +1191,28 @@
         "operationId": "listTrendingPosts",
         "parameters": [
           {
+            "name": "page_token",
             "in": "query",
+            "description": "page token",
             "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
+              "type": "string"
             }
           },
           {
-            "name": "requestParameters",
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -1241,20 +1250,28 @@
         "operationId": "listLatestPosts",
         "parameters": [
           {
+            "name": "page_token",
             "in": "query",
+            "description": "page token",
             "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
+              "type": "string"
             }
           },
           {
-            "name": "requestParameters",
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "paginationRequest",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+              "$ref": "#/components/schemas/PaginationRequest"
             }
           }
         ],
@@ -1355,7 +1372,7 @@
     "/media/topics/{topicId}/posts/{postId}": {
       "delete": {
         "tags": [
-          "topic-controller"
+          "post-controller"
         ],
         "summary": "delete a post",
         "operationId": "deletePostInTopic",
@@ -1451,9 +1468,11 @@
         "required": [
           "createdAt",
           "description",
+          "followedByCurrentUser",
           "followerCount",
           "id",
           "owner",
+          "postCount",
           "tags",
           "topicName",
           "updatedAt"
@@ -1478,36 +1497,25 @@
           "profileImage": {
             "$ref": "#/components/schemas/AttachmentResponse"
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
           "followerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "postCount": {
             "type": "integer",
             "format": "int32"
           },
           "owner": {
             "$ref": "#/components/schemas/Public"
           },
-          "userActivity": {
-            "$ref": "#/components/schemas/TopicUserActivity"
-          }
-        }
-      },
-      "TopicUserActivity": {
-        "required": [
-          "followed"
-        ],
-        "type": "object",
-        "properties": {
-          "followed": {
+          "followedByCurrentUser": {
             "type": "boolean"
           },
-          "followedAt": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -1541,9 +1549,10 @@
           "content",
           "createdAt",
           "id",
-          "likes",
+          "likeCount",
+          "likedByCurrentUser",
           "postId",
-          "repliesCount",
+          "replyCount",
           "updatedAt"
         ],
         "type": "object",
@@ -1560,7 +1569,11 @@
           "content": {
             "type": "string"
           },
-          "likes": {
+          "likeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "replyCount": {
             "type": "integer",
             "format": "int32"
           },
@@ -1572,9 +1585,8 @@
             "type": "string",
             "format": "date-time"
           },
-          "repliesCount": {
-            "type": "integer",
-            "format": "int32"
+          "likedByCurrentUser": {
+            "type": "boolean"
           }
         }
       },
@@ -1616,14 +1628,16 @@
         "required": [
           "attachments",
           "author",
-          "commentCount",
+          "comments",
           "content",
           "createdAt",
           "id",
-          "likes",
+          "likeCount",
+          "likedByCurrentUser",
           "title",
           "updatedAt",
-          "viewCount"
+          "viewCount",
+          "viewedByCurrentUser"
         ],
         "type": "object",
         "properties": {
@@ -1651,7 +1665,7 @@
               "$ref": "#/components/schemas/AttachmentResponse"
             }
           },
-          "commentCount": {
+          "comments": {
             "type": "integer",
             "format": "int32"
           },
@@ -1667,35 +1681,19 @@
             "type": "integer",
             "format": "int32"
           },
-          "likes": {
+          "likeCount": {
             "type": "integer",
             "format": "int32"
           },
-          "userActivity": {
-            "$ref": "#/components/schemas/PostUserActivity"
-          }
-        }
-      },
-      "PostUserActivity": {
-        "required": [
-          "liked",
-          "viewed"
-        ],
-        "type": "object",
-        "properties": {
-          "liked": {
+          "popularityScore": {
+            "type": "number",
+            "format": "double"
+          },
+          "likedByCurrentUser": {
             "type": "boolean"
           },
-          "likedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "viewed": {
+          "viewedByCurrentUser": {
             "type": "boolean"
-          },
-          "viewedAt": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
@@ -1847,6 +1845,77 @@
           }
         }
       },
+      "CursorValue": {
+        "required": [
+          "type",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "STRING",
+              "NUMBER",
+              "DATE"
+            ]
+          }
+        }
+      },
+      "FilterField": {
+        "required": [
+          "field",
+          "operator",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "EQUALS",
+              "IN"
+            ]
+          }
+        }
+      },
+      "PageToken": {
+        "required": [
+          "cursors",
+          "filters",
+          "sortFields"
+        ],
+        "type": "object",
+        "properties": {
+          "cursors": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CursorValue"
+            }
+          },
+          "sortFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SortField"
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterField"
+            }
+          }
+        }
+      },
       "PaginationRequest": {
         "required": [
           "limit",
@@ -1855,12 +1924,30 @@
         "type": "object",
         "properties": {
           "pageToken": {
-            "type": "string",
-            "description": "page token"
+            "$ref": "#/components/schemas/PageToken"
           },
           "limit": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "SortField": {
+        "required": [
+          "direction",
+          "field"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "ASC",
+              "DESC"
+            ]
           }
         }
       }
