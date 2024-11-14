@@ -9,7 +9,7 @@ services:
             - -c
             - |
                 if [ -f /keys/localkeyfile ]; then
-                    mv /keys/localkeyfile /keys/keyfile
+                    sudo mv /keys/localkeyfile /keys/keyfile
                 else
                     openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
                 fi
