@@ -3,15 +3,17 @@ services:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         volumes:
             - keys:/keys
-            - ./keyfile:/keys/keyfile
+            - ./localkeyfile:/keys/localkeyfile
         entrypoint:
             - /bin/sh
             - -c
             - |
-                if [ ! -f /keys/keyfile ]; then
-                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
-                    chmod 600 /keys/keyfile
+                if [ -f /keys/localkeyfile ]; then
+                    mv /keys/localkeyfile /keys/keyfile
+                else
+                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
                 fi
+                chmod 600 /keys/keyfile
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
