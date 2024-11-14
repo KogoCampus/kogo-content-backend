@@ -43,7 +43,7 @@ class ExternalAuthRequestFilter (
         const val USERDATA = "userdata"
         const val USERNAME = "username"
         const val EMAIL = "email"
-        const val SCHOOLINFO = "schoolInfo"
+        const val SCHOOLINFO = "schoolData"
         const val SCHOOL_NAME = "name"
         const val SCHOOL_SHORTENED_NAME = "shortenedName"
     }
@@ -54,33 +54,38 @@ class ExternalAuthRequestFilter (
         filterChain: FilterChain
     ) {
         if (isRequestURINotWhitelisted(request.requestURI)) {
-            val accessToken = getAccessTokenFromRequestHeader(request)
+            try {
+                val accessToken = getAccessTokenFromRequestHeader(request)
 
-            // Call external authentication API
-            val userInfoJson = authenticateUserWithApi(accessToken).get(USERDATA)
+                // Call external authentication API
+                val userInfoJson = authenticateUserWithApi(accessToken).get(USERDATA)
 
-            val username = userInfoJson.get(USERNAME).toString().removeSurrounding("\"")
+                val username = userInfoJson.get(USERNAME).toString().removeSurrounding("\"")
 
-            if (userService.findUserProfileByUsername(username) == null) {
-                val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
-                val schoolInfoJson = userInfoJson.get(SCHOOLINFO)
+                if (userService.findUserProfileByUsername(username) == null) {
+                    val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
+                    val schoolInfoJson = userInfoJson.get(SCHOOLINFO)
 
-                val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
-                val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
+                    val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
+                    val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
 
-                userService.createUserProfile(
-                    idToken = UserIdToken(username, email),
-                    username = username,
-                    email = email,
-                    schoolName = schoolName,
-                    schoolShortenedName = schoolShortenedName,
-                )
+                    userService.createUserProfile(
+                        idToken = UserIdToken(username, email),
+                        username = username,
+                        email = email,
+                        schoolName = schoolName,
+                        schoolShortenedName = schoolShortenedName,
+                    )
+                }
+
+                val authorities = listOf(SimpleGrantedAuthority("ROLE_USER")) // You can assign roles or authorities
+                val authentication = UsernamePasswordAuthenticationToken(username, null, authorities)
+
+                SecurityContextHolder.getContext().authentication = authentication
+
+            } catch(ex: RuntimeException) {
+                throw AuthenticationException("External authentication failed. ${ex.message}")
             }
-
-            val authorities = listOf(SimpleGrantedAuthority("ROLE_USER")) // You can assign roles or authorities
-            val authentication = UsernamePasswordAuthenticationToken(username, null, authorities)
-
-            SecurityContextHolder.getContext().authentication = authentication
         }
 
         filterChain.doFilter(request, response)

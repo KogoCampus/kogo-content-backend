@@ -7,8 +7,21 @@ services:
             - /bin/sh
             - -c
             - |
+                echo "Installing openssl..."
+                yum install -y openssl
+                echo "Generating keyfile..."
                 openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
+                if [ $? -ne 0 ]; then
+                    echo "Failed to generate keyfile"
+                    exit 1
+                fi
+                echo "Setting permissions on keyfile..."
                 chmod 600 /keys/keyfile
+                if [ $? -ne 0 ]; then
+                    echo "Failed to set permissions on keyfile"
+                    exit 1
+                fi
+                echo "Keyfile setup complete."
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
