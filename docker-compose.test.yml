@@ -3,13 +3,15 @@ services:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         volumes:
             - keys:/keys
+            - ./keyfile:/keys/keyfile
         entrypoint:
             - /bin/sh
             - -c
             - |
-                mkdir -p /keys && \
-                openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
-                chmod 600 /keys/keyfile
+                if [ ! -f /keys/keyfile ]; then
+                    openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile && \
+                    chmod 600 /keys/keyfile
+                fi
 
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
@@ -23,9 +25,9 @@ services:
             - mongodb_test:/data/db
             - keys:/keys
         environment:
-            MONGO_INITDB_ROOT_USERNAME: testuser
-            MONGO_INITDB_ROOT_PASSWORD: testpass
-            MONGO_INITDB_DATABASE: test
+            MONGODB_INITDB_ROOT_USERNAME: testuser
+            MONGODB_INITDB_ROOT_PASSWORD: testpass
+            MONGODB_INITDB_DATABASE: test
         entrypoint:
             - /bin/sh
             - -c
