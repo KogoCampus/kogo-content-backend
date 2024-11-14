@@ -30,12 +30,13 @@ jobs:
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: us-west-2
 
-            - name: Set up Docker Compose
+            - name: Generate Mongo RS Keyfile
               run: |
-                docker compose version
-                docker --version
+                mkdir -p ./keys
+                openssl rand -base64 741 | tr -d "+/=\n" > ./keys/keyfile
+                chmod 600 ./keys/keyfile
 
-            - name: Start Docker Compose services
+            - name: Start docker compose services
               run: |
                 docker compose -f docker-compose.test.yml up -d
                 # Wait for MongoDB to be ready

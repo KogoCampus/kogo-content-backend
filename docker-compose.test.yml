@@ -1,39 +1,12 @@
 services:
-    key-file:
-        image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
-        volumes:
-            - keys:/keys
-        entrypoint:
-            - /bin/sh
-            - -c
-            - |
-                echo "Installing openssl..."
-                yum install -y openssl
-                echo "Generating keyfile..."
-                openssl rand -base64 741 | tr -d "+/=\n" > /keys/keyfile
-                if [ $? -ne 0 ]; then
-                    echo "Failed to generate keyfile"
-                    exit 1
-                fi
-                echo "Setting permissions on keyfile..."
-                chmod 600 /keys/keyfile
-                if [ $? -ne 0 ]; then
-                    echo "Failed to set permissions on keyfile"
-                    exit 1
-                fi
-                echo "Keyfile setup complete."
-
     mongod:
         image: docker.io/mongodb/mongodb-enterprise-server:7.0-ubi8
         hostname: mongod
-        depends_on:
-            key-file:
-                condition: service_completed_successfully
         ports:
             - "127.0.0.1:27018:27017"
         volumes:
             - mongodb_test:/data/db
-            - keys:/keys
+            - ./keys:/keys
         environment:
             MONGO_INITDB_ROOT_USERNAME: testuser
             MONGO_INITDB_ROOT_PASSWORD: testpass
@@ -75,7 +48,7 @@ services:
                 condition: service_completed_successfully
         volumes:
             - mongot_test:/var/lib/mongot
-            - keys:/keys
+            - ./keys:/keys
         environment:
             - MONGOD_HOST_AND_PORT=mongod:27017
             - KEY_FILE=/keys/keyfile
@@ -84,7 +57,6 @@ services:
 volumes:
     mongot_test:
     mongodb_test:
-    keys:
 
 networks:
     local-atlas-network:
