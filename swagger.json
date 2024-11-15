@@ -1616,9 +1616,22 @@
             "type": "string"
           },
           "likableId": {
-            "type": "string"
+            "$ref": "#/components/schemas/ObjectId"
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ObjectId": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "date": {
             "type": "string",
             "format": "date-time"
           }
