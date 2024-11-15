@@ -35,5 +35,14 @@ class PostSearchIndex(
         "post.content"
     )
 
-    override fun getIndexName(): String = "post_stat_search"
+    override fun getIndexName(): String = "post_stats_search"
+
+    override fun getCollectionName(): String = "post_stats"
+
+    override fun getMapping(): SearchMapping = SearchMapping.builder()
+        .dynamic(false)
+        .addField("post.title", FieldType.STRING, "lucene.standard")
+        .addField("post.content", FieldType.STRING, "lucene.standard")
+        .addField("popularityScore", FieldType.NUMBER)
+        .build()
 }

@@ -15,7 +15,6 @@ class TopicSearchIndex(
         paginationRequest: PaginationRequest,
         boost: Double?
     ): PaginationSlice<TopicAggregate> {
-        // Default boost considers both relevance and follower count
         return atlasSearchQuery.search(
             entityClass = TopicAggregate::class,
             searchIndex = getIndexName(),
@@ -37,5 +36,15 @@ class TopicSearchIndex(
         "tags"
     )
 
-    override fun getIndexName(): String = "topic_stat_search"
+    override fun getIndexName(): String = "topic_stats_search"
+
+    override fun getCollectionName(): String = "topic_stats"
+
+    override fun getMapping(): SearchMapping = SearchMapping.builder()
+        .dynamic(false)
+        .addField("name", FieldType.STRING, "lucene.standard")
+        .addField("description", FieldType.STRING, "lucene.standard")
+        .addField("tags", FieldType.STRING, "lucene.standard")
+        .addField("followerCount", FieldType.NUMBER)
+        .build()
 }

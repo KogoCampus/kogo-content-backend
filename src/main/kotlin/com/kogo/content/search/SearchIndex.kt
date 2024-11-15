@@ -5,11 +5,13 @@ import com.kogo.content.lib.PaginationSlice
 
 interface SearchIndex<T : Any> {
     fun search(
-        searchText: String, 
+        searchText: String,
         paginationRequest: PaginationRequest,
         boost: Double? = null
     ): PaginationSlice<T>
-    
+
     fun getSearchFields(): List<String>
     fun getIndexName(): String
+    fun getCollectionName(): String
+    fun getMapping(): SearchMapping = SearchMapping()
 }
