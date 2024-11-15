@@ -41,6 +41,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
 
         private fun createSearchIndex() {
             try {
+                staticMongoTemplate.dropCollection(TestSearchEntity::class.java)
                 val testData = listOf(
                     TestSearchEntity(
                         id = "1",

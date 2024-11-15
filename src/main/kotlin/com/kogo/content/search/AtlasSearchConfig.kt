@@ -6,9 +6,11 @@ import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 
 @Configuration
+@Profile("!local")
 class AtlasSearchConfig @Autowired constructor(
     private val applicationContext: ApplicationContext,
     private val mongoTemplate: MongoTemplate

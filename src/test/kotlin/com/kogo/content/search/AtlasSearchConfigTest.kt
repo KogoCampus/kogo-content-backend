@@ -28,7 +28,7 @@ class AtlasSearchConfigTest {
     @Autowired
     private lateinit var testSearchIndex: TestSearchIndex
 
-    @org.springframework.data.mongodb.core.mapping.Document("test_search_entities")
+    @org.springframework.data.mongodb.core.mapping.Document("atlas_config_test_entities")
     data class TestEntity(
         @Id
         val id: String,
@@ -70,8 +70,8 @@ class AtlasSearchConfigTest {
         }
 
         override fun getSearchFields(): List<String> = listOf("title", "content")
-        override fun getIndexName(): String = "test_search_index"
-        override fun getCollectionName(): String = "test_search_entities"
+        override fun getIndexName(): String = "atlas_config_test_index"
+        override fun getCollectionName(): String = "atlas_config_test_entities"
         override fun getMapping(): SearchMapping = SearchMapping.builder()
             .dynamic(false)
             .addField("title", FieldType.STRING, "lucene.standard")
