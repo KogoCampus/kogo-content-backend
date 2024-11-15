@@ -36,7 +36,7 @@ data class PostResponse(
             comments = postView.commentCount,
             popularityScore = postView.popularityScore,
             likedByCurrentUser = postView.likedUserIds.contains(currentUser.id),
-            viewedByCurrentUser = false,
+            viewedByCurrentUser = postView.viewerIds.contains(currentUser.id),
             createdAt = postView.post.createdAt,
             updatedAt = postView.post.updatedAt
         )
