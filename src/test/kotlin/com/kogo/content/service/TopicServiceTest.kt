@@ -68,7 +68,6 @@ class TopicServiceTest {
         verify {
             attachmentRepository.saveFile(profileImage)
             topicRepository.save(any())
-            followerRepository.follow("test-topic-id", "test-owner-id")
             topicAggregateView.refreshView("test-topic-id")
         }
     }
@@ -136,18 +135,47 @@ class TopicServiceTest {
     }
 
     @Test
-    fun `should handle follow operations`() {
+    fun `should handle follow operations correctly`() {
         val topic = mockk<Topic> { every { id } returns "test-topic-id" }
         val user = mockk<User> { every { id } returns "test-user-id" }
 
-        // Test follow
-        every { followerRepository.follow("test-topic-id", "test-user-id") } returns mockk()
-        topicService.follow(topic, user)
-        verify { followerRepository.follow("test-topic-id", "test-user-id") }
+        // Test successful follow operation
+        val follower = mockk<Follower>()
+        every { followerRepository.follow("test-topic-id", "test-user-id") } returns follower
+        every { topicAggregateView.refreshView("test-topic-id") } returns mockk<TopicAggregate>()
 
-        // Test unfollow
+        topicService.follow(topic, user)
+        verify {
+            followerRepository.follow("test-topic-id", "test-user-id")
+            topicAggregateView.refreshView("test-topic-id")
+        }
+
+        // Test unsuccessful follow operation (already following)
+        every { followerRepository.follow("test-topic-id", "test-user-id") } returns null
+
+        topicService.follow(topic, user)
+        verify(exactly = 1) { topicAggregateView.refreshView("test-topic-id") } // Should not be called again
+    }
+
+    @Test
+    fun `should handle unfollow operations correctly`() {
+        val topic = mockk<Topic> { every { id } returns "test-topic-id" }
+        val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test successful unfollow operation
         every { followerRepository.unfollow("test-topic-id", "test-user-id") } returns true
+        every { topicAggregateView.refreshView("test-topic-id") } returns mockk<TopicAggregate>()
+
         topicService.unfollow(topic, user)
-        verify { followerRepository.unfollow("test-topic-id", "test-user-id") }
+        verify {
+            followerRepository.unfollow("test-topic-id", "test-user-id")
+            topicAggregateView.refreshView("test-topic-id")
+        }
+
+        // Test unsuccessful unfollow operation (not following)
+        every { followerRepository.unfollow("test-topic-id", "test-user-id") } returns false
+
+        topicService.unfollow(topic, user)
+        verify(exactly = 1) { topicAggregateView.refreshView("test-topic-id") } // Should not be called again
     }
 }

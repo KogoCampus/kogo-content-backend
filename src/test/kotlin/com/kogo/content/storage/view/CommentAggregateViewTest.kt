@@ -8,6 +8,7 @@ import com.kogo.content.lib.PaginationRequest
 import com.kogo.content.lib.SortDirection
 import com.kogo.content.storage.entity.*
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -68,7 +69,7 @@ class CommentAggregateViewTest @Autowired constructor(
 
             // Add likes
             repeat(i) { j ->
-                mongoTemplate.save(Like(likableId = comment.id!!, userId = "user-$j"))
+                mongoTemplate.save(Like(likableId = ObjectId(comment.id), userId = "user-$j"))
             }
 
             // Add replies
@@ -90,7 +91,7 @@ class CommentAggregateViewTest @Autowired constructor(
 
             // Add different number of likes
             repeat(i + 2) { j ->
-                mongoTemplate.save(Like(likableId = comment.id!!, userId = "user-$j"))
+                mongoTemplate.save(Like(likableId = ObjectId(comment.id), userId = "user-$j"))
             }
 
             // Add replies

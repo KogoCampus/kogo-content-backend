@@ -149,26 +149,49 @@ class PostServiceTest {
     }
 
     @Test
-    fun `should handle interaction operations`() {
+    fun `should handle like operations correctly`() {
         val post = mockk<Post> { every { id } returns "test-post-id" }
         val user = mockk<User> { every { id } returns "test-user-id" }
 
-        // Test like operations
-        every { likeRepository.addLike("test-post-id", "test-user-id") } returns mockk()
+        // Test successful like operation
+        val like = mockk<Like>()
+        every { likeRepository.addLike("test-post-id", "test-user-id") } returns like
         every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
+        
         postService.addLike(post, user)
         verify {
             likeRepository.addLike("test-post-id", "test-user-id")
             postAggregateView.refreshView("test-post-id")
         }
 
-        // Test view operations
-        every { viewerRepository.addView("test-post-id", "test-user-id") } returns mockk()
+        // Test unsuccessful like operation (already liked)
+        every { likeRepository.addLike("test-post-id", "test-user-id") } returns null
+        
+        postService.addLike(post, user)
+        verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
+    }
+
+    @Test
+    fun `should handle viewer operations correctly`() {
+        val post = mockk<Post> { every { id } returns "test-post-id" }
+        val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test successful view operation
+        val viewer = mockk<Viewer>()
+        every { viewerRepository.addView("test-post-id", "test-user-id") } returns viewer
+        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
+        
         postService.addViewer(post, user)
         verify {
             viewerRepository.addView("test-post-id", "test-user-id")
             postAggregateView.refreshView("test-post-id")
         }
+
+        // Test unsuccessful view operation (already viewed)
+        every { viewerRepository.addView("test-post-id", "test-user-id") } returns null
+        
+        postService.addViewer(post, user)
+        verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
     }
 
     @Test

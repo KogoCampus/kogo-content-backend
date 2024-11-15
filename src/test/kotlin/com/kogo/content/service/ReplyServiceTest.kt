@@ -100,19 +100,48 @@ class ReplyServiceTest {
     }
 
     @Test
-    fun `should handle like operations`() {
+    fun `should handle add like operations correctly`() {
         val reply = mockk<Reply> { every { id } returns "test-reply-id" }
         val user = mockk<User> { every { id } returns "test-user-id" }
 
-        // Test adding like
-        every { likeRepository.addLike("test-reply-id", "test-user-id") } returns mockk()
+        // Test successful like operation
+        val like = mockk<Like>()
+        every { likeRepository.addLike("test-reply-id", "test-user-id") } returns like
+        every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
+        
         replyService.addLike(reply, user)
-        verify { likeRepository.addLike("test-reply-id", "test-user-id") }
+        verify {
+            likeRepository.addLike("test-reply-id", "test-user-id")
+            replyAggregateView.refreshView("test-reply-id")
+        }
 
-        // Test removing like
+        // Test unsuccessful like operation (already liked)
+        every { likeRepository.addLike("test-reply-id", "test-user-id") } returns null
+        
+        replyService.addLike(reply, user)
+        verify(exactly = 1) { replyAggregateView.refreshView("test-reply-id") } // Should not be called again
+    }
+
+    @Test
+    fun `should handle remove like operations correctly`() {
+        val reply = mockk<Reply> { every { id } returns "test-reply-id" }
+        val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test successful unlike operation
         every { likeRepository.removeLike("test-reply-id", "test-user-id") } returns true
+        every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
+        
         replyService.removeLike(reply, user)
-        verify { likeRepository.removeLike("test-reply-id", "test-user-id") }
+        verify {
+            likeRepository.removeLike("test-reply-id", "test-user-id")
+            replyAggregateView.refreshView("test-reply-id")
+        }
+
+        // Test unsuccessful unlike operation (not liked)
+        every { likeRepository.removeLike("test-reply-id", "test-user-id") } returns false
+        
+        replyService.removeLike(reply, user)
+        verify(exactly = 1) { replyAggregateView.refreshView("test-reply-id") } // Should not be called again
     }
 }
 

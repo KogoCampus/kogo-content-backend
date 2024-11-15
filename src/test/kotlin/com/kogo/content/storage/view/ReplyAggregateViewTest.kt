@@ -3,6 +3,7 @@ package com.kogo.content.storage.view
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.storage.entity.*
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -54,7 +55,7 @@ class ReplyAggregateViewTest @Autowired constructor(
     fun `should aggregate reply stats with reply document and interactions`() {
         // Create likes
         val likes = (1..3).map { i ->
-            Like(id = "like-$i", likableId = reply.id!!, userId = "user-$i")
+            Like(id = "like-$i", likableId = ObjectId(reply.id), userId = "user-$i")
         }
         mongoTemplate.insertAll(likes)
 
@@ -78,13 +79,13 @@ class ReplyAggregateViewTest @Autowired constructor(
     fun `should handle multiple replies independently`() {
         // Create another reply
         val reply2 = Fixture.createReplyFixture(comment = comment, author = user)
-            .copy(id = "test-reply-2")
+            .copy(id = ObjectId().toString())
         mongoTemplate.save(reply2)
 
         // Add different likes
         val likes = listOf(
-            Like(id = "like-1", likableId = reply.id!!, userId = "user-1"),
-            Like(id = "like-2", likableId = reply2.id!!, userId = "user-2")
+            Like(id = "like-1", likableId = ObjectId(reply.id), userId = "user-1"),
+            Like(id = "like-2", likableId = ObjectId(reply2.id), userId = "user-2")
         )
         mongoTemplate.insertAll(likes)
 

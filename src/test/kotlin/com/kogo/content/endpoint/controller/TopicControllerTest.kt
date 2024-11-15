@@ -91,6 +91,7 @@ class TopicControllerTest @Autowired constructor(
     fun `should create a new topic`() {
         every { topicService.findTopicByTopicName(topic.topicName) } returns null
         every { topicService.create(any(), user) } returns topic
+        every { topicService.follow(topic, user) } returns topic
 
         mockMvc.perform(
             multipart(buildTopicApiUrl())

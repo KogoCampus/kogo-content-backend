@@ -57,12 +57,19 @@ class CommentService @Autowired constructor(
 
     @Transactional
     fun addLike(comment: Comment, user: User): Like? {
-        return likeRepository.addLike(comment.id!!, user.id!!)
+        val like = likeRepository.addLike(comment.id!!, user.id!!)
+        if (like != null) {
+            commentAggregateView.refreshView(comment.id!!)
+        }
+        return like
     }
 
     @Transactional
     fun removeLike(comment: Comment, user: User) {
-        likeRepository.removeLike(comment.id!!, user.id!!)
+        val removed = likeRepository.removeLike(comment.id!!, user.id!!)
+        if (removed) {
+            commentAggregateView.refreshView(comment.id!!)
+        }
     }
 
     fun isUserAuthor(comment: Comment, user: User): Boolean = comment.author == user

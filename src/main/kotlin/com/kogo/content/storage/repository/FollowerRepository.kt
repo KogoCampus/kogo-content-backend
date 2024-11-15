@@ -1,6 +1,7 @@
 package com.kogo.content.storage.repository
 
 import com.kogo.content.storage.entity.Follower
+import org.bson.types.ObjectId
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -18,7 +19,7 @@ class FollowerRepository @Autowired constructor(
 
         val follower = Follower(
             userId = userId,
-            followableId = followableId,
+            followableId = ObjectId(followableId),
         )
         return mongoTemplate.insert(follower)
     }

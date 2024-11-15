@@ -26,7 +26,7 @@ data class TopicResponse(
             tags = topicAggregate.topic.tags,
             profileImage = topicAggregate.topic.profileImage?.let { AttachmentResponse.create(it) },
             postCount = topicAggregate.postCount,
-            followedByCurrentUser = false,
+            followedByCurrentUser = topicAggregate.followerIds.contains(currentUser.id),
             followerCount = topicAggregate.followerCount,
             createdAt = topicAggregate.topic.createdAt,
             updatedAt = topicAggregate.topic.updatedAt,

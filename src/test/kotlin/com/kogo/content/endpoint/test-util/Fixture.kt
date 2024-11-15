@@ -2,6 +2,7 @@ package com.kogo.content.endpoint.`test-util`
 
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.view.*
+import org.bson.types.ObjectId
 import java.time.Instant
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -59,16 +60,24 @@ private fun getRandomParameterValue(type: KType): Any? {
 
 class Fixture {
     companion object {
-        fun createUserFixture() = fixture<User>()
+        private fun generateObjectIdString(): String {
+            return ObjectId().toString()
+        }
+
+        fun createUserFixture() = fixture<User> {
+            mapOf("id" to generateObjectIdString())
+        }
 
         fun createTopicFixture(owner: User? = null) = fixture<Topic> {
             mapOf(
+                "id" to generateObjectIdString(),
                 "owner" to (owner ?: createUserFixture())
             )
         }
 
         fun createPostFixture(topic: Topic, author: User? = null) = fixture<Post> {
             mapOf(
+                "id" to generateObjectIdString(),
                 "topic" to topic,
                 "author" to (author ?: createUserFixture()),
                 "attachments" to emptyList<Any>(),
@@ -77,6 +86,7 @@ class Fixture {
 
         fun createCommentFixture(post: Post, author: User? = null) = fixture<Comment> {
             mapOf(
+                "id" to generateObjectIdString(),
                 "post" to post,
                 "author" to (author ?: createUserFixture()),
             )
@@ -84,6 +94,7 @@ class Fixture {
 
         fun createReplyFixture(comment: Comment, author: User? = null) = fixture<Reply> {
             mapOf(
+                "id" to generateObjectIdString(),
                 "comment" to comment,
                 "author" to (author ?: createUserFixture()),
             )
@@ -102,7 +113,7 @@ class Fixture {
         fun createTopicAggregateFixture(topic: Topic) = TopicAggregate(
             topicId = topic.id!!,
             topic = topic,
-            followerIds = (1..Random.nextInt(0, 100)).map { "user$it" }.toSet(),
+            followerIds = (1..Random.nextInt(0, 100)).map { generateObjectIdString() }.toSet(),
             followerCount = Random.nextInt(0, 1000),
             postCount = Random.nextInt(0, 1000),
             lastUpdated = Instant.now()
@@ -113,7 +124,7 @@ class Fixture {
             likeCount: Int = Random.nextInt(0, 1000),
             replyCount: Int = Random.nextInt(0, 1000)
         ) = CommentAggregate(
-            commentId = comment?.id ?: "comment-${Random.nextInt(1000)}",
+            commentId = comment?.id ?: generateObjectIdString(),
             comment = comment ?: createCommentFixture(
                 createPostFixture(
                     createTopicFixture(createUserFixture())
@@ -121,7 +132,7 @@ class Fixture {
             ),
             likeCount = likeCount,
             replyCount = replyCount,
-            likedUserIds = (1..likeCount).map { "user-$it" }.toSet(),
+            likedUserIds = (1..likeCount).map { generateObjectIdString() }.toSet(),
             lastUpdated = Instant.now()
         )
 

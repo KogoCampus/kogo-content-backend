@@ -32,7 +32,7 @@ class TopicService(
 
     fun getAllFollowingTopicsByUserId(userId: String): List<Topic> {
         val followings = followerRepository.findAllFollowingsByUserId(userId)
-        return followings.map { following -> find(following.followableId) }.filterNotNull()
+        return followings.map { following -> find(following.followableId.toString()) }.filterNotNull()
     }
 
     fun searchTopicAggregatesByKeyword(
@@ -59,7 +59,6 @@ class TopicService(
                 updatedAt = Instant.now(),
             )
         )
-        follow(savedTopic, owner)
         topicAggregateView.refreshView(savedTopic.id!!)
         return savedTopic
     }
@@ -87,13 +86,19 @@ class TopicService(
 
     @Transactional
     fun follow(topic: Topic, user: User): Topic {
-        followerRepository.follow(topic.id!!, user.id!!)
+        val follower = followerRepository.follow(topic.id!!, user.id!!)
+        if (follower != null) {
+            topicAggregateView.refreshView(topic.id!!)
+        }
         return topic
     }
 
     @Transactional
     fun unfollow(topic: Topic, user: User): Topic {
-        followerRepository.unfollow(topic.id!!, user.id!!)
+        val unfollowed = followerRepository.unfollow(topic.id!!, user.id!!)
+        if (unfollowed) {
+            topicAggregateView.refreshView(topic.id!!)
+        }
         return topic
     }
 

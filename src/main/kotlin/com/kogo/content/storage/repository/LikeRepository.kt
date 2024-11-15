@@ -1,6 +1,7 @@
 package com.kogo.content.storage.repository
 
 import com.kogo.content.storage.entity.Like
+import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -17,9 +18,9 @@ class LikeRepository @Autowired constructor(
 
         val like = Like(
             userId = userId,
-            likableId = likableId
+            likableId = ObjectId(likableId)
         )
-        return mongoTemplate.insert(like)
+        return mongoTemplate.save(like)
     }
 
     fun removeLike(likableId: String, userId: String): Boolean {

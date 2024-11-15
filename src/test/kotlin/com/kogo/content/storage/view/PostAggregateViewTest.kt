@@ -7,12 +7,15 @@ import com.kogo.content.lib.PaginationRequest
 import com.kogo.content.lib.SortDirection
 import com.kogo.content.storage.entity.*
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
 
@@ -56,7 +59,7 @@ class PostAggregateViewTest @Autowired constructor(
 
             // Add likes
             repeat(i) { j ->
-                mongoTemplate.save(Like(likableId = post.id!!, userId = "user-$j"))
+                mongoTemplate.save(Like(likableId = ObjectId(post.id), userId = "user-$j"))
             }
 
             // Add comments
@@ -66,7 +69,7 @@ class PostAggregateViewTest @Autowired constructor(
 
             // Add views
             repeat(i * 2) { j ->
-                mongoTemplate.save(Viewer(viewableId = post.id!!, userId = "viewer-$j"))
+                mongoTemplate.save(Viewer(viewableId = ObjectId(post.id), userId = "viewer-$j"))
             }
 
             post
@@ -141,7 +144,7 @@ class PostAggregateViewTest @Autowired constructor(
     @Test
     fun `should aggregate post stats correctly`() {
         val post = posts[4] // Last post has 5 likes, 5 comments, and 10 views
-        val stats = postAggregateView.find(post.id!!)!!
+        val stats = postAggregateView.find(post.id!!)
 
         assertThat(stats.post.id).isEqualTo(post.id)
         assertThat(stats.post.title).isEqualTo("Post Title 5")
@@ -213,5 +216,66 @@ class PostAggregateViewTest @Autowired constructor(
         assertThat(nextPage.items.map { it.post.topic.id }).containsOnly(topic.id)
         assertThat(nextPage.items.map { it.post.title })
             .containsExactly("Post Title 3", "Post Title 2")
+    }
+
+    @Test
+    fun `should update aggregate stats when adding like and view`() {
+        // Create initial post
+        val post = Fixture.createPostFixture(topic = topic, author = user)
+        mongoTemplate.save(post)
+
+        // Initial refresh of the view
+        postAggregateView.refreshView(post.id!!)
+
+        // Verify initial state
+        var stats = postAggregateView.find(post.id!!)
+        assertThat(stats.likeCount).isEqualTo(0)
+        assertThat(stats.viewCount).isEqualTo(0)
+        assertThat(stats.likedUserIds).isEmpty()
+        assertThat(stats.viewerIds).isEmpty()
+
+        // Add a like
+        mongoTemplate.save(Like(likableId = ObjectId(post.id), userId = "test-user-1"))
+        postAggregateView.refreshView(post.id!!)
+
+        // Verify like was counted
+        stats = postAggregateView.find(post.id!!)
+        assertThat(stats.likeCount).isEqualTo(1)
+        assertThat(stats.likedUserIds).containsExactly("test-user-1")
+
+        // Add a view
+        mongoTemplate.save(Viewer(viewableId = ObjectId(post.id), userId = "test-viewer-1"))
+        postAggregateView.refreshView(post.id!!)
+
+        // Verify both like and view are counted
+        stats = postAggregateView.find(post.id!!)
+        assertThat(stats.likeCount).isEqualTo(1)
+        assertThat(stats.viewCount).isEqualTo(1)
+        assertThat(stats.likedUserIds).containsExactly("test-user-1")
+        assertThat(stats.viewerIds).containsExactly("test-viewer-1")
+
+        // Add another like and view from different users
+        mongoTemplate.save(Like(likableId = ObjectId(post.id), userId = "test-user-2"))
+        mongoTemplate.save(Viewer(viewableId = ObjectId(post.id), userId = "test-viewer-2"))
+        postAggregateView.refreshView(post.id!!)
+
+        // Verify all updates are reflected
+        stats = postAggregateView.find(post.id!!)
+        assertThat(stats.likeCount).isEqualTo(2)
+        assertThat(stats.viewCount).isEqualTo(2)
+        assertThat(stats.likedUserIds).containsExactlyInAnyOrder("test-user-1", "test-user-2")
+        assertThat(stats.viewerIds).containsExactlyInAnyOrder("test-viewer-1", "test-viewer-2")
+
+        // Remove a like
+        mongoTemplate.remove(Query(Criteria.where("userId").`is`("test-user-1")
+            .and("likableId").`is`(ObjectId(post.id))), Like::class.java)
+        postAggregateView.refreshView(post.id!!)
+
+        // Verify like removal is reflected
+        stats = postAggregateView.find(post.id!!)
+        assertThat(stats.likeCount).isEqualTo(1)
+        assertThat(stats.viewCount).isEqualTo(2)
+        assertThat(stats.likedUserIds).containsExactly("test-user-2")
+        assertThat(stats.viewerIds).containsExactlyInAnyOrder("test-viewer-1", "test-viewer-2")
     }
 }

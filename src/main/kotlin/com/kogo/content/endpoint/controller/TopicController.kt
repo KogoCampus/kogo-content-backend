@@ -40,6 +40,7 @@ class TopicController @Autowired constructor(
         )])
     fun getTopic(@PathVariable("id") topicId: String) = run {
         val topic = findTopicByIdOrThrow(topicId)
+
         HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(topic.id!!), userService.getCurrentUser()))
     }
 
@@ -60,8 +61,10 @@ class TopicController @Autowired constructor(
         if (topicService.findTopicByTopicName(topicDto.topicName) != null) {
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "topic name must be unique: ${topicDto.topicName}")
         }
+        val user = userService.getCurrentUser()
         val topic = topicService.create(topicDto, userService.getCurrentUser())
-        HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(topic.id!!), userService.getCurrentUser()))
+        topicService.follow(topic, user)
+        HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(topic.id!!), user))
     }
 
     @RequestMapping(

@@ -1,5 +1,6 @@
 package com.kogo.content.storage.entity
 
+import org.bson.types.ObjectId
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant
@@ -11,7 +12,7 @@ data class Viewer (
 
     var userId: String,
 
-    var viewableId : String,
+    var viewableId : ObjectId,
 
     var createdAt: Instant = Instant.now(),
 )

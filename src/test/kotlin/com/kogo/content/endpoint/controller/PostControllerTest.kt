@@ -8,7 +8,6 @@ import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.User
 import com.kogo.content.endpoint.`test-util`.Fixture
-import com.kogo.content.lib.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk

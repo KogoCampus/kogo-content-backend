@@ -49,6 +49,10 @@ class PostService (
         boost = 1.0
     )
 
+    fun testFunc(postId: String) {
+        postAggregateView.refreshView(postId)
+    }
+
     fun searchPostAggregatesByKeywordAndPopularity(
         searchText: String,
         paginationRequest: PaginationRequest
@@ -102,7 +106,9 @@ class PostService (
     @Transactional
     fun addLike(post: Post, user: User): Like? {
         val like = likeRepository.addLike(post.id!!, user.id!!)
-        postAggregateView.refreshView(post.id!!)
+        if (like != null) {
+            postAggregateView.refreshView(post.id!!)
+        }
         return like
     }
 
@@ -115,7 +121,9 @@ class PostService (
     @Transactional
     fun addViewer(post: Post, user: User): Viewer? {
         val viewer = viewerRepository.addView(post.id!!, user.id!!)
-        postAggregateView.refreshView(post.id!!)
+        if (viewer != null) {
+            postAggregateView.refreshView(post.id!!)
+        }
         return viewer
     }
 

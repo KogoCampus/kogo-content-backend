@@ -3,6 +3,7 @@ package com.kogo.content.storage.view
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.storage.entity.*
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -57,10 +58,10 @@ class TopicAggregateViewTest @Autowired constructor(
 
         // Add followers to topics
         (1..4).forEach { i ->
-            mongoTemplate.save(Follower(followableId = topic1.id!!, userId = "user-$i"))
+            mongoTemplate.save(Follower(followableId = ObjectId(topic1.id), userId = "user-$i"))
         }
         (1..2).forEach { i ->
-            mongoTemplate.save(Follower(followableId = topic2.id!!, userId = "user-$i"))
+            mongoTemplate.save(Follower(followableId = ObjectId(topic2.id), userId = "user-$i"))
         }
 
         // Refresh views for all topics
@@ -82,7 +83,7 @@ class TopicAggregateViewTest @Autowired constructor(
         )
 
         // Test topic2 stats
-        val topic2Stats = topicAggregateView.find(topic2.id!!)!!
+        val topic2Stats = topicAggregateView.find(topic2.id!!)
         assertThat(topic2Stats.topic.id).isEqualTo(topic2.id)
         assertThat(topic2Stats.postCount).isEqualTo(3)
         assertThat(topic2Stats.followerCount).isEqualTo(2)
@@ -112,13 +113,13 @@ class TopicAggregateViewTest @Autowired constructor(
         mongoTemplate.save(newPost)
 
         // Add new follower to topic1
-        mongoTemplate.save(Follower(followableId = topic1.id!!, userId = "user-5"))
+        mongoTemplate.save(Follower(followableId = ObjectId(topic1.id), userId = "user-5"))
 
         // Refresh view
         topicAggregateView.refreshView(topic1.id!!)
 
         // Verify updated stats
-        val updatedStats = topicAggregateView.find(topic1.id!!)!!
+        val updatedStats = topicAggregateView.find(topic1.id!!)
         assertThat(updatedStats.postCount).isEqualTo(6)
         assertThat(updatedStats.followerCount).isEqualTo(5)
         assertThat(updatedStats.followerIds).hasSize(5)

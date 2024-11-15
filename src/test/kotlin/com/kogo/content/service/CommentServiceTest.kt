@@ -102,20 +102,48 @@ class CommentServiceTest {
     }
 
     @Test
-    fun `should handle like operations`() {
+    fun `should handle add like operations correctly`() {
         val comment = mockk<Comment> { every { id } returns "test-comment-id" }
         val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test successful like operation
         val like = mockk<Like>()
-
-        // Test adding like
         every { likeRepository.addLike("test-comment-id", "test-user-id") } returns like
+        every { commentAggregateView.refreshView("test-comment-id") } returns mockk<CommentAggregate>()
+        
         commentService.addLike(comment, user)
-        verify { likeRepository.addLike("test-comment-id", "test-user-id") }
+        verify {
+            likeRepository.addLike("test-comment-id", "test-user-id")
+            commentAggregateView.refreshView("test-comment-id")
+        }
 
-        // Test removing like
+        // Test unsuccessful like operation (already liked)
+        every { likeRepository.addLike("test-comment-id", "test-user-id") } returns null
+        
+        commentService.addLike(comment, user)
+        verify(exactly = 1) { commentAggregateView.refreshView("test-comment-id") } // Should not be called again
+    }
+
+    @Test
+    fun `should handle remove like operations correctly`() {
+        val comment = mockk<Comment> { every { id } returns "test-comment-id" }
+        val user = mockk<User> { every { id } returns "test-user-id" }
+
+        // Test successful unlike operation
         every { likeRepository.removeLike("test-comment-id", "test-user-id") } returns true
+        every { commentAggregateView.refreshView("test-comment-id") } returns mockk<CommentAggregate>()
+        
         commentService.removeLike(comment, user)
-        verify { likeRepository.removeLike("test-comment-id", "test-user-id") }
+        verify {
+            likeRepository.removeLike("test-comment-id", "test-user-id")
+            commentAggregateView.refreshView("test-comment-id")
+        }
+
+        // Test unsuccessful unlike operation (not liked)
+        every { likeRepository.removeLike("test-comment-id", "test-user-id") } returns false
+        
+        commentService.removeLike(comment, user)
+        verify(exactly = 1) { commentAggregateView.refreshView("test-comment-id") } // Should not be called again
     }
 }
 

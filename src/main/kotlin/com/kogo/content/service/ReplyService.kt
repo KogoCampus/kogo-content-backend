@@ -57,12 +57,19 @@ class ReplyService @Autowired constructor(
 
     @Transactional
     fun addLike(reply: Reply, user: User): Like? {
-        return likeRepository.addLike(reply.id!!, user.id!!)
+        val like = likeRepository.addLike(reply.id!!, user.id!!)
+        if (like != null) {
+            replyAggregateView.refreshView(reply.id!!)
+        }
+        return like
     }
 
     @Transactional
     fun removeLike(reply: Reply, user: User) {
-        likeRepository.removeLike(reply.id!!, user.id!!)
+        val removed = likeRepository.removeLike(reply.id!!, user.id!!)
+        if (removed) {
+            replyAggregateView.refreshView(reply.id!!)
+        }
     }
 
     fun hasUserLikedReply(reply: Reply, user: User): Boolean {
