@@ -31,7 +31,7 @@ class LikeRepository @Autowired constructor(
 
     fun findLike(likableId: String, userId: String): Like? {
         val query = Query(
-            Criteria.where("likableId").`is`(likableId)
+            Criteria.where("likableId").`is`(ObjectId(likableId))
                 .and("userId").`is`(userId)
         )
         return mongoTemplate.findOne(query, Like::class.java)

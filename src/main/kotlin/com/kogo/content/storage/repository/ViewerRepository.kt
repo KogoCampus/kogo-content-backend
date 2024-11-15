@@ -26,7 +26,7 @@ class ViewerRepository @Autowired constructor(
 
     fun findView(viewableId: String, userId: String): Viewer? {
         val query = Query(
-            Criteria.where("viewableId").`is`(viewableId)
+            Criteria.where("viewableId").`is`(ObjectId(viewableId))
                 .and("userId").`is`(userId)
         )
         return mongoTemplate.findOne(query, Viewer::class.java)

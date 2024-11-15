@@ -93,6 +93,7 @@ class PostController @Autowired constructor(
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not following topic id: ${topic.id!!}")
 
         val post = postService.create(topic, userService.getCurrentUser(), postDto)
+        postService.addViewer(post, user)
         return HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user))
     }
 

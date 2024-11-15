@@ -38,7 +38,7 @@ class FollowerRepository @Autowired constructor(
     fun findFollowing(followableId: String, userId: String): Follower? {
         val following = Query(
             Criteria.where("userId").`is`(userId)
-                .and("followableId").`is`(followableId)
+                .and("followableId").`is`(ObjectId(followableId))
         )
         return mongoTemplate.findOne(following, Follower::class.java)
     }

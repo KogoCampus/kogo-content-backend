@@ -103,6 +103,7 @@ class PostControllerTest @Autowired constructor(
         val topicId = topic.id!!
         val newPost = Fixture.createPostFixture(topic = topic, author = user)
         val newPostStat = Fixture.createPostAggregateFixture(newPost)
+        val postSlot = slot<Post>()
 
         every { topicService.find(topicId) } returns topic
         every { topicService.hasUserFollowedTopic(topic, user) } returns true
@@ -110,6 +111,7 @@ class PostControllerTest @Autowired constructor(
         every { postService.findAggregate(newPost.id!!) } returns newPostStat
         every { postService.hasUserLikedPost(newPost, user) } returns true
         every { postService.hasUserViewedPost(newPost, user) } returns true
+        every { postService.addViewer(capture(postSlot), user) } returns mockk()
 
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId, "posts"))
@@ -124,6 +126,8 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(newPost.content))
             .andExpect(jsonPath("$.data.topicId").value(topic.id))
             .andExpect { jsonPath("$.data.createdAt").exists() }
+
+        assertThat(postSlot.captured.id).isEqualTo(newPost.id)
     }
 
     @Test
