@@ -1,6 +1,7 @@
 package com.kogo.content.search
 
 import com.kogo.content.logging.Logger
+import com.mongodb.MongoCommandException
 import jakarta.annotation.PostConstruct
 import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
@@ -57,8 +58,15 @@ class AtlasSearchConfig @Autowired constructor(
             try {
                 mongoTemplate.db.runCommand(command)
                 log.info { "Search index '$indexName' created successfully." }
+
+            } catch (e: MongoCommandException) {
+                if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
+                    log.info { "Search index '$indexName' already exists, skipping creation." }
+                } else {
+                    throw e
+                }
             } catch (e: Exception) {
-                log.info { "Failed to create search index '$indexName': ${e.message}" }
+                log.error { "Failed to create search index '$indexName': ${e.message}" }
                 throw e
             }
         }

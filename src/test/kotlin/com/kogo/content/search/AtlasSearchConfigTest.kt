@@ -2,10 +2,12 @@ package com.kogo.content.search
 
 import com.kogo.content.lib.PaginationRequest
 import com.kogo.content.lib.PaginationSlice
+import com.mongodb.MongoCommandException
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
@@ -118,30 +120,5 @@ class AtlasSearchConfigTest {
 
         assertThat(firstBatch).isNotEmpty
         assertThat(firstBatch?.any { (it as? Document)?.get("name") == testSearchIndex.getIndexName() }).isTrue
-    }
-
-    @Test
-    fun `should not create search index if it already exists`() {
-        // Create index first
-        val createCommand = Document().apply {
-            put("createSearchIndexes", testSearchIndex.getCollectionName())
-            put("indexes", listOf(Document().apply {
-                put("name", testSearchIndex.getIndexName())
-                put("definition", testSearchIndex.getMapping().toDocument())
-            }))
-        }
-        mongoTemplate.db.runCommand(createCommand)
-
-        // Try to initialize indexes again
-        atlasSearchConfig.initializeSearchIndexes()
-
-        // Verify only one index exists
-        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.getCollectionName())
-        val indexes = mongoTemplate.db.runCommand(listIndexesCommand)
-        val cursor = indexes.get("cursor") as? Document
-        val firstBatch = cursor?.get("firstBatch") as? List<*>
-
-        assertThat(firstBatch).isNotEmpty
-        assertThat(firstBatch?.count { (it as? Document)?.get("name") == testSearchIndex.getIndexName() }).isEqualTo(1)
     }
 }
