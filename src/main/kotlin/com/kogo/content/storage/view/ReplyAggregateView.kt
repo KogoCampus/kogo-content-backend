@@ -20,7 +20,7 @@ class ReplyAggregateView(
         private val PAGINATION_FIELD_MAPPINGS = mapOf(
             "id" to "replyId",
             "author" to "reply.author.id",
-            "reply" to "reply.id",
+            "comment" to "reply.comment.id",
             "content" to "reply.content",
             "createdAt" to "reply.createdAt",
             "updatedAt" to "reply.updatedAt"

@@ -22,7 +22,7 @@ class PostAggregateView(
         private const val POPULARITY_VIEW_WEIGHT = 0.1
 
         private val PAGINATION_FIELD_MAPPINGS = mapOf(
-            "id" to "postId",
+            "id" to "_id",
             "author" to "post.author.id",
             "topic" to "post.topic.id",
             "title" to "post.title",

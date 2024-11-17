@@ -18,7 +18,7 @@ class CommentAggregateView(
 
     companion object {
         private val PAGINATION_FIELD_MAPPINGS = mapOf(
-            "id" to "commentId",
+            "id" to "_id",
             "author" to "comment.author.id",
             "post" to "comment.post.id",
             "content" to "comment.content",
