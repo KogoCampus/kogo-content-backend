@@ -123,15 +123,14 @@ class TopicServiceTest {
         every {
             topicAggregateSearchIndex.search(
                 searchText = searchText,
-                paginationRequest = paginationRequest,
-                boost = 1.0
+                paginationRequest = paginationRequest
             )
         } returns paginationSlice
 
         val result = topicService.searchTopicAggregatesByKeyword(searchText, paginationRequest)
 
         assertThat(result.items).hasSize(2)
-        verify { topicAggregateSearchIndex.search(searchText, paginationRequest, 1.0) }
+        verify { topicAggregateSearchIndex.search(searchText, paginationRequest) }
     }
 
     @Test

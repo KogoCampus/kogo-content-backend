@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.lib.PaginationSlice
 import com.kogo.content.service.*
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.view.PostAggregate
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -69,6 +71,10 @@ class CommentController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok - All comments",
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                      ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = CommentResponse::class)
             )

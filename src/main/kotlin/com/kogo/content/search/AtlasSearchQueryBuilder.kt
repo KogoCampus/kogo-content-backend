@@ -2,15 +2,10 @@ package com.kogo.content.search
 
 import com.kogo.content.lib.*
 import org.bson.Document
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
-import org.springframework.data.mongodb.core.aggregation.LimitOperation
-import org.springframework.data.mongodb.core.aggregation.MatchOperation
-import org.springframework.data.mongodb.core.aggregation.SkipOperation
-import org.springframework.data.mongodb.core.aggregation.SortOperation
-import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.stereotype.Component
 import kotlin.reflect.KClass
 
@@ -18,151 +13,162 @@ import kotlin.reflect.KClass
 class AtlasSearchQueryBuilder(
     private val mongoTemplate: MongoTemplate
 ) {
-    data class ScoreField(
-        val field: String,
-        val boost: Double? = null,
-        val boostPath: String? = null
-    )
+    companion object {
+        private const val ATLAS_SEARCH_MAX_RESULTS = 10
+    }
 
     fun <T : Any> search(
         entityClass: KClass<T>,
-        searchIndex: String,
+        searchIndexName: String,
         paginationRequest: PaginationRequest,
         searchText: String,
-        searchFields: List<String>,
-        scoreFields: List<ScoreField>? = null
+        searchableFields: List<String>,
+        scoreFields: List<ScoreField>? = null,
     ): PaginationSlice<T> {
         val operations = mutableListOf<AggregationOperation>()
 
-        operations.add(AggregationOperation {
-            Document("\$search", Document().apply {
-                put("index", searchIndex)
-                
-                // If we have score fields, use compound operator
-                if (!scoreFields.isNullOrEmpty()) {
-                    put("compound", Document().apply {
-                        put("should", buildShouldClauses(searchText, searchFields, scoreFields))
-                    })
-                } else {
-                    // Simple text search without scoring
-                    put("text", Document().apply {
-                        put("query", searchText)
-                        put("path", searchFields)
-                    })
-                }
-            })
-        })
-
-        // Add filter stages
-        paginationRequest.pageToken.filters.forEach { filter ->
-            operations.add(
-                MatchOperation(
-                    Criteria.where(filter.field).apply {
-                        when (filter.operator) {
-                            FilterOperator.EQUALS -> `is`(filter.value)
-                            FilterOperator.IN -> `in`(filter.value)
-                        }
-                    }
-                )
-            )
-        }
-
-        // Add sort stages
-        if (paginationRequest.pageToken.sortFields.isNotEmpty()) {
-            val sortOperations = paginationRequest.pageToken.sortFields.map { sort ->
-                Sort.Order(
-                    if (sort.direction == SortDirection.ASC) Sort.Direction.ASC else Sort.Direction.DESC,
-                    sort.field
-                )
-            }.toMutableList()
-
-            // Add score sorting if using search
-            sortOperations.add(Sort.Order(Sort.Direction.DESC, "score"))
-            operations.add(SortOperation(Sort.by(sortOperations)))
-        } else {
-            // Default sort by score
-            operations.add(SortOperation(Sort.by(Sort.Direction.DESC, "score")))
-        }
-
-        // Apply cursor-based pagination
-        paginationRequest.pageToken.cursors["searchAfter"]?.let { cursor ->
-            val skipValue = when (val value = cursor.value) {
-                is Int -> value.toLong()
-                is Long -> value
-                else -> throw IllegalArgumentException("Invalid cursor value type: ${value::class}")
-            }
-            operations.add(SkipOperation(skipValue))
-        }
-
-        operations.add(LimitOperation((paginationRequest.limit + 1).toLong()))
+        operations.addAll(buildSearchOperations(
+            searchIndexName = searchIndexName,
+            searchText = searchText,
+            searchableFields = searchableFields,
+            scoreFields = scoreFields,
+            paginationRequest = paginationRequest,
+        ))
 
         val results = mongoTemplate.aggregate(
             Aggregation.newAggregation(entityClass.java, operations),
             entityClass.java
-        ).mappedResults
+        )
 
-        return if (results.size > paginationRequest.limit) {
-            // Has more pages
-            val currentSkip = paginationRequest.pageToken.cursors["searchAfter"]?.value as? Number ?: 0
-            PaginationSlice(
-                items = results.take(paginationRequest.limit),
-                nextPageToken = paginationRequest.pageToken.copy(
-                    cursors = mapOf(
-                        "searchAfter" to CursorValue(
-                            value = (currentSkip.toLong() + paginationRequest.limit),
-                            type = CursorValueType.NUMBER
-                        )
-                    )
-                )
-            )
-        } else {
-            // Last page - no next token
-            PaginationSlice(
-                items = results,
-                nextPageToken = null
-            )
+        return createPaginationSlice(results, paginationRequest)
+    }
+
+    private fun buildSearchOperations(
+        searchIndexName: String,
+        searchText: String,
+        searchableFields: List<String>,
+        scoreFields: List<ScoreField>?,
+        paginationRequest: PaginationRequest,
+    ): List<AggregationOperation> = listOf(
+        // Search operation
+        AggregationOperation {
+            Document("\$search", Document().apply {
+                put("index", searchIndexName)
+                put("compound", buildCompoundQuery(searchText, searchableFields, scoreFields, paginationRequest.pageToken.filters))
+                put("sort", buildSortCriteria(paginationRequest.pageToken.sortFields))
+                // Add searchAfter if cursor exists
+                paginationRequest.pageToken.cursors["searchAfter"]?.let { cursor ->
+                    put("searchAfter", cursor.value)
+                }
+            })
+        },
+        // Add metadata fields
+        AggregationOperation {
+            Document("\$addFields", Document().apply {
+                put("_searchScore", Document("\$meta", "searchScore"))
+                put("_searchAfter", Document("\$meta", "searchSequenceToken"))
+            })
+        },
+        // Limit results
+        AggregationOperation {
+            Document("\$limit", minOf(paginationRequest.limit, ATLAS_SEARCH_MAX_RESULTS))
+        }
+    )
+
+    private fun buildCompoundQuery(
+        searchText: String,
+        searchFields: List<String>,
+        scoreFields: List<ScoreField>?,
+        filters: List<FilterField>
+    ) = Document().apply {
+        // Must clause for text search
+        put("must", listOf(Document("text", Document().apply {
+            put("query", searchText)
+            put("path", searchFields)
+            put("fuzzy", Document("maxEdits", 1))
+        })))
+
+        // Should clause for boosting
+        if (!scoreFields.isNullOrEmpty()) {
+            put("should", scoreFields.map { scoreField ->
+                Document("text", Document().apply {
+                    put("query", searchText)
+                    put("path", scoreField.field)
+                    when {
+                        scoreField.boostPath != null -> {
+                            put("score", Document("boost", Document("path", scoreField.boostPath)))
+                        }
+                        scoreField.boost != null -> {
+                            put("score", Document("boost", Document("value", scoreField.boost)))
+                        }
+                    }
+                })
+            })
+        }
+
+        // Filter clause
+        if (filters.isNotEmpty()) {
+            put("filter", buildFilterCriteria(filters))
         }
     }
 
-    private fun buildShouldClauses(
-        searchText: String,
-        searchFields: List<String>,
-        scoreFields: List<ScoreField>
-    ): List<Document> {
-        val clauses = mutableListOf<Document>()
-
-        // Add regular search fields without boost
-        val regularFields = searchFields.filter { field ->
-            scoreFields.none { it.field == field }
+    private fun buildFilterCriteria(filters: List<FilterField>) = filters.map { filter ->
+        when (filter.operator) {
+            FilterOperator.EQUALS -> when (filter.value) {
+                is Number -> Document("equals", Document().apply {
+                    put("path", filter.field)
+                    put("value", filter.value)
+                })
+                else -> Document("text", Document().apply {
+                    put("query", filter.value.toString())
+                    put("path", filter.field)
+                })
+            }
+            FilterOperator.IN -> Document("queryString", Document().apply {
+                put("defaultPath", filter.field)
+                put("query", when (filter.value) {
+                    is List<*> -> filter.value.joinToString(" OR ")
+                    is Array<*> -> filter.value.joinToString(" OR ")
+                    else -> filter.value.toString()
+                })
+            })
         }
-        if (regularFields.isNotEmpty()) {
-            clauses.add(Document("text", Document().apply {
-                put("query", searchText)
-                put("path", regularFields)
-            }))
+    }
+
+    private fun buildSortCriteria(sortFields: List<SortField>) = Document().apply {
+        put("score", Document("\$meta", "searchScore"))
+        sortFields.forEach { sortField ->
+            put(sortField.field, if (sortField.direction == SortDirection.ASC) 1 else -1)
+        }
+    }
+
+    private fun <T> createPaginationSlice(results: AggregationResults<T>, paginationRequest: PaginationRequest): PaginationSlice<T> {
+        val rawResults = results.rawResults["results"] as? List<Document>
+        val mappedResults = results.mappedResults
+
+        if (mappedResults.isEmpty()) {
+            return PaginationSlice(items = emptyList(), nextPageToken = null)
         }
 
-        // Add score fields with boost
-        scoreFields.forEach { scoreField ->
-            clauses.add(Document("text", Document().apply {
-                put("query", searchText)
-                put("path", scoreField.field)
-                put("score", Document("boost", Document().apply {
-                    when {
-                        scoreField.boostPath != null -> {
-                            put("path", scoreField.boostPath)
-                        }
-                        scoreField.boost != null -> {
-                            put("value", scoreField.boost)
-                        }
-                        else -> {
-                            put("value", 1.0)
-                        }
-                    }
-                }))
-            }))
-        }
+        val limit = minOf(paginationRequest.limit, ATLAS_SEARCH_MAX_RESULTS)
+        // Create next page token only if we got a full page of results
+        val nextPageToken = if (mappedResults.size >= limit) {
+            // Get the last document's search sequence token
+            val lastDocument = rawResults?.last()
+            val searchAfter = lastDocument?.getString("_searchAfter")!!
 
-        return clauses
+            paginationRequest.pageToken.copy(
+                cursors = mapOf(
+                    "searchAfter" to CursorValue.from(searchAfter)
+                ),
+                sortFields = paginationRequest.pageToken.sortFields,
+                filters = paginationRequest.pageToken.filters
+            )
+        } else null
+
+        return PaginationSlice(
+            items = mappedResults,
+            nextPageToken = nextPageToken
+        )
     }
 }

@@ -40,26 +40,21 @@ class PostService (
         paginationRequest.withSort("popularityScore", SortDirection.DESC)
     )
 
-    fun searchPostAggregatesByKeyword(
+    fun searchPostAggregatesByKeywordAndTopic(
+        topic: Topic,
         searchText: String,
         paginationRequest: PaginationRequest
     ) = postAggregateSearchIndex.search(
         searchText = searchText,
-        paginationRequest = paginationRequest,
-        boost = 1.0
+        paginationRequest = paginationRequest.withFilter("topic.id", topic.id!!)
     )
-
-    fun testFunc(postId: String) {
-        postAggregateView.refreshView(postId)
-    }
 
     fun searchPostAggregatesByKeywordAndPopularity(
         searchText: String,
         paginationRequest: PaginationRequest
     ) = postAggregateSearchIndex.search(
         searchText = searchText,
-        paginationRequest = paginationRequest,
-        boost = 2.0
+        paginationRequest = paginationRequest.withSort("popularityScore", SortDirection.DESC),
     )
 
     @Transactional

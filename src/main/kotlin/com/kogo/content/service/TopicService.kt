@@ -42,7 +42,6 @@ class TopicService(
         return topicAggregateSearchIndex.search(
             searchText = searchText,
             paginationRequest = paginationRequest,
-            boost = 1.0  // Normal relevance boost
         )
     }
 

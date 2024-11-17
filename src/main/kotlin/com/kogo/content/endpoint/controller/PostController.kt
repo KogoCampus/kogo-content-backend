@@ -8,6 +8,7 @@ import com.kogo.content.service.CommentService
 import com.kogo.content.service.UserService
 import com.kogo.content.service.PostService
 import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.lib.PaginationSlice
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
@@ -51,7 +52,10 @@ class PostController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                      ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = PostResponse::class))
             )],
