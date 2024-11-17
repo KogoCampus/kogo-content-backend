@@ -2,7 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.entity.Attachment
 import com.kogo.content.storage.entity.Topic

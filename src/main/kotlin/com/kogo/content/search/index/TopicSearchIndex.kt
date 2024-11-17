@@ -1,7 +1,7 @@
 package com.kogo.content.search.index
 
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.search.*
 import com.kogo.content.storage.view.TopicAggregate
 import org.springframework.stereotype.Repository

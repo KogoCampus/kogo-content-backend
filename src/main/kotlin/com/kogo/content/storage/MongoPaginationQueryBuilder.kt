@@ -1,14 +1,13 @@
 package com.kogo.content.storage
 
 import com.kogo.content.exception.InvalidFieldException
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import kotlin.reflect.KClass
-import kotlin.reflect.typeOf
 
 @Component
 class MongoPaginationQueryBuilder(

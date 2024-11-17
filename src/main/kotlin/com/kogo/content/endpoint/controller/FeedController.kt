@@ -1,7 +1,7 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
-import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService

@@ -1,4 +1,4 @@
-package com.kogo.content.lib
+package com.kogo.content.common
 
 import org.springframework.http.HttpHeaders
 

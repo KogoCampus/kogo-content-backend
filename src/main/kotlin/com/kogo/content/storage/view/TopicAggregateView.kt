@@ -7,9 +7,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 
 @Component
-class TopicAggregateView(
-    mongoTemplate: MongoTemplate
-) : MongoView<TopicAggregate>(mongoTemplate, TopicAggregate::class) {
+class TopicAggregateView : MongoView<TopicAggregate>(TopicAggregate::class) {
 
     override fun buildAggregation(id: String) = newAggregation(
         match(Criteria.where("_id").`is`(id)),

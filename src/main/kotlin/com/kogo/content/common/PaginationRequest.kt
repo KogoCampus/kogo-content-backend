@@ -1,4 +1,4 @@
-package com.kogo.content.lib
+package com.kogo.content.common
 
 data class PaginationRequest(
     var pageToken: PageToken = PageToken.create(),

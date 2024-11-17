@@ -1,7 +1,7 @@
 package com.kogo.content.storage
 
 import com.kogo.content.exception.InvalidFieldException
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.storage.entity.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -274,7 +274,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
     fun `should navigate through pages using encoded page tokens`() {
         // Clear existing data first
         mongoTemplate.dropCollection(TestEntity::class.java)
-        
+
         // Create test data with unique IDs
         val testData = (1..10).map { i ->
             TestEntity(

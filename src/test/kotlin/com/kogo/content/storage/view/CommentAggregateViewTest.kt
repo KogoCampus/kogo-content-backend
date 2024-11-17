@@ -2,10 +2,10 @@ package com.kogo.content.storage.view
 
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.exception.InvalidFieldException
-import com.kogo.content.lib.FilterOperator
-import com.kogo.content.lib.PageToken
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.SortDirection
+import com.kogo.content.common.FilterOperator
+import com.kogo.content.common.PageToken
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.SortDirection
 import com.kogo.content.storage.entity.*
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.types.ObjectId
@@ -17,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
-import kotlin.test.assertFails
 
 @SpringBootTest
 @ActiveProfiles("test")

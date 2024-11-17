@@ -1,7 +1,7 @@
 package com.kogo.content.search
 
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.MongoTemplate

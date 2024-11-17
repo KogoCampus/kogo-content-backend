@@ -1,6 +1,6 @@
 package com.kogo.content.search.index
 
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.User

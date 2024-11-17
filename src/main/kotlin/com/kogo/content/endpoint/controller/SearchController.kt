@@ -5,8 +5,8 @@ import com.kogo.content.endpoint.model.PostResponse
 import com.kogo.content.endpoint.model.TopicResponse
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter

@@ -2,7 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.storage.entity.Comment
 import com.kogo.content.storage.entity.Like
 import com.kogo.content.storage.entity.Reply
@@ -108,7 +108,7 @@ class ReplyServiceTest {
         val like = mockk<Like>()
         every { likeRepository.addLike("test-reply-id", "test-user-id") } returns like
         every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
-        
+
         replyService.addLike(reply, user)
         verify {
             likeRepository.addLike("test-reply-id", "test-user-id")
@@ -117,7 +117,7 @@ class ReplyServiceTest {
 
         // Test unsuccessful like operation (already liked)
         every { likeRepository.addLike("test-reply-id", "test-user-id") } returns null
-        
+
         replyService.addLike(reply, user)
         verify(exactly = 1) { replyAggregateView.refreshView("test-reply-id") } // Should not be called again
     }
@@ -130,7 +130,7 @@ class ReplyServiceTest {
         // Test successful unlike operation
         every { likeRepository.removeLike("test-reply-id", "test-user-id") } returns true
         every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
-        
+
         replyService.removeLike(reply, user)
         verify {
             likeRepository.removeLike("test-reply-id", "test-user-id")
@@ -139,7 +139,7 @@ class ReplyServiceTest {
 
         // Test unsuccessful unlike operation (not liked)
         every { likeRepository.removeLike("test-reply-id", "test-user-id") } returns false
-        
+
         replyService.removeLike(reply, user)
         verify(exactly = 1) { replyAggregateView.refreshView("test-reply-id") } // Should not be called again
     }

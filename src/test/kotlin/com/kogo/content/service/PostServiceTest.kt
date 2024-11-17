@@ -2,7 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.AttachmentRepository

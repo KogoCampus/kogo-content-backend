@@ -1,6 +1,6 @@
 package com.kogo.content.search
 
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import org.bson.Document
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation

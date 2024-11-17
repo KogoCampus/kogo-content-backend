@@ -2,8 +2,8 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.TopicDto
 import com.kogo.content.endpoint.model.TopicUpdate
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.repository.*

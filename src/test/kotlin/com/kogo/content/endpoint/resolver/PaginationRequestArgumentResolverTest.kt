@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.resolver
 
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.MockMvc

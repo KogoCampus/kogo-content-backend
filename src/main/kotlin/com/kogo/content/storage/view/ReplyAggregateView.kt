@@ -1,39 +1,20 @@
 package com.kogo.content.storage.view
 
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
-import com.kogo.content.storage.MongoPaginationQueryBuilder
 import com.kogo.content.storage.entity.Reply
-import com.kogo.content.storage.view.CommentAggregateView.Companion
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 
 @Component
-class ReplyAggregateView(
-    mongoTemplate: MongoTemplate,
-    private val mongoPaginationQueryBuilder: MongoPaginationQueryBuilder
-) : MongoView<ReplyAggregate>(mongoTemplate, ReplyAggregate::class) {
+class ReplyAggregateView : MongoView<ReplyAggregate>(ReplyAggregate::class) {
 
-    companion object {
-        private val PAGINATION_FIELD_MAPPINGS = mapOf(
-            "id" to "replyId",
-            "author" to "reply.author.id",
-            "comment" to "reply.comment.id",
-            "content" to "reply.content",
-            "createdAt" to "reply.createdAt",
-            "updatedAt" to "reply.updatedAt"
-        )
-    }
-
-    fun findAll(paginationRequest: PaginationRequest): PaginationSlice<ReplyAggregate> {
-        return mongoPaginationQueryBuilder.getPage(
-            ReplyAggregate::class,
-            PAGINATION_FIELD_MAPPINGS,
-            paginationRequest = paginationRequest
-        )
-    }
+    override fun fieldAlias(): Map<String, String> = mapOf(
+        "author" to "reply.author.id",
+        "comment" to "reply.comment.id",
+        "content" to "reply.content",
+        "createdAt" to "reply.createdAt",
+        "updatedAt" to "reply.updatedAt"
+    )
 
     override fun buildAggregation(id: String) = newAggregation(
         match(Criteria.where("_id").`is`(id)),

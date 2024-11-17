@@ -1,36 +1,28 @@
 package com.kogo.content.storage.view
 
 import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.MongoPaginationQueryBuilder
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
 import org.bson.Document
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 
 @Component
-class PostAggregateView(
-    mongoTemplate: MongoTemplate,
-    private val mongoPaginationQueryBuilder: MongoPaginationQueryBuilder
-) : MongoView<PostAggregate>(mongoTemplate, PostAggregate::class) {
+class PostAggregateView : MongoView<PostAggregate>(PostAggregate::class) {
 
     companion object {
         private const val POPULARITY_LIKE_WEIGHT = 0.8
         private const val POPULARITY_COMMENT_WEIGHT = 0.4
         private const val POPULARITY_VIEW_WEIGHT = 0.1
-
-        private val PAGINATION_FIELD_MAPPINGS = mapOf(
-            "id" to "_id",
-            "author" to "post.author.id",
-            "topic" to "post.topic.id",
-            "title" to "post.title",
-            "content" to "post.content",
-            "createdAt" to "post.createdAt",
-            "updatedAt" to "post.updatedAt",
-        )
     }
+
+    override fun fieldAlias(): Map<String, String> = mapOf(
+        "author" to "post.author.id",
+        "topic" to "post.topic.id",
+        "title" to "post.title",
+        "content" to "post.content",
+        "createdAt" to "post.createdAt",
+        "updatedAt" to "post.updatedAt",
+    )
 
     override fun buildAggregation(id: String) = newAggregation(
         match(Criteria.where("_id").`is`(id)),
@@ -85,14 +77,6 @@ class PostAggregateView(
                 ))
             ).build(),
     )
-
-    fun findAll(paginationRequest: PaginationRequest): PaginationSlice<PostAggregate> {
-        return mongoPaginationQueryBuilder.getPage(
-            PostAggregate::class,
-            PAGINATION_FIELD_MAPPINGS,
-            paginationRequest = paginationRequest
-        )
-    }
 
     override fun getSourceCollection() = Post::class.java
 }

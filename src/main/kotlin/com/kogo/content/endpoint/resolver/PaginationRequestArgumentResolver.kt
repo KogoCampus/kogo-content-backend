@@ -1,9 +1,7 @@
 package com.kogo.content.endpoint.resolver
 
-import com.kogo.content.lib.FilterField
-import com.kogo.content.lib.FilterOperator
-import com.kogo.content.lib.PageToken
-import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.common.PageToken
+import com.kogo.content.common.PaginationRequest
 import org.springframework.core.MethodParameter
 import org.springframework.web.bind.support.WebDataBinderFactory
 import org.springframework.web.context.request.NativeWebRequest

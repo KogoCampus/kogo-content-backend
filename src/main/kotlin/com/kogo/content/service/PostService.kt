@@ -2,9 +2,9 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.lib.PaginationRequest
+import com.kogo.content.common.PaginationRequest
 import com.kogo.content.storage.entity.*
-import com.kogo.content.lib.SortDirection
+import com.kogo.content.common.SortDirection
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.view.PostAggregate

@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
-import com.kogo.content.lib.*
+import com.kogo.content.common.*
 import com.kogo.content.service.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every

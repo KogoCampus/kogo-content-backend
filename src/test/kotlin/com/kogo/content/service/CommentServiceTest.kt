@@ -2,8 +2,8 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.SortDirection
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.SortDirection
 import com.kogo.content.storage.entity.Comment
 import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.User
@@ -110,7 +110,7 @@ class CommentServiceTest {
         val like = mockk<Like>()
         every { likeRepository.addLike("test-comment-id", "test-user-id") } returns like
         every { commentAggregateView.refreshView("test-comment-id") } returns mockk<CommentAggregate>()
-        
+
         commentService.addLike(comment, user)
         verify {
             likeRepository.addLike("test-comment-id", "test-user-id")
@@ -119,7 +119,7 @@ class CommentServiceTest {
 
         // Test unsuccessful like operation (already liked)
         every { likeRepository.addLike("test-comment-id", "test-user-id") } returns null
-        
+
         commentService.addLike(comment, user)
         verify(exactly = 1) { commentAggregateView.refreshView("test-comment-id") } // Should not be called again
     }
@@ -132,7 +132,7 @@ class CommentServiceTest {
         // Test successful unlike operation
         every { likeRepository.removeLike("test-comment-id", "test-user-id") } returns true
         every { commentAggregateView.refreshView("test-comment-id") } returns mockk<CommentAggregate>()
-        
+
         commentService.removeLike(comment, user)
         verify {
             likeRepository.removeLike("test-comment-id", "test-user-id")
@@ -141,7 +141,7 @@ class CommentServiceTest {
 
         // Test unsuccessful unlike operation (not liked)
         every { likeRepository.removeLike("test-comment-id", "test-user-id") } returns false
-        
+
         commentService.removeLike(comment, user)
         verify(exactly = 1) { commentAggregateView.refreshView("test-comment-id") } // Should not be called again
     }

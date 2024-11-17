@@ -1,7 +1,7 @@
 package com.kogo.content.search
 
-import com.kogo.content.lib.PaginationRequest
-import com.kogo.content.lib.PaginationSlice
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 
 interface SearchIndex<T : Any> {
 
