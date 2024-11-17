@@ -738,7 +738,7 @@
           "200": {
             "description": "ok",
             "headers": {
-              "next_page": {
+              "X-Page-Token": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
@@ -842,6 +842,14 @@
         "responses": {
           "200": {
             "description": "ok - All comments",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -955,6 +963,14 @@
         "responses": {
           "200": {
             "description": "ok - Replies",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1093,7 +1109,7 @@
           "200": {
             "description": "ok",
             "headers": {
-              "next_page": {
+              "X-Page-Token": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
@@ -1161,7 +1177,7 @@
           "200": {
             "description": "ok",
             "headers": {
-              "next_page": {
+              "X-Page-Token": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
