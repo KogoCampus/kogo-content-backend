@@ -51,6 +51,7 @@ class S3FileHandler() : FileHandler {
         val objectRequest = PutObjectRequest.builder()
             .bucket(s3Object.bucket)
             .key(objectKey)
+            .contentType(s3Object.content.contentType)
             .build()
         s3Client.putObject(objectRequest, RequestBody.fromInputStream(inputStream, s3Object.content.size))
 
