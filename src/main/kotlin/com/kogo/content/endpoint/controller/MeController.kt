@@ -1,15 +1,20 @@
 package com.kogo.content.endpoint.controller
 
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.NotificationService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserService
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -25,7 +30,8 @@ import org.springframework.web.bind.annotation.*
 class MeController @Autowired constructor(
     private val userService: UserService,
     private val topicService: TopicService,
-    private val postService: PostService
+    private val postService: PostService,
+    private val notificationService: NotificationService
 ) {
     companion object: Logger()
 
@@ -134,6 +140,46 @@ class MeController @Autowired constructor(
         val followingTopics = topicService.getAllFollowingTopicsByUserId(me.id!!)
         HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.create(topicService.findAggregate(it.id!!), me) })
     }
+
+    @GetMapping(path = ["me/notifications"])
+    @Operation(
+        summary = "get notifications whose recipient is me",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                    ],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = Notification::class)
+            ))],
+        )]
+    ) fun sendNotification(
+        paginationRequest: PaginationRequest
+    ): ResponseEntity<*> = run {
+        val me = userService.getCurrentUser()
+        val paginationResponse = notificationService.getNotifications(paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse,
+            headers = paginationResponse.toHttpHeaders()
+        )
+    }
+
 
     private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<User>(userId)
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
