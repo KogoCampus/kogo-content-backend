@@ -8,12 +8,9 @@ import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.io.ByteArrayInputStream
 import java.util.*
-import java.time.Duration
 
 data class S3Object (
     val bucket: String,
@@ -48,18 +45,18 @@ class S3FileHandler() : FileHandler {
     }
 
     fun putS3Object(s3Object: S3Object): FileStoreMetadata {
-        val name = fileStoreName(s3Object.filename)
+        val objectKey = createS3ObjectKey(s3Object.filename)
         val bytes = s3Object.content.bytes
         val inputStream = ByteArrayInputStream(bytes)
         val objectRequest = PutObjectRequest.builder()
             .bucket(s3Object.bucket)
-            .key(name)
+            .key(objectKey)
             .build()
         s3Client.putObject(objectRequest, RequestBody.fromInputStream(inputStream, s3Object.content.size))
 
         return FileStoreMetadata(
             fileName = s3Object.filename,
-            storeKey = FileStoreKey(fileStoreName(s3Object.filename))
+            storeKey = FileStoreKey(objectKey)
         )
     }
 
@@ -68,7 +65,7 @@ class S3FileHandler() : FileHandler {
         return "https://${bucketName}.s3.${region}.amazonaws.com/${storeKey.key}"
     }
 
-    private fun fileStoreName(fileName: String): String {
+    private fun createS3ObjectKey(fileName: String): String {
         return String.format("%s-%s", UUID.randomUUID().toString(), fileName)
     }
 }
