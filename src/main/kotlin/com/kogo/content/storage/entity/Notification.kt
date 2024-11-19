@@ -13,6 +13,7 @@ data class Notification (
 
     val message: NotificationMessage,
 
+    val isPush: Boolean,
     var createdAt: Instant = Instant.now(),
 )
 
@@ -20,5 +21,10 @@ data class NotificationMessage(
     val title: String,
     val body: String,
     val data: Map<String, Any>? = null
+)
+
+data class PushNotificationRequest(
+    val recipients: List<String>,
+    val notification: NotificationMessage
 )
 

@@ -28,6 +28,7 @@ class CommentController @Autowired constructor(
     private val userService: UserService,
     private val commentService: CommentService,
     private val postService: PostService,
+    private val notificationService: NotificationService
 ) {
     @RequestMapping(
         path = ["posts/{postId}/comments"],
@@ -47,7 +48,21 @@ class CommentController @Autowired constructor(
         val post = findPostByIdOrThrow(postId)
         val author = userService.getCurrentUser()
         val newComment = commentService.create(post, author, commentDto)
-
+        println(post.author.idToken!!.toString())
+        notificationService.createPushNotification(Notification(
+            recipientId = post.author.idToken!!.toString(),
+            message = NotificationMessage(
+                title = "New Comment",
+                body =  "There is a new comment in your post",
+                data = mapOf(
+                    "commentId" to newComment.id!!,
+                    "postId" to post.id!!,
+                    "commentAuthor" to newComment.author.username
+                ),
+            ),
+            isPush = true,
+            createdAt = newComment.createdAt,
+        ))
         HttpJsonResponse.successResponse(CommentResponse.create(commentService.findAggregate(newComment.id!!), author))
     }
 
