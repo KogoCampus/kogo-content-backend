@@ -34,6 +34,9 @@ class S3FileHandler() : FileHandler {
     @Value("\${aws.s3.bucket}")
     private lateinit var bucketName: String
 
+    @Value("\${aws.s3.region}")
+    private lateinit var region: String
+
     constructor(s3Client: S3Client, s3Presigner: S3Presigner) : this() {
         this.s3Client = s3Client
         this.s3Presigner = s3Presigner
@@ -62,18 +65,7 @@ class S3FileHandler() : FileHandler {
 
     // generates a presigned url to download
     override fun issueFilePublicSourceUrl(storeKey: FileStoreKey): String {
-        val objectRequest = GetObjectRequest.builder()
-            .bucket(bucketName)
-            .key(storeKey.key)
-            .build()
-
-        val presignRequest = GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofMinutes(10))
-            .getObjectRequest(objectRequest)
-            .build()
-
-        val presignedRequest = s3Presigner.presignGetObject(presignRequest)
-        return presignedRequest.url().toString()
+        return "https://${bucketName}.s3.${region}.amazonaws.com/${storeKey.key}"
     }
 
     private fun fileStoreName(fileName: String): String {
