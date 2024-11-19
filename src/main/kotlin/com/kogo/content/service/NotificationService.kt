@@ -5,6 +5,7 @@ import com.kogo.content.storage.entity.PushNotificationRequest
 import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
+import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -16,6 +17,7 @@ import org.springframework.web.client.RestTemplate
 @Service
 class NotificationService(
     private val notificationRepository: NotificationRepository,
+    private val userRepository: UserRepository,
     @Value("\${kogo-api.base-url}") private val apiBaseUrl: String,
     @Value("\${kogo-api.push-notification-endpoint}") private val pushNotificationEndpoint: String
 ){
@@ -28,12 +30,14 @@ class NotificationService(
         // Save the notification to the database first
         val savedNotification = notificationRepository.save(notification)
 
+        // Retrieve recipient ID Token
+        val recipient = userRepository.findUserById(notification.recipientId)
+
         // Prepare the PushNotificationRequest
         val pushNotificationRequest = PushNotificationRequest(
-            recipients = listOf(notification.recipientId),
-            notification = notification.message
+            recipients = listOf(recipient?.idToken.toString()),
+            notification = savedNotification.message
         )
-
         // Make the API call to push notifications
         val url = "$apiBaseUrl$pushNotificationEndpoint"
         val headers = HttpHeaders()
