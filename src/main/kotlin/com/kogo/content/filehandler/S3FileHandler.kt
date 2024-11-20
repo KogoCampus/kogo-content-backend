@@ -8,12 +8,9 @@ import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.io.ByteArrayInputStream
 import java.util.*
-import java.time.Duration
 
 data class S3Object (
     val bucket: String,
@@ -34,6 +31,9 @@ class S3FileHandler() : FileHandler {
     @Value("\${aws.s3.bucket}")
     private lateinit var bucketName: String
 
+    @Value("\${aws.s3.region}")
+    private lateinit var region: String
+
     constructor(s3Client: S3Client, s3Presigner: S3Presigner) : this() {
         this.s3Client = s3Client
         this.s3Presigner = s3Presigner
@@ -45,40 +45,29 @@ class S3FileHandler() : FileHandler {
     }
 
     fun putS3Object(s3Object: S3Object): FileStoreMetadata {
-        val name = fileStoreName(s3Object.filename)
+        val objectKey = createS3ObjectKey(s3Object.filename)
         val bytes = s3Object.content.bytes
         val inputStream = ByteArrayInputStream(bytes)
         val objectRequest = PutObjectRequest.builder()
             .bucket(s3Object.bucket)
-            .key(name)
-            .contentType(s3Object.content.contentType ?: "application/octet-stream")
+            .key(objectKey)
+            .contentType(s3Object.content.contentType)
             .contentDisposition("inline")
             .build()
         s3Client.putObject(objectRequest, RequestBody.fromInputStream(inputStream, s3Object.content.size))
 
         return FileStoreMetadata(
             fileName = s3Object.filename,
-            storeKey = FileStoreKey(fileStoreName(s3Object.filename))
+            storeKey = FileStoreKey(objectKey)
         )
     }
 
     // generates a presigned url to download
     override fun issueFilePublicSourceUrl(storeKey: FileStoreKey): String {
-        val objectRequest = GetObjectRequest.builder()
-            .bucket(bucketName)
-            .key(storeKey.key)
-            .build()
-
-        val presignRequest = GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofMinutes(10))
-            .getObjectRequest(objectRequest)
-            .build()
-
-        val presignedRequest = s3Presigner.presignGetObject(presignRequest)
-        return presignedRequest.url().toString()
+        return "https://${bucketName}.s3.${region}.amazonaws.com/${storeKey.key}"
     }
 
-    private fun fileStoreName(fileName: String): String {
+    private fun createS3ObjectKey(fileName: String): String {
         return String.format("%s-%s", UUID.randomUUID().toString(), fileName)
     }
 }
