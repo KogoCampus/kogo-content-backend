@@ -197,7 +197,20 @@ class CommentController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this comment Id: $commentId")
         }
 
-        commentService.addLike(comment, user)
+        val newLike = commentService.addLike(comment, user)
+        notificationService.createNotification(Notification(
+            recipientId = comment.author.id!!,
+            message = NotificationMessage(
+                title = "New Like",
+                body = "${newLike?.userId} liked your post",
+                data = mapOf(
+                    "commentId" to comment.id!!,
+                    "userId" to newLike?.userId!!,
+                )
+            ),
+            isPush = false,
+            createdAt = newLike.createdAt,
+        ))
         return HttpJsonResponse.successResponse(
             CommentResponse.create(commentService.findAggregate(comment.id!!), user),
             "User's like added successfully to comment $commentId"

@@ -28,6 +28,7 @@ class ReplyController @Autowired constructor(
     private val commentService: CommentService,
     private val replyService: ReplyService,
     private val userService: UserService,
+    private val notificationService: NotificationService,
 ) {
     @GetMapping("comments/{commentId}/replies")
     @Operation(
@@ -102,6 +103,21 @@ class ReplyController @Autowired constructor(
         val comment = findCommentOrThrow(commentId)
         val author = userService.getCurrentUser()
         val newReply = replyService.create(comment, author, commentDto)
+        notificationService.createPushNotification(Notification(
+            recipientId = comment.author.id!!,
+            message = NotificationMessage(
+                title = "New Reply",
+                body =  "There is a new reply in your comment",
+                data = mapOf(
+                    "replyId" to newReply.id!!,
+                    "commentId" to comment.id!!,
+                    "replyAuthor" to newReply.author.username,
+                    "replyContent" to newReply.content
+                ),
+            ),
+            isPush = true,
+            createdAt = newReply.createdAt,
+        ))
 
         HttpJsonResponse.successResponse(ReplyResponse.create(replyService.findAggregate(newReply.id!!), author))
     }
@@ -179,7 +195,20 @@ class ReplyController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this reply Id: $replyId")
         }
 
-        replyService.addLike(reply, user)
+        val newLike = replyService.addLike(reply, user)
+        notificationService.createNotification(Notification(
+            recipientId = reply.author.id!!,
+            message = NotificationMessage(
+                title = "New Like",
+                body = "${newLike?.userId} liked your post",
+                data = mapOf(
+                    "replyId" to reply.id!!,
+                    "userId" to newLike?.userId!!,
+                )
+            ),
+            isPush = false,
+            createdAt = newLike.createdAt,
+        ))
         HttpJsonResponse.successResponse(
            ReplyResponse.create(replyService.findAggregate(reply.id!!), user),
             "User's like added successfully to reply $replyId"

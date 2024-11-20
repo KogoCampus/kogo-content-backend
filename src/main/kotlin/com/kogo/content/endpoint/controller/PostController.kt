@@ -4,12 +4,9 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.service.CommentService
-import com.kogo.content.service.UserService
-import com.kogo.content.service.PostService
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
-import com.kogo.content.service.TopicService
+import com.kogo.content.service.*
 import com.kogo.content.storage.entity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -31,7 +28,8 @@ class PostController @Autowired constructor(
     private val postService: PostService,
     private val commentService: CommentService,
     private val userService: UserService,
-    private val topicService: TopicService
+    private val topicService: TopicService,
+    private val notificationService: NotificationService
 ) {
     @GetMapping("topics/{topicId}/posts")
     @Operation(
@@ -181,7 +179,20 @@ class PostController @Autowired constructor(
         if (postService.hasUserLikedPost(post, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this post: $postId")
 
-        postService.addLike(post, user)
+        val newLike = postService.addLike(post, user)
+        notificationService.createNotification(Notification(
+            recipientId = post.author.id!!,
+            message = NotificationMessage(
+                title = "New Like",
+                body = "${newLike?.userId} liked your post",
+                data = mapOf(
+                    "postId" to post.id!!,
+                    "userId" to newLike?.userId!!,
+                )
+            ),
+            isPush = false,
+            createdAt = newLike.createdAt,
+        ))
         HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user), "User's like added successfully to post: $postId")
     }
 
