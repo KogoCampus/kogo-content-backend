@@ -743,6 +743,12 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -844,6 +850,12 @@
             "description": "ok - All comments",
             "headers": {
               "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
@@ -965,6 +977,12 @@
             "description": "ok - Replies",
             "headers": {
               "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
@@ -1114,6 +1132,12 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -1178,6 +1202,12 @@
             "description": "ok",
             "headers": {
               "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
                 "style": "simple",
                 "schema": {
                   "type": "string"
@@ -1356,6 +1386,71 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/notifications": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get notifications whose recipient is me",
+        "operationId": "sendNotification",
+        "parameters": [
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
                   }
                 }
               }
@@ -1977,6 +2072,54 @@
               "ASC",
               "DESC"
             ]
+          }
+        }
+      },
+      "Notification": {
+        "required": [
+          "createdAt",
+          "isPushNotification",
+          "message",
+          "recipientId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "recipientId": {
+            "type": "string"
+          },
+          "message": {
+            "$ref": "#/components/schemas/NotificationMessage"
+          },
+          "isPushNotification": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NotificationMessage": {
+        "required": [
+          "body",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
           }
         }
       }
