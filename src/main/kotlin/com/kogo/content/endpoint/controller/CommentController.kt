@@ -198,17 +198,17 @@ class CommentController @Autowired constructor(
         }
 
         val newLike = commentService.addLike(comment, user)
-        notificationService.createNotification(Notification(
+        notificationService.createPushNotification(Notification(
             recipientId = comment.author.id!!,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${newLike?.userId} liked your post",
+                body = "${newLike?.userId} liked your comment",
                 data = mapOf(
                     "commentId" to comment.id!!,
                     "userId" to newLike?.userId!!,
                 )
             ),
-            isPush = false,
+            isPush = true,
             createdAt = newLike.createdAt,
         ))
         return HttpJsonResponse.successResponse(

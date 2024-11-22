@@ -196,17 +196,17 @@ class ReplyController @Autowired constructor(
         }
 
         val newLike = replyService.addLike(reply, user)
-        notificationService.createNotification(Notification(
+        notificationService.createPushNotification(Notification(
             recipientId = reply.author.id!!,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${newLike?.userId} liked your post",
+                body = "${newLike?.userId} liked your reply",
                 data = mapOf(
                     "replyId" to reply.id!!,
                     "userId" to newLike?.userId!!,
                 )
             ),
-            isPush = false,
+            isPush = true,
             createdAt = newLike.createdAt,
         ))
         HttpJsonResponse.successResponse(
