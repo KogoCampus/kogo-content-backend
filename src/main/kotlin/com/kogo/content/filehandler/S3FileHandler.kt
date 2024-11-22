@@ -52,6 +52,7 @@ class S3FileHandler() : FileHandler {
             .bucket(s3Object.bucket)
             .key(objectKey)
             .contentType(s3Object.content.contentType)
+            .contentDisposition("inline")
             .build()
         s3Client.putObject(objectRequest, RequestBody.fromInputStream(inputStream, s3Object.content.size))
 

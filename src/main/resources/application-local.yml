@@ -12,3 +12,7 @@ spring:
 
 filehandler:
     prefix: tmp/files
+
+kogo-api:
+    base-url: "http://localhost:3000"
+    push-notification-endpoint: "/student/internal/push-notification"

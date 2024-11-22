@@ -4,6 +4,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.common.*
 import com.kogo.content.service.*
+import com.kogo.content.storage.entity.NotificationMessage
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
@@ -34,6 +35,9 @@ class ReplyControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserService
+
+    @MockkBean
+    lateinit var notificationService: NotificationService
 
     private val user = Fixture.createUserFixture()
     private val topic = Fixture.createTopicFixture(user)
@@ -113,6 +117,10 @@ class ReplyControllerTest @Autowired constructor(
         val newReply = Fixture.createReplyFixture(comment = comment, author = user)
         val newReplyStat = Fixture.createReplyAggregateFixture(newReply)
 
+        // mock message
+        val notificationMessageSlot = slot<NotificationMessage>()
+        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+
         every { replyService.create(comment, user, any()) } returns newReply
         every { replyService.findAggregate(newReply.id!!) } returns newReplyStat
         every { replyService.hasUserLikedReply(newReply, user) } returns false
@@ -129,6 +137,10 @@ class ReplyControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.commentId").value(comment.id))
             .andExpect(jsonPath("$.data.likeCount").value(newReplyStat.likeCount))
             .andExpect(jsonPath("$.data.likedByCurrentUser").value(false))
+
+        val capturedNotificationMessage = notificationMessageSlot.captured
+        assertThat(capturedNotificationMessage.title).isEqualTo("New Reply")
+        assertThat(capturedNotificationMessage.body).isEqualTo("There is a new reply in your comment")
     }
 
     @Test
@@ -159,6 +171,10 @@ class ReplyControllerTest @Autowired constructor(
         every { replyService.hasUserLikedReply(reply, user) } returns false
         every { replyService.addLike(reply, user) } returns mockk()
 
+        // mock message
+        val notificationMessageSlot = slot<NotificationMessage>()
+        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+
         mockMvc.put(buildReplyApiUrl(replyId, "likes")) {
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
@@ -168,6 +184,9 @@ class ReplyControllerTest @Autowired constructor(
             jsonPath("$.data.likedByCurrentUser") { value(false) }
             jsonPath("$.message") { value("User's like added successfully to reply $replyId") }
         }
+        val capturedNotificationMessage = notificationMessageSlot.captured
+        assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your reply")
     }
 
     @Test

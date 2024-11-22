@@ -28,6 +28,7 @@ class ReplyController @Autowired constructor(
     private val commentService: CommentService,
     private val replyService: ReplyService,
     private val userService: UserService,
+    private val notificationService: NotificationService,
 ) {
     @GetMapping("comments/{commentId}/replies")
     @Operation(
@@ -63,7 +64,7 @@ class ReplyController @Autowired constructor(
             description = "ok - Replies",
             headers = [
                 Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
-                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
             ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = CommentResponse::class))
@@ -102,6 +103,19 @@ class ReplyController @Autowired constructor(
         val comment = findCommentOrThrow(commentId)
         val author = userService.getCurrentUser()
         val newReply = replyService.create(comment, author, commentDto)
+        notificationService.createPushNotification(
+            recipientId = comment.author.id!!,
+            message = NotificationMessage(
+                title = "New Reply",
+                body =  "There is a new reply in your comment",
+                data = mapOf(
+                    "replyId" to newReply.id!!,
+                    "commentId" to comment.id!!,
+                    "replyAuthor" to newReply.author.username,
+                    "replyContent" to newReply.content
+                ),
+            )
+        )
 
         HttpJsonResponse.successResponse(ReplyResponse.create(replyService.findAggregate(newReply.id!!), author))
     }
@@ -179,7 +193,18 @@ class ReplyController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this reply Id: $replyId")
         }
 
-        replyService.addLike(reply, user)
+        val newLike = replyService.addLike(reply, user)
+        notificationService.createPushNotification(
+            recipientId = reply.author.id!!,
+            message = NotificationMessage(
+                title = "New Like",
+                body = "${user.id} liked your reply",
+                data = mapOf(
+                    "replyId" to reply.id!!,
+                    "userId" to user.id!!,
+                )
+            )
+        )
         HttpJsonResponse.successResponse(
            ReplyResponse.create(replyService.findAggregate(reply.id!!), user),
             "User's like added successfully to reply $replyId"

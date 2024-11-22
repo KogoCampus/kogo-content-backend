@@ -28,6 +28,7 @@ class CommentController @Autowired constructor(
     private val userService: UserService,
     private val commentService: CommentService,
     private val postService: PostService,
+    private val notificationService: NotificationService
 ) {
     @RequestMapping(
         path = ["posts/{postId}/comments"],
@@ -47,7 +48,19 @@ class CommentController @Autowired constructor(
         val post = findPostByIdOrThrow(postId)
         val author = userService.getCurrentUser()
         val newComment = commentService.create(post, author, commentDto)
-
+        notificationService.createPushNotification(
+            recipientId = post.author.id!!,
+            message = NotificationMessage(
+                title = "New Comment",
+                body =  "There is a new comment in your post",
+                data = mapOf(
+                    "commentId" to newComment.id!!,
+                    "postId" to post.id!!,
+                    "commentAuthor" to newComment.author.username,
+                    "commentContent" to newComment.content
+                ),
+            )
+        )
         HttpJsonResponse.successResponse(CommentResponse.create(commentService.findAggregate(newComment.id!!), author))
     }
 
@@ -72,7 +85,7 @@ class CommentController @Autowired constructor(
             description = "ok - All comments",
             headers = [
                 Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
-                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
                       ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = CommentResponse::class)
@@ -182,7 +195,18 @@ class CommentController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this comment Id: $commentId")
         }
 
-        commentService.addLike(comment, user)
+        val newLike = commentService.addLike(comment, user)
+        notificationService.createPushNotification(
+            recipientId = comment.author.id!!,
+            message = NotificationMessage(
+                title = "New Like",
+                body = "${user.id!!} liked your comment",
+                data = mapOf(
+                    "commentId" to comment.id!!,
+                    "userId" to user.id!!,
+                )
+            ),
+        )
         return HttpJsonResponse.successResponse(
             CommentResponse.create(commentService.findAggregate(comment.id!!), user),
             "User's like added successfully to comment $commentId"

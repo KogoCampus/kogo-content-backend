@@ -38,6 +38,10 @@ class TopicSearchIndex(
                 ScoreField(
                     field = "topic.topicName",
                     boost = 2.0
+                ),
+                ScoreField(
+                    field = "topic.tags",
+                    boost = 2.0
                 )
             )
         )

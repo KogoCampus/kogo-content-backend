@@ -1,12 +1,19 @@
 package com.kogo.content.endpoint.controller
 
+import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.*
+import com.kogo.content.storage.entity.Comment
+import com.kogo.content.storage.entity.NotificationMessage
+import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.repository.UserRepository
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,12 +24,16 @@ import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 class CommentControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
+    @MockkBean
+    private lateinit var userRepository: UserRepository
+
     @MockkBean
     lateinit var commentService: CommentService
 
@@ -37,6 +48,9 @@ class CommentControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserService
+
+    @MockkBean
+    lateinit var notificationService: NotificationService
 
     private val user = Fixture.createUserFixture()
     private val topic = Fixture.createTopicFixture(user)
@@ -156,6 +170,10 @@ class CommentControllerTest @Autowired constructor(
         every { commentService.hasUserLikedComment(comment.id!!, user) } returns false
         every { commentService.addLike(comment, user) } returns mockk()
 
+        // mock message
+        val notificationMessageSlot = slot<NotificationMessage>()
+        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+
         mockMvc.perform(
             multipart(buildCommentApiUrl(comment.id!!, "likes"))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -163,6 +181,9 @@ class CommentControllerTest @Autowired constructor(
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.message").value("User's like added successfully to comment ${comment.id}"))
+        val capturedNotificationMessage = notificationMessageSlot.captured
+        assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your comment")
     }
 
     @Test
