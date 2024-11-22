@@ -103,7 +103,7 @@ class ReplyController @Autowired constructor(
         val comment = findCommentOrThrow(commentId)
         val author = userService.getCurrentUser()
         val newReply = replyService.create(comment, author, commentDto)
-        notificationService.createPushNotification(Notification(
+        notificationService.createPushNotification(
             recipientId = comment.author.id!!,
             message = NotificationMessage(
                 title = "New Reply",
@@ -114,10 +114,8 @@ class ReplyController @Autowired constructor(
                     "replyAuthor" to newReply.author.username,
                     "replyContent" to newReply.content
                 ),
-            ),
-            isPush = true,
-            createdAt = newReply.createdAt,
-        ))
+            )
+        )
 
         HttpJsonResponse.successResponse(ReplyResponse.create(replyService.findAggregate(newReply.id!!), author))
     }
@@ -196,19 +194,17 @@ class ReplyController @Autowired constructor(
         }
 
         val newLike = replyService.addLike(reply, user)
-        notificationService.createPushNotification(Notification(
+        notificationService.createPushNotification(
             recipientId = reply.author.id!!,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${newLike?.userId} liked your reply",
+                body = "${user.id} liked your reply",
                 data = mapOf(
                     "replyId" to reply.id!!,
-                    "userId" to newLike?.userId!!,
+                    "userId" to user.id!!,
                 )
-            ),
-            isPush = true,
-            createdAt = newLike.createdAt,
-        ))
+            )
+        )
         HttpJsonResponse.successResponse(
            ReplyResponse.create(replyService.findAggregate(reply.id!!), user),
             "User's like added successfully to reply $replyId"

@@ -13,7 +13,7 @@ data class Notification (
 
     val message: NotificationMessage,
 
-    val isPush: Boolean,
+    val isPushNotification: Boolean,
     var createdAt: Instant = Instant.now(),
 )
 

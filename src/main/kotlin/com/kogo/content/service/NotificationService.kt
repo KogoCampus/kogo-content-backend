@@ -5,6 +5,7 @@ import com.kogo.content.storage.entity.PushNotificationRequest
 import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
+import com.kogo.content.storage.entity.NotificationMessage
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
@@ -23,15 +24,31 @@ class NotificationService(
 ){
     private val restTemplate = RestTemplate()
 
-    fun createNotification(notification: Notification): Notification {
-        return notificationRepository.save(notification)
+    fun createNotification(recipientId: String, message: NotificationMessage): Notification {
+        val newNotification = Notification(
+            recipientId = recipientId,
+            message = message,
+            isPushNotification = false,
+        )
+        return notificationRepository.save(newNotification)
     }
-    fun createPushNotification(notification: Notification): Notification {
+
+//    fun createNotifications(recipientIds: List<String>): List<Notification> {
+//
+//    }
+
+    fun createPushNotification(recipientId: String, message: NotificationMessage): Notification {
+        val newNotification = Notification(
+            recipientId = recipientId,
+            message = message,
+            isPushNotification = true,
+        )
+
         // Save the notification to the database first
-        val savedNotification = notificationRepository.save(notification)
+        val savedNotification = notificationRepository.save(newNotification)
 
         // Retrieve recipient ID Token
-        val recipient = userRepository.findUserById(notification.recipientId)
+        val recipient = userRepository.findUserById(newNotification.recipientId)
 
         // Prepare the PushNotificationRequest
         val pushNotificationRequest = PushNotificationRequest(

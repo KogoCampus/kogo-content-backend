@@ -48,7 +48,7 @@ class CommentController @Autowired constructor(
         val post = findPostByIdOrThrow(postId)
         val author = userService.getCurrentUser()
         val newComment = commentService.create(post, author, commentDto)
-        notificationService.createPushNotification(Notification(
+        notificationService.createPushNotification(
             recipientId = post.author.id!!,
             message = NotificationMessage(
                 title = "New Comment",
@@ -59,10 +59,8 @@ class CommentController @Autowired constructor(
                     "commentAuthor" to newComment.author.username,
                     "commentContent" to newComment.content
                 ),
-            ),
-            isPush = true,
-            createdAt = newComment.createdAt,
-        ))
+            )
+        )
         HttpJsonResponse.successResponse(CommentResponse.create(commentService.findAggregate(newComment.id!!), author))
     }
 
@@ -198,19 +196,17 @@ class CommentController @Autowired constructor(
         }
 
         val newLike = commentService.addLike(comment, user)
-        notificationService.createPushNotification(Notification(
+        notificationService.createPushNotification(
             recipientId = comment.author.id!!,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${newLike?.userId} liked your comment",
+                body = "${user.id!!} liked your comment",
                 data = mapOf(
                     "commentId" to comment.id!!,
-                    "userId" to newLike?.userId!!,
+                    "userId" to user.id!!,
                 )
             ),
-            isPush = true,
-            createdAt = newLike.createdAt,
-        ))
+        )
         return HttpJsonResponse.successResponse(
             CommentResponse.create(commentService.findAggregate(comment.id!!), user),
             "User's like added successfully to comment $commentId"

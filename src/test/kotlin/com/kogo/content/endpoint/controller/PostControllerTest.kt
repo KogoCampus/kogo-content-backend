@@ -8,6 +8,8 @@ import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.User
 import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.content.service.NotificationService
+import com.kogo.content.storage.entity.NotificationMessage
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
@@ -27,6 +29,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
@@ -45,6 +48,9 @@ class PostControllerTest @Autowired constructor(
 
     @MockkBean
     lateinit var userService: UserService
+
+    @MockkBean
+    lateinit var notificationService: NotificationService
 
     /**
      * Fixtures
@@ -241,6 +247,10 @@ class PostControllerTest @Autowired constructor(
         every { postService.hasUserLikedPost(post, user) } returns false
         every { postService.addLike(post, user) } returns mockk()
 
+        // mock message
+        val notificationMessageSlot = slot<NotificationMessage>()
+        every { notificationService.createPushNotification(post.author.id!!, capture(notificationMessageSlot))} returns mockk()
+
         mockMvc.put(buildPostApiUrl(postId, "likes")) {
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
@@ -249,6 +259,9 @@ class PostControllerTest @Autowired constructor(
             jsonPath("$.data.likeCount") { value(postStat.likeCount) }
             jsonPath("$.data.likedByCurrentUser") { value(false) }
         }
+        val capturedNotificationMessage = notificationMessageSlot.captured
+        assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your post")
     }
 
     @Test
