@@ -162,7 +162,7 @@ class MeController @Autowired constructor(
             description = "ok",
             headers = [
                 Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
-                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
                     ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = Notification::class)

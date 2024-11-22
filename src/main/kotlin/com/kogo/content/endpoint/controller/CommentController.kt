@@ -85,7 +85,7 @@ class CommentController @Autowired constructor(
             description = "ok - All comments",
             headers = [
                 Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
-                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
                       ],
             content = [Content(mediaType = "application/json", array = ArraySchema(
                 schema = Schema(implementation = CommentResponse::class)
