@@ -32,10 +32,11 @@ interface SearchIndex<T : Any> {
     fun search(
         searchText: String,
         paginationRequest: PaginationRequest,
+        configOverride: SearchConfiguration? = null
     ): PaginationSlice<T>
 
     fun getIndexName(): String
     fun getTargetCollectionName(): String
     fun getSearchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition()
-    fun getSearchableFields(): List<String>
+    fun getSearchConfiguration(): SearchConfiguration
 }

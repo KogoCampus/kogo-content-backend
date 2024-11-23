@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.stereotype.Component
+import java.util.Date
 import kotlin.reflect.KClass
 
 @Component
@@ -22,16 +23,14 @@ class AtlasSearchQueryBuilder(
         searchIndexName: String,
         paginationRequest: PaginationRequest,
         searchText: String,
-        searchableFields: List<String>,
-        scoreFields: List<ScoreField>? = null,
+        configuration: SearchConfiguration,
     ): PaginationSlice<T> {
         val operations = mutableListOf<AggregationOperation>()
 
         operations.addAll(buildSearchOperations(
             searchIndexName = searchIndexName,
             searchText = searchText,
-            searchableFields = searchableFields,
-            scoreFields = scoreFields,
+            configuration = configuration,
             paginationRequest = paginationRequest,
         ))
 
@@ -46,16 +45,14 @@ class AtlasSearchQueryBuilder(
     private fun buildSearchOperations(
         searchIndexName: String,
         searchText: String,
-        searchableFields: List<String>,
-        scoreFields: List<ScoreField>?,
+        configuration: SearchConfiguration,
         paginationRequest: PaginationRequest,
     ): List<AggregationOperation> = listOf(
         // Search operation
         AggregationOperation {
             Document("\$search", Document().apply {
                 put("index", searchIndexName)
-                put("compound", buildCompoundQuery(searchText, searchableFields, scoreFields, paginationRequest.pageToken.filters))
-                put("sort", buildSortCriteria(paginationRequest.pageToken.sortFields))
+                put("compound", buildCompoundQuery(searchText, configuration, paginationRequest.pageToken.filters))
                 // Add searchAfter if cursor exists
                 paginationRequest.pageToken.cursors["searchAfter"]?.let { cursor ->
                     put("searchAfter", cursor.value)
@@ -75,35 +72,55 @@ class AtlasSearchQueryBuilder(
         }
     )
 
+    private fun buildScoreDocument(score: Score): Document = when (score) {
+        is Score.Boost -> Document("boost", Document("value", score.value))
+        is Score.Constant -> Document("constant", Document("value", score.value))
+        is Score.Path -> Document("boost", Document("path", score.path))
+        is Score.Function -> Document("function", score.expression)
+    }
+
     private fun buildCompoundQuery(
         searchText: String,
-        searchFields: List<String>,
-        scoreFields: List<ScoreField>?,
+        configuration: SearchConfiguration,
         filters: List<FilterField>
     ) = Document().apply {
         // Must clause for text search
         put("must", listOf(Document("text", Document().apply {
             put("query", searchText)
-            put("path", searchFields)
-            put("fuzzy", Document("maxEdits", 1))
+            put("path", configuration.textSearchFields)
+            put("fuzzy", Document("maxEdits", configuration.fuzzyMaxEdits))
         })))
 
-        // Should clause for boosting
-        if (!scoreFields.isNullOrEmpty()) {
-            put("should", scoreFields.map { scoreField ->
-                Document("text", Document().apply {
-                    put("query", searchText)
-                    put("path", scoreField.field)
-                    when {
-                        scoreField.boostPath != null -> {
-                            put("score", Document("boost", Document("path", scoreField.boostPath)))
-                        }
-                        scoreField.boost != null -> {
-                            put("score", Document("boost", Document("value", scoreField.boost)))
-                        }
-                    }
+        // Should clause for boosting and near queries
+        val shouldClauses = mutableListOf<Document>()
+
+        // Add score field boosts
+        configuration.scoreFields.forEach { scoreField ->
+            shouldClauses.add(Document("text", Document().apply {
+                put("query", searchText)
+                put("path", scoreField.field)
+                put("score", buildScoreDocument(scoreField.score))
+            }))
+        }
+
+        // Add near field boosts
+        configuration.nearFields.forEach { nearField ->
+            shouldClauses.add(Document("near", Document().apply {
+                put("path", nearField.field)
+                put("origin", when (nearField) {
+                    is DateNearField -> nearField.origin
+                    is NumericNearField -> nearField.origin
+                    is GeoNearField -> nearField.origin.toDocument()
                 })
-            })
+                put("pivot", nearField.pivot)
+                nearField.score?.let { score ->
+                    put("score", buildScoreDocument(score))
+                }
+            }))
+        }
+
+        if (shouldClauses.isNotEmpty()) {
+            put("should", shouldClauses)
         }
 
         // Filter clause
@@ -135,13 +152,6 @@ class AtlasSearchQueryBuilder(
         }
     }
 
-    private fun buildSortCriteria(sortFields: List<SortField>) = Document().apply {
-        put("score", Document("\$meta", "searchScore"))
-        sortFields.forEach { sortField ->
-            put(sortField.field, if (sortField.direction == SortDirection.ASC) 1 else -1)
-        }
-    }
-
     private fun <T> createPaginationSlice(results: AggregationResults<T>, paginationRequest: PaginationRequest): PaginationSlice<T> {
         val rawResults = results.rawResults["results"] as? List<Document>
         val mappedResults = results.mappedResults
@@ -153,17 +163,14 @@ class AtlasSearchQueryBuilder(
         val limit = minOf(paginationRequest.limit, ATLAS_SEARCH_MAX_RESULTS)
         // Create next page token only if we got a full page of results
         val nextPageToken = if (mappedResults.size >= limit) {
-            // Get the last document's search sequence token
-            val lastDocument = rawResults?.last()
-            val searchAfter = lastDocument?.getString("_searchAfter")!!
+            val lastSearchDocument = rawResults?.last()
+            val searchAfter = lastSearchDocument?.getString("_searchAfter")
 
-            paginationRequest.pageToken.copy(
-                cursors = mapOf(
-                    "searchAfter" to CursorValue.from(searchAfter)
-                ),
-                sortFields = paginationRequest.pageToken.sortFields,
-                filters = paginationRequest.pageToken.filters
-            )
+            searchAfter?.let {
+                paginationRequest.pageToken.copy(
+                    cursors = mapOf("searchAfter" to CursorValue.from(it))
+                )
+            }
         } else null
 
         return PaginationSlice(

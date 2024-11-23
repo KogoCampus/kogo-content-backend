@@ -40,6 +40,14 @@ class PostService (
         paginationRequest.withSort("popularityScore", SortDirection.DESC)
     )
 
+    fun searchPostAggregatesByKeyword(
+        searchText: String,
+        paginationRequest: PaginationRequest
+    ) = postAggregateSearchIndex.search(
+        searchText = searchText,
+        paginationRequest = paginationRequest,
+    )
+
     fun searchPostAggregatesByKeywordAndTopic(
         topic: Topic,
         searchText: String,
@@ -47,14 +55,6 @@ class PostService (
     ) = postAggregateSearchIndex.search(
         searchText = searchText,
         paginationRequest = paginationRequest.withFilter("topic.id", topic.id!!)
-    )
-
-    fun searchPostAggregatesByKeywordAndPopularity(
-        searchText: String,
-        paginationRequest: PaginationRequest
-    ) = postAggregateSearchIndex.search(
-        searchText = searchText,
-        paginationRequest = paginationRequest.withSort("popularityScore", SortDirection.DESC),
     )
 
     @Transactional

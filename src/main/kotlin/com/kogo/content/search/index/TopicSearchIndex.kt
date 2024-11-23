@@ -19,9 +19,28 @@ class TopicSearchIndex(
         "updatedAt" to "topic.updatedAt"
     )
 
+    override fun getSearchConfiguration() = SearchConfiguration(
+        textSearchFields = listOf(
+            "topic.topicName",
+            "topic.description",
+            "topic.tags"
+        ),
+        scoreFields = listOf(
+            ScoreField(
+                field = "topic.topicName",
+                score = Score.Boost(1.25)
+            ),
+            ScoreField(
+                field = "topic.tags",
+                score = Score.Boost(1.25)
+            )
+        )
+    )
+
     override fun search(
         searchText: String,
         paginationRequest: PaginationRequest,
+        configOverride: SearchConfiguration?
     ): PaginationSlice<TopicAggregate> {
         val paginationRequestAliased = SearchIndex.Helper.createAliasedPaginationRequest(
             paginationRequest = paginationRequest,
@@ -33,25 +52,9 @@ class TopicSearchIndex(
             searchIndexName = getIndexName(),
             paginationRequest = paginationRequestAliased,
             searchText = searchText,
-            searchableFields = getSearchableFields(),
-            scoreFields = listOf(
-                ScoreField(
-                    field = "topic.topicName",
-                    boost = 2.0
-                ),
-                ScoreField(
-                    field = "topic.tags",
-                    boost = 2.0
-                )
-            )
+            configuration = configOverride ?: getSearchConfiguration()
         )
     }
-
-    override fun getSearchableFields(): List<String> = listOf(
-        "topic.topicName",
-        "topic.description",
-        "topic.tags"
-    )
 
     override fun getIndexName(): String = "topic_stats_search"
 

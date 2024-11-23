@@ -2,12 +2,10 @@ package com.kogo.content.search.index
 
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
-import com.kogo.content.search.AtlasSearchQueryBuilder
-import com.kogo.content.search.ScoreField
-import com.kogo.content.search.SearchIndex
-import com.kogo.content.search.SearchIndexDefinition
+import com.kogo.content.search.*
 import com.kogo.content.storage.view.PostAggregate
 import org.springframework.stereotype.Repository
+import java.util.Date
 
 @Repository
 class PostSearchIndex(
@@ -22,9 +20,27 @@ class PostSearchIndex(
         "topic.id" to "post.topic._id"
     )
 
+    override fun getSearchConfiguration() = SearchConfiguration(
+        textSearchFields = listOf("post.title", "post.content"),
+        nearFields = listOf(
+            DateNearField(
+                field = "post.createdAt",
+                origin = Date(),
+                pivot = DateNearField.ONE_WEEK_MS,  // 7 days
+            ),
+        ),
+        scoreFields = listOf(
+            ScoreField(
+                field = "post.title",
+                score = Score.Boost(1.5),
+            )
+        )
+    )
+
     override fun search(
         searchText: String,
         paginationRequest: PaginationRequest,
+        configOverride: SearchConfiguration?
     ): PaginationSlice<PostAggregate> {
         val paginationRequestAliased = SearchIndex.Helper.createAliasedPaginationRequest(
             paginationRequest = paginationRequest,
@@ -36,20 +52,9 @@ class PostSearchIndex(
             searchIndexName = getIndexName(),
             paginationRequest = paginationRequestAliased,
             searchText = searchText,
-            searchableFields = getSearchableFields(),
-            scoreFields = listOf(
-                ScoreField(
-                    field = "post.title",
-                    boost = 2.0
-                ),
-            )
+            configuration = configOverride ?: getSearchConfiguration()
         )
     }
-
-    override fun getSearchableFields(): List<String> = listOf(
-        "post.title",
-        "post.content"
-    )
 
     override fun getIndexName(): String = "post_stats_search"
 

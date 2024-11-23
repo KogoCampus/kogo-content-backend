@@ -69,7 +69,7 @@ class SearchController(
         paginationRequest: PaginationRequest
     ) = run {
         val user = userService.getCurrentUser()
-        val paginationResponse = postService.searchPostAggregatesByKeywordAndPopularity(keyword, paginationRequest)
+        val paginationResponse = postService.searchPostAggregatesByKeyword(keyword, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { post ->
