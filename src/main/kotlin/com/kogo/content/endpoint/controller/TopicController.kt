@@ -1,5 +1,7 @@
 package com.kogo.content.endpoint.controller
 
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
@@ -10,10 +12,13 @@ import com.kogo.content.service.UserService
 import com.kogo.content.service.TopicService
 import com.kogo.content.storage.entity.Topic
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.headers.Header
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -42,6 +47,43 @@ class TopicController @Autowired constructor(
         val topic = findTopicByIdOrThrow(topicId)
 
         HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(topic.id!!), userService.getCurrentUser()))
+    }
+
+        @GetMapping("topics")
+    @Operation(
+        summary = "return a list of topics",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
+            ],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = TopicResponse::class))
+            )],
+        )])
+    fun listTopics(paginationRequest: PaginationRequest): ResponseEntity<*> = run {
+        val user = userService.getCurrentUser()
+        val paginationResponse = topicService.getAllTopics(paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { TopicResponse.create(it, user) },
+            headers = paginationResponse.toHttpHeaders()
+        )
     }
 
     @RequestMapping(

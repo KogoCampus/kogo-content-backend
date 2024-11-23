@@ -30,6 +30,9 @@ class TopicService(
     fun findTopicByTopicName(topicName: String): Topic? = topicRepository.findByTopicName(topicName)
     fun findTopicsByOwner(owner: User) = topicRepository.findAllByOwnerId(owner.id!!)
 
+    fun getAllTopics(paginationRequest: PaginationRequest)
+        = topicAggregateView.findAll(paginationRequest)
+
     fun getAllFollowingTopicsByUserId(userId: String): List<Topic> {
         val followings = followerRepository.findAllFollowingsByUserId(userId)
         return followings.map { following -> find(following.followableId.toString()) }.filterNotNull()

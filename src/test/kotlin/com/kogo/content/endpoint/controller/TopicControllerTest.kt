@@ -1,5 +1,9 @@
 package com.kogo.content.endpoint.controller
 
+import com.kogo.content.common.CursorValue
+import com.kogo.content.common.PageToken
+import com.kogo.content.common.PaginationRequest
+import com.kogo.content.common.PaginationSlice
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.model.TopicUpdate
 import com.kogo.content.service.UserService
@@ -353,5 +357,42 @@ class TopicControllerTest @Autowired constructor(
 
         mockMvc.delete(buildTopicApiUrl(topicId, "posts", invalidPostId))
             .andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `should return a list of topics with pagination`() {
+        val pageToken = PageToken.create()
+        val limit = 10
+        val paginationParams = mapOf(
+            PaginationRequest.PAGE_TOKEN_PARAM to pageToken.encode(),
+            PaginationRequest.PAGE_SIZE_PARAM to limit.toString()
+        )
+
+        val topics = listOf(
+            Fixture.createTopicAggregateFixture(topic),
+            Fixture.createTopicAggregateFixture(Fixture.createTopicFixture(user))
+        )
+
+        val nextPageToken = PageToken(
+            cursors = mapOf("createdAt" to CursorValue.from(Instant.now()))
+        )
+
+        val paginationSlice = PaginationSlice(
+            items = topics,
+            nextPageToken = nextPageToken
+        )
+
+        every { topicService.getAllTopics(any()) } returns paginationSlice
+
+        mockMvc.get(buildTopicApiUrl(params = paginationParams))
+            .andExpect {
+                status { isOk() }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                header { string(PaginationSlice.HEADER_PAGE_TOKEN, nextPageToken.encode()) }
+                header { string(PaginationSlice.HEADER_PAGE_SIZE, topics.size.toString()) }
+                jsonPath("$.data.length()") { value(topics.size) }
+                jsonPath("$.data[0].id") { value(topics[0].topicId) }
+                jsonPath("$.data[0].topicName") { value(topics[0].topic.topicName) }
+            }
     }
 }
