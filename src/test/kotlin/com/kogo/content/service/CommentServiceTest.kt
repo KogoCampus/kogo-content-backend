@@ -10,6 +10,7 @@ import com.kogo.content.storage.entity.User
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.entity.Like
+import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.CommentAggregate
 import com.kogo.content.storage.view.CommentAggregateView
 import io.mockk.*
@@ -21,11 +22,13 @@ class CommentServiceTest {
     private val commentRepository: CommentRepository = mockk()
     private val likeRepository: LikeRepository = mockk()
     private val commentAggregateView: CommentAggregateView = mockk()
+    private val viewRepository: ViewerRepository = mockk()
 
     private val commentService = CommentService(
         commentRepository = commentRepository,
         likeRepository = likeRepository,
-        commentAggregateView = commentAggregateView
+        commentAggregateView = commentAggregateView,
+        viewerRepository = viewRepository,
     )
 
     @Test

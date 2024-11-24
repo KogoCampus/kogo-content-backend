@@ -159,7 +159,7 @@ class PostServiceTest {
         every { viewerRepository.addView("test-post-id", "test-user-id") } returns viewer
         every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
 
-        postService.addViewer(post, user)
+        postService.markPostViewedByUser(post.id!!, user.id!!)
         verify {
             viewerRepository.addView("test-post-id", "test-user-id")
             postAggregateView.refreshView("test-post-id")
@@ -168,7 +168,7 @@ class PostServiceTest {
         // Test unsuccessful view operation (already viewed)
         every { viewerRepository.addView("test-post-id", "test-user-id") } returns null
 
-        postService.addViewer(post, user)
+        postService.markPostViewedByUser(post.id!!, user.id!!)
         verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
     }
 
@@ -180,7 +180,8 @@ class PostServiceTest {
         }
 
         every { attachmentRepository.delete(any()) } just runs
-        every { postRepository.deleteById(any()) } just runs
+        every { postRepository.deleteById("test-post-id") } just runs
+        every { postAggregateView.delete("test-post-id") } just runs
 
         postService.delete(post)
 

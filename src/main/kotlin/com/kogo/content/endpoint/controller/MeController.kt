@@ -65,7 +65,7 @@ class MeController @Autowired constructor(
     fun updateMe(
         @Valid meUpdate: UserUpdate) = run {
             val me = userService.getCurrentUser()
-            val updatedUser = userService.updateUserProfile(me, meUpdate)
+            val updatedUser = userService.updateUser(me, meUpdate)
             HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
@@ -175,11 +175,10 @@ class MeController @Autowired constructor(
         val paginationResponse = notificationService.getNotificationsByRecipientId(me.id!!, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse,
+            data = paginationResponse.items,
             headers = paginationResponse.toHttpHeaders()
         )
     }
-
 
     private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<User>(userId)
     private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)

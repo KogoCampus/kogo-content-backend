@@ -395,4 +395,67 @@ class TopicControllerTest @Autowired constructor(
                 jsonPath("$.data[0].topicName") { value(topics[0].topic.topicName) }
             }
     }
+
+    @Test
+    fun `should return a list of users following a topic with pagination`() {
+        val topicId = topic.id!!
+        val pageToken = PageToken.create()
+        val limit = 10
+        val paginationParams = mapOf(
+            PaginationRequest.PAGE_TOKEN_PARAM to pageToken.encode(),
+            PaginationRequest.PAGE_SIZE_PARAM to limit.toString()
+        )
+
+        // Create a list of users following the topic
+        val users = listOf(
+            Fixture.createUserFixture(),
+            Fixture.createUserFixture(),
+            Fixture.createUserFixture()
+        )
+
+        val nextPageToken = PageToken(
+            cursors = mapOf("username" to CursorValue.from(users.last().username))
+        )
+
+        val paginationSlice = PaginationSlice(
+            items = users,
+            nextPageToken = nextPageToken
+        )
+
+        // Mock the service call
+        every { topicService.find(topicId) } returns topic
+        every { userService.getAllUsersFollowingTopic(topicId, any()) } returns paginationSlice
+
+        mockMvc.get(buildTopicApiUrl(topicId, "users", params = paginationParams))
+            .andExpect {
+                status { isOk() }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                header { string(PaginationSlice.HEADER_PAGE_TOKEN, nextPageToken.encode()) }
+                header { string(PaginationSlice.HEADER_PAGE_SIZE, users.size.toString()) }
+                jsonPath("$.data.length()") { value(users.size) }
+                // Verify first user in the list
+                jsonPath("$.data[0].id") { value(users[0].id) }
+                jsonPath("$.data[0].username") { value(users[0].username) }
+                // Verify that sensitive information is not included
+                jsonPath("$.data[0].email").doesNotExist()
+                jsonPath("$.data[0].idToken").doesNotExist()
+            }
+    }
+
+    @Test
+    fun `should return 404 when getting users for non-existing topic`() {
+        val invalidTopicId = "invalid-topic-id"
+        val paginationParams = mapOf(
+            PaginationRequest.PAGE_TOKEN_PARAM to PageToken.create().encode(),
+            PaginationRequest.PAGE_SIZE_PARAM to "10"
+        )
+
+        every { topicService.find(invalidTopicId) } returns null
+
+        mockMvc.get(buildTopicApiUrl(invalidTopicId, "users", params = paginationParams))
+            .andExpect { 
+                status { isNotFound() }
+                content { contentType(MediaType.APPLICATION_JSON) }
+            }
+    }
 }

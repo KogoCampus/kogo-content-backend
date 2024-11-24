@@ -11,7 +11,6 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.security.SecurityProperties
 import org.springframework.http.HttpEntity
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher
@@ -65,12 +64,12 @@ class ExternalAuthRequestFilter (
                 val userInfoJson = authenticateUserWithApi(accessToken).get(USERDATA)
                 val username = userInfoJson.get(USERNAME).toString().removeSurrounding("\"")
 
-                if (userService.findUserProfileByUsername(username) == null) {
+                if (userService.findUserByUsername(username) == null) {
                     val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
                     val schoolInfoJson = userInfoJson.get(SCHOOLINFO)
                     val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
                     val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
-                    userService.createUserProfile(
+                    userService.createUser(
                         idToken = UserIdToken(username, email),
                         username = username,
                         email = email,

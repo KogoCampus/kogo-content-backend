@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.mongodb.core.query.isEqualTo
 
 @Repository
 class FollowerRepository @Autowired constructor(
@@ -31,8 +32,10 @@ class FollowerRepository @Autowired constructor(
     }
 
     fun unfollowAllByFollowableId(followableId: String) {
-        val followings = findAllFollowingsByFollowableId(followableId)
-        followings.forEach { mongoTemplate.remove(it) }
+        val query = Query(
+            Criteria.where("followableId").isEqualTo(ObjectId(followableId))
+        )
+        mongoTemplate.remove(query, Follower::class.java)
     }
 
     fun findFollowing(followableId: String, userId: String): Follower? {

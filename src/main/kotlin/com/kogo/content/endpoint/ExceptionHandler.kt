@@ -85,6 +85,12 @@ class GlobalExceptionHandler: ResponseEntityExceptionHandler() {
         return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, details = message)
     }
 
+    @ExceptionHandler(MongoViewException::class)
+    fun handleMongoViewException(ex: MongoViewException): ResponseEntity<ErrorResponse> {
+        log.error (ex) { ex.message }
+        return HttpJsonResponse.errorResponse(ErrorCode.INTERNAL_SERVER_ERROR)
+    }
+
     @ExceptionHandler(RuntimeException::class)
     fun handleUnhandledRuntimeException(ex: RuntimeException): ResponseEntity<ErrorResponse> {
         val message = "Unhandled exception occurred: ${ex.message}"

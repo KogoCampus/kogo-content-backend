@@ -7,6 +7,7 @@ import com.kogo.content.common.SortDirection
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.LikeRepository
+import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.CommentAggregate
 import com.kogo.content.storage.view.CommentAggregateView
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +20,8 @@ import java.time.Instant
 class CommentService @Autowired constructor(
     private val commentRepository: CommentRepository,
     private val likeRepository: LikeRepository,
-    private val commentAggregateView: CommentAggregateView
+    private val commentAggregateView: CommentAggregateView,
+    private val viewerRepository: ViewerRepository
 ) {
     fun find(commentId: String): Comment? = commentRepository.findByIdOrNull(commentId)
     fun findAggregate(commentId: String): CommentAggregate = commentAggregateView.find(commentId)
@@ -52,10 +54,10 @@ class CommentService @Autowired constructor(
     }
 
     fun delete(comment: Comment) = run {
+        commentAggregateView.delete(comment.id!!)
         commentRepository.deleteById(comment.id!!)
     }
 
-    @Transactional
     fun addLike(comment: Comment, user: User): Like? {
         val like = likeRepository.addLike(comment.id!!, user.id!!)
         if (like != null) {
@@ -64,7 +66,6 @@ class CommentService @Autowired constructor(
         return like
     }
 
-    @Transactional
     fun removeLike(comment: Comment, user: User) {
         val removed = likeRepository.removeLike(comment.id!!, user.id!!)
         if (removed) {
@@ -72,9 +73,14 @@ class CommentService @Autowired constructor(
         }
     }
 
-    fun isUserAuthor(comment: Comment, user: User): Boolean = comment.author == user
-
-    fun hasUserLikedComment(commentId: String, user: User): Boolean {
-        return likeRepository.findLike(commentId, user.id!!) != null
+    fun markCommentViewedByUser(commentId: String, userId: String): Viewer? {
+        val viewer = viewerRepository.addView(commentId, userId)
+        if (viewer != null) {
+            commentAggregateView.refreshView(commentId)
+        }
+        return viewer
     }
+
+    fun hasUserLikedComment(commentId: String, user: User) = likeRepository.findLike(commentId, user.id!!) != null
+    fun isUserAuthor(comment: Comment, user: User) = comment.author == user
 }

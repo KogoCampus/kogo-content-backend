@@ -1,14 +1,11 @@
 package com.kogo.content.service
 
+import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
 import com.kogo.content.storage.entity.User
 import com.kogo.content.storage.entity.UserIdToken
 import com.kogo.content.storage.repository.AttachmentRepository
-import com.kogo.content.storage.repository.PostRepository
-import com.kogo.content.storage.repository.TopicRepository
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -25,20 +22,18 @@ class UserService @Autowired constructor(
     companion object : Logger()
 
     fun find(userId: String): User? = userRepository.findByIdOrNull(userId)
-
-    fun getCurrentUsername(): String {
-        val authentication = SecurityContextHolder.getContext().authentication
-        return authentication.principal as String
-    }
+    fun findUserByUsername(username: String) = userRepository.findByUsername(username)
 
     fun getCurrentUser(): User {
-        val username = getCurrentUsername()
-        return findUserProfileByUsername(username) ?: throw RuntimeException("Username not found $username")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val username = authentication.principal as String
+        return findUserByUsername(username) ?: throw RuntimeException("Username not found $username")
     }
 
-    fun findUserProfileByUsername(username: String) = userRepository.findByUsername(username)
+    fun getAllUsersFollowingTopic(topicId: String, paginationRequest: PaginationRequest)
+        = userRepository.findUsersByTopicId(topicId, paginationRequest)
 
-    fun createUserProfile(idToken: UserIdToken, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): User =
+    fun createUser(idToken: UserIdToken, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): User =
         userRepository.save(User(
             idToken = idToken,
             username = username,
@@ -48,7 +43,7 @@ class UserService @Autowired constructor(
         ))
 
     @Transactional
-    fun updateUserProfile(user: User, userUpdate: UserUpdate): User {
+    fun updateUser(user: User, userUpdate: UserUpdate): User {
         with(userUpdate) {
             username?.let { user.username = it }
             profileImage?.let { user.profileImage = attachmentRepository.saveFile(it) }

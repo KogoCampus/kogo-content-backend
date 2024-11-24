@@ -7,6 +7,7 @@ import com.kogo.content.common.PaginationSlice
 import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.ReplyRepository
 import com.kogo.content.storage.repository.LikeRepository
+import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.ReplyAggregate
 import com.kogo.content.storage.view.ReplyAggregateView
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +20,8 @@ import java.time.Instant
 class ReplyService @Autowired constructor(
     private val replyRepository: ReplyRepository,
     private val likeRepository: LikeRepository,
-    private val replyAggregateView: ReplyAggregateView
+    private val replyAggregateView: ReplyAggregateView,
+    private val viewerRepository: ViewerRepository
 ) {
     fun find(replyId: String) = replyRepository.findByIdOrNull(replyId)
     fun findAggregate(replyId: String) = replyAggregateView.find(replyId)
@@ -52,10 +54,10 @@ class ReplyService @Autowired constructor(
     }
 
     fun delete(reply: Reply) {
+        replyAggregateView.delete(reply.id!!)
         replyRepository.deleteById(reply.id!!)
     }
 
-    @Transactional
     fun addLike(reply: Reply, user: User): Like? {
         val like = likeRepository.addLike(reply.id!!, user.id!!)
         if (like != null) {
@@ -64,7 +66,6 @@ class ReplyService @Autowired constructor(
         return like
     }
 
-    @Transactional
     fun removeLike(reply: Reply, user: User) {
         val removed = likeRepository.removeLike(reply.id!!, user.id!!)
         if (removed) {
@@ -72,9 +73,13 @@ class ReplyService @Autowired constructor(
         }
     }
 
-    fun hasUserLikedReply(reply: Reply, user: User): Boolean {
-        return likeRepository.findLike(reply.id!!, user.id!!) != null
+    fun markReplyViewedByUser(replyId: String, userId: String): Viewer? {
+        val viewed = viewerRepository.addView(replyId, userId)
+        if (viewed != null)
+            replyAggregateView.refreshView(replyId)
+        return viewed
     }
 
+    fun hasUserLikedReply(reply: Reply, user: User) = likeRepository.findLike(reply.id!!, user.id!!) != null
     fun isUserAuthor(reply: Reply, user: User): Boolean = reply.author == user
 }

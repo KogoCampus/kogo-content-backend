@@ -35,7 +35,7 @@ class TopicService(
 
     fun getAllFollowingTopicsByUserId(userId: String): List<Topic> {
         val followings = followerRepository.findAllFollowingsByUserId(userId)
-        return followings.map { following -> find(following.followableId.toString()) }.filterNotNull()
+        return followings.mapNotNull { following -> find(following.followableId.toString()) }
     }
 
     fun searchTopicAggregatesByKeyword(
@@ -83,6 +83,7 @@ class TopicService(
     fun delete(topic: Topic) {
         topic.profileImage?.let { attachmentRepository.delete(it) }
         followerRepository.unfollowAllByFollowableId(topic.id!!)
+        topicAggregateView.delete(topic.id!!)
         topicRepository.deleteById(topic.id!!)
     }
 

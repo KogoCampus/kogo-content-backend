@@ -9,6 +9,7 @@ import com.kogo.content.storage.entity.Reply
 import com.kogo.content.storage.entity.User
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ReplyRepository
+import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.ReplyAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
@@ -21,11 +22,13 @@ class ReplyServiceTest {
     private val replyRepository: ReplyRepository = mockk()
     private val likeRepository: LikeRepository = mockk()
     private val replyAggregateView: ReplyAggregateView = mockk()
+    private val viewerRepository: ViewerRepository = mockk()
 
     private val replyService = ReplyService(
         replyRepository = replyRepository,
         likeRepository = likeRepository,
-        replyAggregateView = replyAggregateView
+        replyAggregateView = replyAggregateView,
+        viewerRepository = viewerRepository
     )
 
     @Test

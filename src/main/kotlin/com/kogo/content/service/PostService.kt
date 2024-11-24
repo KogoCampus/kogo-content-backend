@@ -95,10 +95,10 @@ class PostService (
     @Transactional
     fun delete(post: Post) {
         post.attachments.forEach { attachmentRepository.delete(it) }
+        postAggregateView.delete(post.id!!)
         postRepository.deleteById(post.id!!)
     }
 
-    @Transactional
     fun addLike(post: Post, user: User): Like? {
         val like = likeRepository.addLike(post.id!!, user.id!!)
         if (like != null) {
@@ -107,28 +107,20 @@ class PostService (
         return like
     }
 
-    @Transactional
     fun removeLike(post: Post, user: User) {
         likeRepository.removeLike(post.id!!, user.id!!)
         postAggregateView.refreshView(post.id!!)
     }
 
-    @Transactional
-    fun addViewer(post: Post, user: User): Viewer? {
-        val viewer = viewerRepository.addView(post.id!!, user.id!!)
+    fun markPostViewedByUser(postId: String, userId: String): Viewer? {
+        val viewer = viewerRepository.addView(postId, userId)
         if (viewer != null) {
-            postAggregateView.refreshView(post.id!!)
+            postAggregateView.refreshView(postId)
         }
         return viewer
     }
 
-    fun hasUserLikedPost(post: Post, user: User): Boolean {
-        return likeRepository.findLike(post.id!!, user.id!!) != null
-    }
-
-    fun hasUserViewedPost(post: Post, user: User): Boolean {
-        return viewerRepository.findView(post.id!!, user.id!!) != null
-    }
-
+    fun hasUserLikedPost(post: Post, user: User): Boolean = likeRepository.findLike(post.id!!, user.id!!) != null
+    fun hasUserViewedPost(post: Post, user: User): Boolean = viewerRepository.findView(post.id!!, user.id!!) != null
     fun isPostAuthor(post: Post, user: User): Boolean = post.author == user
 }

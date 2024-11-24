@@ -103,6 +103,7 @@ class ReplyController @Autowired constructor(
         val comment = findCommentOrThrow(commentId)
         val author = userService.getCurrentUser()
         val newReply = replyService.create(comment, author, commentDto)
+
         notificationService.createPushNotification(
             recipientId = comment.author.id!!,
             message = NotificationMessage(

@@ -2,6 +2,7 @@ package com.kogo.content.storage.view
 
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
+import com.kogo.content.exception.MongoViewException
 import com.kogo.content.storage.MongoPaginationQueryBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -29,8 +30,8 @@ abstract class MongoView<T : Any>(
     fun findAll(paginationRequest: PaginationRequest): PaginationSlice<T> {
         return mongoPaginationQueryBuilder.getPage(
             viewClass,
-            fieldAlias(),
-            paginationRequest = paginationRequest
+            paginationRequest = paginationRequest,
+            fieldMappings = fieldAlias(),
         )
     }
 
@@ -41,7 +42,12 @@ abstract class MongoView<T : Any>(
             viewClass.java
         ).uniqueMappedResult?.also {
             mongoTemplate.save(it)
-        } ?: throw RuntimeException("Failed to refresh view for ${viewClass.simpleName} with id: $id")
+        } ?: throw MongoViewException(id, viewClass, "Failed to refresh view for ${viewClass.simpleName} with id: $id")
+    }
+
+    fun delete(id: String) {
+        val view = mongoTemplate.findById(id, viewClass.java) ?: throw MongoViewException(id, viewClass, "Unable to delete view for ${viewClass.simpleName} because id $id not found")
+        mongoTemplate.remove(view)
     }
 
     protected abstract fun buildAggregation(id: String): Aggregation

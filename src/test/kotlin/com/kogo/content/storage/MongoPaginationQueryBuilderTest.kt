@@ -72,8 +72,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(2)
@@ -96,8 +96,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val firstPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            firstPageRequest
+            firstPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         // Second page using cursor
@@ -108,8 +108,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val secondPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            secondPageRequest
+            secondPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(secondPage.items).hasSize(2)
@@ -131,8 +131,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(3)
@@ -152,8 +152,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(1)
@@ -168,8 +168,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(2)
@@ -183,8 +183,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).isEmpty()
@@ -210,8 +210,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(1)
@@ -227,8 +227,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThrows<InvalidFieldException> {
             mongoPaginationQueryBuilder.getPage(
                 TestEntity::class,
-                fieldMappings,
-                request
+                request,
+                fieldMappings = fieldMappings,
             )
         }
     }
@@ -244,9 +244,9 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThrows<InvalidFieldException> {
             mongoPaginationQueryBuilder.getPage(
                 TestEntity::class,
-                fieldMappings,
                 request,
-                excludedFields
+                fieldMappings = fieldMappings,
+                excludedFields = excludedFields
             )
         }
     }
@@ -264,8 +264,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThrows<InvalidFieldException> {
             mongoPaginationQueryBuilder.getPage(
                 TestEntity::class,
-                incompleteFieldMappings,
-                request
+                request,
+                fieldMappings = incompleteFieldMappings,
             )
         }
     }
@@ -295,8 +295,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val firstPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            firstPageRequest
+            firstPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         // Verify first page
@@ -314,8 +314,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val secondPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            secondPageRequest
+            secondPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         // Verify second page
@@ -331,8 +331,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val thirdPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            thirdPageRequest
+            thirdPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         // Verify third page
@@ -348,8 +348,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val finalPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            finalPageRequest
+            finalPageRequest,
+            fieldMappings = fieldMappings,
         )
 
         // Verify final page
@@ -376,8 +376,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(2)
@@ -392,8 +392,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val nextResult = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            nextRequest
+            nextRequest,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(nextResult.items).hasSize(1)
@@ -411,8 +411,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            fieldMappings,
-            request
+            request,
+            fieldMappings = fieldMappings,
         )
 
         assertThat(result.items).hasSize(2)

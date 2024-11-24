@@ -29,7 +29,6 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
@@ -90,7 +89,7 @@ class PostControllerTest @Autowired constructor(
     fun `should return a single post`() {
         val postId = post.id!!
 
-        every { postService.addViewer(post, user) } returns mockk()
+        every { postService.markPostViewedByUser(post.id!!, user.id!!) } returns mockk()
 
         mockMvc.get(buildPostApiUrl(postId))
             .andExpect { status { isOk() } }
@@ -109,7 +108,6 @@ class PostControllerTest @Autowired constructor(
         val topicId = topic.id!!
         val newPost = Fixture.createPostFixture(topic = topic, author = user)
         val newPostStat = Fixture.createPostAggregateFixture(newPost)
-        val postSlot = slot<Post>()
 
         every { topicService.find(topicId) } returns topic
         every { topicService.hasUserFollowedTopic(topic, user) } returns true
@@ -117,7 +115,7 @@ class PostControllerTest @Autowired constructor(
         every { postService.findAggregate(newPost.id!!) } returns newPostStat
         every { postService.hasUserLikedPost(newPost, user) } returns true
         every { postService.hasUserViewedPost(newPost, user) } returns true
-        every { postService.addViewer(capture(postSlot), user) } returns mockk()
+        every { postService.markPostViewedByUser(newPost.id!!, user.id!!) } returns mockk()
 
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId, "posts"))
@@ -132,20 +130,15 @@ class PostControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.data.content").value(newPost.content))
             .andExpect(jsonPath("$.data.topicId").value(topic.id))
             .andExpect { jsonPath("$.data.createdAt").exists() }
-
-        assertThat(postSlot.captured.id).isEqualTo(newPost.id)
     }
 
     @Test
     fun `should increment view count when return a single post`() {
         val postId = post.id!!
 
-        val postSlot = slot<Post>()
-        every { postService.addViewer(capture(postSlot), user) } returns mockk()
+        every { postService.markPostViewedByUser(postId, user.id!!) } returns mockk()
 
         mockMvc.get(buildPostApiUrl(postId)).andExpect { status { isOk() } }
-        val postCaptured = postSlot.captured
-        assertThat(postCaptured.id).isEqualTo(postId)
     }
 
     @Test

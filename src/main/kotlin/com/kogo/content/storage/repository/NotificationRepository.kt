@@ -21,13 +21,9 @@ class NotificationRepositoryCustomImpl : NotificationRepositoryCustom {
     private lateinit var mongoPaginationQueryBuilder: MongoPaginationQueryBuilder
 
     override fun findAllByRecipientId(recipientId:String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
-        val query = Query().addCriteria(Criteria.where("recipientId").`is`(recipientId))
         return mongoPaginationQueryBuilder.getPage(
             Notification::class,
-            fieldAlias(),
-            paginationRequest = paginationRequest
+            paginationRequest = paginationRequest.withFilter("recipientId", recipientId)
         )
     }
-
-    private fun fieldAlias(): Map<String, String> = emptyMap()
 }

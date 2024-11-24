@@ -8,6 +8,8 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import kotlin.reflect.KClass
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 
 @Component
 class MongoPaginationQueryBuilder(
@@ -15,13 +17,22 @@ class MongoPaginationQueryBuilder(
 ) {
     fun <T : Any> getPage(
         entityClass: KClass<T>,
-        fieldMappings: Map<String, String>,
         paginationRequest: PaginationRequest,
+        baseAggregation: List<AggregationOperation> = emptyList(),
+        fieldMappings: Map<String, String> = emptyMap(),
         excludedFields: Set<String> = emptySet()
     ): PaginationSlice<T> {
         validateFields(paginationRequest, fieldMappings, excludedFields, entityClass, entityClass.simpleName ?: "Unknown")
-        val query = buildPaginationQuery(Query(), fieldMappings, paginationRequest)
-        val results = mongoTemplate.find(query, entityClass.java)
+
+        // Build the aggregation pipeline
+        val operations = mutableListOf<AggregationOperation>()
+        operations.addAll(baseAggregation)
+
+        val paginationOperations = buildPaginationOperations(fieldMappings, paginationRequest)
+        operations.addAll(paginationOperations)
+
+        val aggregation = Aggregation.newAggregation(operations)
+        val results = mongoTemplate.aggregate(aggregation, entityClass.java, entityClass.java).mappedResults
 
         return if (results.size > paginationRequest.limit) {
             val lastItem = results[paginationRequest.limit - 1]
@@ -43,8 +54,24 @@ class MongoPaginationQueryBuilder(
         }
     }
 
-    private fun buildPaginationQuery(baseQuery: Query, fieldMappings: Map<String, String>, request: PaginationRequest): Query {
-        val query = Query.of(baseQuery)
+    private fun buildPaginationOperations(
+        fieldMappings: Map<String, String>,
+        request: PaginationRequest
+    ): List<AggregationOperation> {
+        val operations = mutableListOf<AggregationOperation>()
+
+        // Apply filters
+        val filterCriteria = buildFilterCriteria(request.pageToken, fieldMappings)
+        if (filterCriteria != null) {
+            operations.add(Aggregation.match(filterCriteria))
+        }
+
+        // Apply cursor-based pagination
+        if (request.pageToken.cursors.isNotEmpty()) {
+            val cursorCriteria = buildCursorCriteria(request.pageToken, fieldMappings)
+            operations.add(Aggregation.match(cursorCriteria))
+        }
+
         // Apply sort
         val sortFields = request.pageToken.sortFields.map {
             Sort.Order(
@@ -53,34 +80,34 @@ class MongoPaginationQueryBuilder(
             )
         }
         if (sortFields.isNotEmpty()) {
-            query.with(Sort.by(sortFields))
+            operations.add(Aggregation.sort(Sort.by(sortFields)))
         }
 
-        // Apply filters
-        request.pageToken.filters.forEach { filter ->
+        // Apply limit
+        operations.add(Aggregation.limit(request.limit + 1L))
+
+        return operations
+    }
+
+    private fun buildFilterCriteria(pageToken: PageToken, fieldMappings: Map<String, String>): Criteria? {
+        if (pageToken.filters.isEmpty()) return null
+
+        val criteria = pageToken.filters.map { filter ->
             val fieldName = fieldMappings[filter.field] ?: filter.field
             when (filter.operator) {
-                FilterOperator.EQUALS -> query.addCriteria(Criteria.where(fieldName).`is`(filter.value))
+                FilterOperator.EQUALS -> Criteria.where(fieldName).`is`(filter.value)
                 FilterOperator.IN -> {
-                    // Handle IN operator with proper list casting
                     @Suppress("UNCHECKED_CAST")
                     val values = when (filter.value) {
                         is List<*> -> filter.value
                         else -> listOf(filter.value)
                     }
-                    query.addCriteria(Criteria.where(fieldName).`in`(values))
+                    Criteria.where(fieldName).`in`(values)
                 }
             }
         }
 
-        // Apply cursor-based pagination
-        if (request.pageToken.cursors.isNotEmpty()) {
-            val criteria = buildCursorCriteria(request.pageToken, fieldMappings)
-            query.addCriteria(criteria)
-        }
-
-        query.limit(request.limit + 1) // Fetch one extra to determine if there are more pages
-        return query
+        return Criteria().andOperator(*criteria.toTypedArray())
     }
 
     private fun buildCursorCriteria(pageToken: PageToken, fieldMappings: Map<String, String>): Criteria {
@@ -194,3 +221,4 @@ class MongoPaginationQueryBuilder(
         }
     }
 }
+

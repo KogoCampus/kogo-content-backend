@@ -48,6 +48,7 @@ class CommentController @Autowired constructor(
         val post = findPostByIdOrThrow(postId)
         val author = userService.getCurrentUser()
         val newComment = commentService.create(post, author, commentDto)
+
         notificationService.createPushNotification(
             recipientId = post.author.id!!,
             message = NotificationMessage(
@@ -98,6 +99,7 @@ class CommentController @Autowired constructor(
         paginationRequest: PaginationRequest
     ): ResponseEntity<*> = run {
         val post = findPostByIdOrThrow(postId)
+        val user = userService.getCurrentUser()
         val paginationResponse = commentService.findAggregatesByPost(post, paginationRequest)
 
         HttpJsonResponse.successResponse(

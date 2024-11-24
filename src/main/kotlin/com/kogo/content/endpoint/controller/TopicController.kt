@@ -10,6 +10,7 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService
 import com.kogo.content.service.TopicService
+import com.kogo.content.storage.entity.Notification
 import com.kogo.content.storage.entity.Topic
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -212,6 +213,47 @@ class TopicController @Autowired constructor(
 
         topicService.unfollow(topic, user)
         HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(topic.id!!), user), "User's follow successfully removed from topic: $topicId")
+    }
+
+    @GetMapping(path = ["topics/{id}/users"])
+    @Operation(
+        summary = "get users following a given topic",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
+            ],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = Notification::class)
+            ))],
+        )]
+    ) fun listUsersFollowingTopic(
+        @PathVariable("id") topicId: String,
+        paginationRequest: PaginationRequest
+    ): ResponseEntity<*> = run {
+        findTopicByIdOrThrow(topicId)
+
+        val paginationResponse = userService.getAllUsersFollowingTopic(topicId, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { UserData.Public.from(it) },
+            headers = paginationResponse.toHttpHeaders()
+        )
     }
 
     private fun findTopicByIdOrThrow(topicId: String) = topicService.find(topicId) ?: throw ResourceNotFoundException.of<Topic>(topicId)
