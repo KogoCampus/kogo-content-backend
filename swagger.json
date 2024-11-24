@@ -1143,6 +1143,79 @@
         }
       }
     },
+    "/media/topics/{id}/users": {
+      "get": {
+        "tags": [
+          "topic-controller"
+        ],
+        "summary": "get users following a given topic",
+        "operationId": "listUsersFollowingTopic",
+        "parameters": [
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/search/topics": {
       "get": {
         "tags": [
