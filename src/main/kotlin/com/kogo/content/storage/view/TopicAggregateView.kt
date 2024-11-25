@@ -39,6 +39,7 @@ class TopicAggregateView : MongoView<TopicAggregate>(TopicAggregate::class) {
             .and("topic").`as`("topic")
             .and("followers.userId").`as`("followerIds")
             .and("followers").size().`as`("followerCount")
+            .and("posts._id").`as`("postIds")
             .and("posts").size().`as`("postCount")
             .andExpression("\$\$NOW").`as`("lastUpdated")
     )

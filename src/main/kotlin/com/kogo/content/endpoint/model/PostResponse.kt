@@ -1,6 +1,5 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.Post
 import com.kogo.content.storage.entity.User
 import com.kogo.content.storage.view.PostAggregate
 import java.time.Instant
@@ -33,7 +32,7 @@ data class PostResponse(
             attachments = postView.post.attachments.map { AttachmentResponse.create(it) },
             viewCount = postView.viewCount,
             likeCount = postView.likeCount,
-            comments = postView.commentCount,
+            comments = postView.commentCount + postView.replyCount,
             popularityScore = postView.popularityScore,
             likedByCurrentUser = postView.likedUserIds.contains(currentUser.id),
             viewedByCurrentUser = postView.viewerIds.contains(currentUser.id),

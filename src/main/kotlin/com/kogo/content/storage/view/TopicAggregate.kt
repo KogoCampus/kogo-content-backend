@@ -12,6 +12,7 @@ data class TopicAggregate(
     val topic: Topic,
     val followerIds: Set<String> = emptySet(),
     val followerCount: Int = 0,
-    val postCount: Int = 0,  // Added this to track number of posts in topic
+    val postIds: Set<String> = emptySet(),
+    val postCount: Int = 0,
     val lastUpdated: Instant = Instant.now()
 )

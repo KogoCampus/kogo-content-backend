@@ -14,7 +14,10 @@ data class PostAggregate(
     val viewerIds: Set<String> = emptySet(),
     val likeCount: Int = 0,
     val viewCount: Int = 0,
+    val commentIds: Set<String> = emptySet(),
     val commentCount: Int = 0,
+    val replyIds: Set<String> = emptySet(),
+    val replyCount: Int = 0,
     val popularityScore: Double = 0.0,
     val lastUpdated: Instant = Instant.now()
 )

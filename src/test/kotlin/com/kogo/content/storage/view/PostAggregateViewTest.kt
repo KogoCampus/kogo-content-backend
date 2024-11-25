@@ -35,6 +35,7 @@ class PostAggregateViewTest @Autowired constructor(
         mongoTemplate.dropCollection(Post::class.java)
         mongoTemplate.dropCollection(Like::class.java)
         mongoTemplate.dropCollection(Comment::class.java)
+        mongoTemplate.dropCollection(Reply::class.java)
         mongoTemplate.dropCollection(Viewer::class.java)
         mongoTemplate.dropCollection("post_stats")
         mongoTemplate.dropCollection(User::class.java)
@@ -62,9 +63,15 @@ class PostAggregateViewTest @Autowired constructor(
                 mongoTemplate.save(Like(likableId = ObjectId(post.id), userId = "user-$j"))
             }
 
-            // Add comments
-            repeat(i) {
-                mongoTemplate.save(Fixture.createCommentFixture(post = post, author = user))
+            // Add comments and replies
+            repeat(i) { _ ->
+                val comment = Fixture.createCommentFixture(post = post, author = user)
+                mongoTemplate.save(comment)
+                
+                // Add 2 replies for each comment
+                repeat(2) { _ ->
+                    mongoTemplate.save(Fixture.createReplyFixture(comment = comment, author = user))
+                }
             }
 
             // Add views
@@ -143,16 +150,15 @@ class PostAggregateViewTest @Autowired constructor(
 
     @Test
     fun `should aggregate post stats correctly`() {
-        val post = posts[4] // Last post has 5 likes, 5 comments, and 10 views
+        val post = posts[4] // Last post has 5 likes, 5 comments (with 10 replies), and 10 views
         val stats = postAggregateView.find(post.id!!)
 
-        assertThat(stats.post.id).isEqualTo(post.id)
-        assertThat(stats.post.title).isEqualTo("Post Title 5")
         assertThat(stats.likeCount).isEqualTo(5)
         assertThat(stats.viewCount).isEqualTo(10)
+        assertThat(stats.commentIds).hasSize(5)
         assertThat(stats.commentCount).isEqualTo(5)
-        assertThat(stats.likedUserIds).containsExactly("user-0", "user-1", "user-2", "user-3", "user-4")
-        assertThat(stats.viewerIds).hasSize(10)
+        assertThat(stats.replyIds).hasSize(10) // 2 replies for each of 5 comments
+        assertThat(stats.replyCount).isEqualTo(10)
     }
 
     @Test

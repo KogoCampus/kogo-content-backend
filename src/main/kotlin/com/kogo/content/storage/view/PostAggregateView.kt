@@ -3,8 +3,11 @@ package com.kogo.content.storage.view
 import com.kogo.content.storage.entity.Post
 import org.bson.Document
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
+import org.springframework.data.mongodb.core.aggregation.AggregationExpression
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
+import org.springframework.data.mongodb.core.aggregation.ObjectOperators
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators
 
 @Component
 class PostAggregateView : MongoView<PostAggregate>(PostAggregate::class) {
@@ -55,6 +58,12 @@ class PostAggregateView : MongoView<PostAggregate>(PostAggregate::class) {
             .foreignField("post")
             .`as`("comments"),
 
+        lookup()
+            .from("reply")
+            .localField("comments._id")
+            .foreignField("comment")
+            .`as`("replies"),
+
         // Project final structure with popularity score
         project()
             .and("_id").`as`("postId")
@@ -63,7 +72,10 @@ class PostAggregateView : MongoView<PostAggregate>(PostAggregate::class) {
             .and("viewers.userId").`as`("viewerIds")
             .and("likes").size().`as`("likeCount")
             .and("viewers").size().`as`("viewCount")
+            .and("comments._id").`as`("commentIds")
             .and("comments").size().`as`("commentCount")
+            .and("replies._id").`as`("replyIds")
+            .and("replies").size().`as`("replyCount")
             .andExpression("\$\$NOW").`as`("lastUpdated"),
 
         // compute popularity score
@@ -72,8 +84,11 @@ class PostAggregateView : MongoView<PostAggregate>(PostAggregate::class) {
             .withValue(
                 Document("\$add", listOf(
                     Document("\$multiply", listOf("\$likeCount", POPULARITY_LIKE_WEIGHT)),
-                    Document("\$multiply", listOf("\$commentCount", POPULARITY_COMMENT_WEIGHT)),
-                    Document("\$multiply", listOf("\$viewCount", POPULARITY_VIEW_WEIGHT))
+                    Document("\$multiply", listOf("\$viewCount", POPULARITY_VIEW_WEIGHT)),
+                    Document("\$multiply", listOf(
+                        Document("\$add", listOf("\$commentCount", "\$replyCount")),
+                        POPULARITY_COMMENT_WEIGHT
+                    ))
                 ))
             ).build(),
     )

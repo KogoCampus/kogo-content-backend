@@ -73,9 +73,13 @@ class TopicAggregateViewTest @Autowired constructor(
     @Test
     fun `should aggregate topic stats correctly`() {
         // Test topic1 stats
-        val topic1Stats = topicAggregateView.find(topic1.id!!)!!
+        val topic1Stats = topicAggregateView.find(topic1.id!!)
         assertThat(topic1Stats.topic.id).isEqualTo(topic1.id)
         assertThat(topic1Stats.postCount).isEqualTo(5)
+        assertThat(topic1Stats.postIds).hasSize(5)
+        assertThat(topic1Stats.postIds).containsExactlyInAnyOrderElementsOf(
+            topic1Posts.map { it.id }
+        )
         assertThat(topic1Stats.followerCount).isEqualTo(4)
         assertThat(topic1Stats.followerIds).hasSize(4)
         assertThat(topic1Stats.followerIds).containsExactlyInAnyOrder(
@@ -86,6 +90,10 @@ class TopicAggregateViewTest @Autowired constructor(
         val topic2Stats = topicAggregateView.find(topic2.id!!)
         assertThat(topic2Stats.topic.id).isEqualTo(topic2.id)
         assertThat(topic2Stats.postCount).isEqualTo(3)
+        assertThat(topic2Stats.postIds).hasSize(3)
+        assertThat(topic2Stats.postIds).containsExactlyInAnyOrderElementsOf(
+            topic2Posts.map { it.id }
+        )
         assertThat(topic2Stats.followerCount).isEqualTo(2)
         assertThat(topic2Stats.followerIds).hasSize(2)
         assertThat(topic2Stats.followerIds).containsExactlyInAnyOrder(
@@ -99,7 +107,7 @@ class TopicAggregateViewTest @Autowired constructor(
         mongoTemplate.save(emptyTopic)
         topicAggregateView.refreshView(emptyTopic.id!!)
 
-        val stats = topicAggregateView.find(emptyTopic.id!!)!!
+        val stats = topicAggregateView.find(emptyTopic.id!!)
         assertThat(stats.topic.id).isEqualTo(emptyTopic.id)
         assertThat(stats.postCount).isEqualTo(0)
         assertThat(stats.followerCount).isEqualTo(0)
