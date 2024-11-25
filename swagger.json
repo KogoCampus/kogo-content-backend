@@ -2143,7 +2143,9 @@
             "type": "string",
             "enum": [
               "EQUALS",
-              "IN"
+              "IN",
+              "LESS_THAN",
+              "GREATER_THAN"
             ]
           }
         }
