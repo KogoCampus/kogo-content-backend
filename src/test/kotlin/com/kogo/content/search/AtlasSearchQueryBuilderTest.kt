@@ -212,4 +212,54 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
         assertThat(firstPage.items.map { it.id })
             .doesNotContainAnyElementsOf(secondPage.items.map { it.id })
     }
+
+    @Test
+    fun `should filter search results with numeric comparison operators`() {
+        val config = SearchConfiguration(
+            textSearchFields = listOf("title", "content")
+        )
+
+        val request = PaginationRequest(limit = 10)
+            .withFilter("viewCount", 1000, FilterOperator.GREATER_THAN)
+            .withFilter("viewCount", 3000, FilterOperator.LESS_THAN)
+
+        val results = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndexName = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = request,
+            configuration = config
+        )
+
+        assertThat(results.items).isNotEmpty
+        assertThat(results.items.all { it.viewCount in 1001..2999 }).isTrue()
+    }
+
+    @Test
+    fun `should filter search results with date comparison operators`() {
+        val config = SearchConfiguration(
+            textSearchFields = listOf("title", "content")
+        )
+
+        val now = Instant.now()
+        val oneHourAgo = now.minusSeconds(3600)
+        val twoHoursAgo = now.minusSeconds(7200)
+
+        val request = PaginationRequest(limit = 10)
+            .withFilter("createdAt", twoHoursAgo, FilterOperator.GREATER_THAN)
+            .withFilter("createdAt", oneHourAgo, FilterOperator.LESS_THAN)
+
+        val results = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndexName = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = request,
+            configuration = config
+        )
+
+        assertThat(results.items).isNotEmpty
+        assertThat(results.items.all {
+            it.createdAt.isAfter(twoHoursAgo) && it.createdAt.isBefore(oneHourAgo)
+        }).isTrue()
+    }
 }

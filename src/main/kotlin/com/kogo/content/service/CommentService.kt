@@ -10,6 +10,7 @@ import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.CommentAggregate
 import com.kogo.content.storage.view.CommentAggregateView
+import com.kogo.content.storage.view.PostAggregateView
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -21,7 +22,8 @@ class CommentService @Autowired constructor(
     private val commentRepository: CommentRepository,
     private val likeRepository: LikeRepository,
     private val commentAggregateView: CommentAggregateView,
-    private val viewerRepository: ViewerRepository
+    private val viewerRepository: ViewerRepository,
+    private val postAggregateView: PostAggregateView
 ) {
     fun find(commentId: String): Comment? = commentRepository.findByIdOrNull(commentId)
     fun findAggregate(commentId: String): CommentAggregate = commentAggregateView.find(commentId)
@@ -41,6 +43,7 @@ class CommentService @Autowired constructor(
             )
         )
         commentAggregateView.refreshView(comment.id!!)
+        postAggregateView.refreshView(post.id!!)
         return comment;
     }
 
@@ -53,9 +56,10 @@ class CommentService @Autowired constructor(
         return updatedComment
     }
 
-    fun delete(comment: Comment) = run {
-        commentAggregateView.delete(comment.id!!)
+    fun delete(comment: Comment) {
         commentRepository.deleteById(comment.id!!)
+        commentAggregateView.delete(comment.id!!)
+        postAggregateView.refreshView(comment.post.id!!)
     }
 
     fun addLike(comment: Comment, user: User): Like? {

@@ -3,13 +3,12 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.common.*
-import com.kogo.content.storage.entity.Comment
-import com.kogo.content.storage.entity.Like
-import com.kogo.content.storage.entity.Reply
-import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ReplyRepository
 import com.kogo.content.storage.repository.ViewerRepository
+import com.kogo.content.storage.view.CommentAggregateView
+import com.kogo.content.storage.view.PostAggregateView
 import com.kogo.content.storage.view.ReplyAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
@@ -22,18 +21,26 @@ class ReplyServiceTest {
     private val replyRepository: ReplyRepository = mockk()
     private val likeRepository: LikeRepository = mockk()
     private val replyAggregateView: ReplyAggregateView = mockk()
+    private val commentAggregateView: CommentAggregateView = mockk()
+    private val postAggregateView: PostAggregateView = mockk()
     private val viewerRepository: ViewerRepository = mockk()
 
     private val replyService = ReplyService(
         replyRepository = replyRepository,
         likeRepository = likeRepository,
         replyAggregateView = replyAggregateView,
-        viewerRepository = viewerRepository
+        viewerRepository = viewerRepository,
+        commentAggregateView = commentAggregateView,
+        postAggregateView = postAggregateView
     )
 
     @Test
     fun `should create new reply and refresh aggregate view`() {
-        val comment = mockk<Comment> { every { id } returns "test-comment-id" }
+        val parentPost = mockk<Post> { every { id } returns "test-post-id" }
+        val comment = mockk<Comment> {
+            every { id } returns "test-comment-id"
+            every { post } returns parentPost
+        }
         val author = mockk<User> { every { id } returns "test-user-id" }
         val replyDto = CommentDto(content = "Test reply content")
         val savedReply = Reply(
@@ -47,6 +54,8 @@ class ReplyServiceTest {
 
         every { replyRepository.save(any()) } returns savedReply
         every { replyAggregateView.refreshView("test-reply-id") } returns mockk()
+        every { commentAggregateView.refreshView("test-comment-id") } returns mockk()
+        every { postAggregateView.refreshView("test-post-id") } returns mockk()
 
         val result = replyService.create(comment, author, replyDto)
 

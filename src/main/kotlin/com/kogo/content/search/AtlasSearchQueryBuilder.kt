@@ -148,6 +148,14 @@ class AtlasSearchQueryBuilder(
                     else -> filter.value.toString()
                 })
             })
+            FilterOperator.LESS_THAN -> Document("range", Document().apply {
+                put("path", filter.field)
+                put("lt", filter.value)
+            })
+            FilterOperator.GREATER_THAN -> Document("range", Document().apply {
+                put("path", filter.field)
+                put("gt", filter.value)
+            })
         }
     }
 

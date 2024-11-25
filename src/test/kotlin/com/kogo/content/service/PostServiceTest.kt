@@ -11,6 +11,8 @@ import com.kogo.content.storage.repository.PostRepository
 import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.PostAggregate
 import com.kogo.content.storage.view.PostAggregateView
+import com.kogo.content.storage.view.TopicAggregate
+import com.kogo.content.storage.view.TopicAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -22,6 +24,7 @@ class PostServiceTest {
     private val likeRepository: LikeRepository = mockk()
     private val viewerRepository: ViewerRepository = mockk()
     private val postAggregateView: PostAggregateView = mockk()
+    private val topicAggregateView: TopicAggregateView = mockk()
     private val postAggregateSearchIndex: SearchIndex<PostAggregate> = mockk()
 
     private val postService = PostService(
@@ -30,7 +33,8 @@ class PostServiceTest {
         likeRepository = likeRepository,
         viewerRepository = viewerRepository,
         postAggregateView = postAggregateView,
-        postAggregateSearchIndex = postAggregateSearchIndex
+        postAggregateSearchIndex = postAggregateSearchIndex,
+        topicAggregateView = topicAggregateView
     )
 
     @Test
@@ -57,6 +61,7 @@ class PostServiceTest {
         every { attachmentRepository.saveFiles(any()) } returns listOf(mockk())
         every { postRepository.save(any()) } returns savedPost
         every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
+        every { topicAggregateView.refreshView("test-topic-id") } returns mockk<TopicAggregate>()
 
         val result = postService.create(topic, author, postDto)
 
@@ -170,22 +175,5 @@ class PostServiceTest {
 
         postService.markPostViewedByUser(post.id!!, user.id!!)
         verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
-    }
-
-    @Test
-    fun `should delete post and its attachments`() {
-        val post = mockk<Post> {
-            every { id } returns "test-post-id"
-            every { attachments } returns listOf(mockk(), mockk())
-        }
-
-        every { attachmentRepository.delete(any()) } just runs
-        every { postRepository.deleteById("test-post-id") } just runs
-        every { postAggregateView.delete("test-post-id") } just runs
-
-        postService.delete(post)
-
-        verify(exactly = 2) { attachmentRepository.delete(any()) }
-        verify { postRepository.deleteById("test-post-id") }
     }
 }

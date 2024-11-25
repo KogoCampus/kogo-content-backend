@@ -104,6 +104,8 @@ class MongoPaginationQueryBuilder(
                     }
                     Criteria.where(fieldName).`in`(values)
                 }
+                FilterOperator.LESS_THAN -> Criteria.where(fieldName).lt(filter.value)
+                FilterOperator.GREATER_THAN -> Criteria.where(fieldName).gt(filter.value)
             }
         }
 

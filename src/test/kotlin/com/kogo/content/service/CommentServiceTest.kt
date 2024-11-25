@@ -13,6 +13,8 @@ import com.kogo.content.storage.entity.Like
 import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.CommentAggregate
 import com.kogo.content.storage.view.CommentAggregateView
+import com.kogo.content.storage.view.PostAggregate
+import com.kogo.content.storage.view.PostAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -22,6 +24,7 @@ class CommentServiceTest {
     private val commentRepository: CommentRepository = mockk()
     private val likeRepository: LikeRepository = mockk()
     private val commentAggregateView: CommentAggregateView = mockk()
+    private val postAggregateView: PostAggregateView = mockk()
     private val viewRepository: ViewerRepository = mockk()
 
     private val commentService = CommentService(
@@ -29,6 +32,7 @@ class CommentServiceTest {
         likeRepository = likeRepository,
         commentAggregateView = commentAggregateView,
         viewerRepository = viewRepository,
+        postAggregateView = postAggregateView
     )
 
     @Test
@@ -47,6 +51,7 @@ class CommentServiceTest {
 
         every { commentRepository.save(any()) } returns savedComment
         every { commentAggregateView.refreshView("test-comment-id") } returns mockk<CommentAggregate>()
+        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
 
         val result = commentService.create(post, author, commentDto)
 

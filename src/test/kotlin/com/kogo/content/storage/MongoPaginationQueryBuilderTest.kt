@@ -420,4 +420,46 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThat(result.nextPageToken?.cursors?.get("createdAt")?.type)
             .isEqualTo(CursorValueType.DATE)
     }
+
+    @Test
+    fun `should handle numeric comparison operators`() {
+        val request = PaginationRequest(limit = 10)
+            .withFilter("score", 200, FilterOperator.GREATER_THAN)
+            .withFilter("score", 300, FilterOperator.LESS_THAN)
+            .withSort("score", SortDirection.ASC)
+
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request,
+            fieldMappings = fieldMappings,
+        )
+
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.map { it.score }).containsExactly(250)
+        assertThat(result.items.all { it.score in 201..299 }).isTrue()
+    }
+
+    @Test
+    fun `should handle date comparison operators`() {
+        val now = Instant.now()
+        val threeSecondsAgo = now.minusSeconds(3)
+        val oneSecondAgo = now.minusSeconds(1)
+
+        val request = PaginationRequest(limit = 10)
+            .withFilter("createdAt", threeSecondsAgo, FilterOperator.GREATER_THAN)
+            .withFilter("createdAt", oneSecondAgo, FilterOperator.LESS_THAN)
+            .withSort("createdAt", SortDirection.DESC)
+
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request,
+            fieldMappings = fieldMappings,
+        )
+
+        // Should return entities created between 3 seconds ago and 1 second ago
+        assertThat(result.items).isNotEmpty
+        assertThat(result.items.all {
+            it.createdAt.isAfter(threeSecondsAgo) && it.createdAt.isBefore(oneSecondAgo)
+        }).isTrue()
+    }
 }

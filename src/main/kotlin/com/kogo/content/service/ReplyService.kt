@@ -8,6 +8,8 @@ import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.ReplyRepository
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ViewerRepository
+import com.kogo.content.storage.view.CommentAggregateView
+import com.kogo.content.storage.view.PostAggregateView
 import com.kogo.content.storage.view.ReplyAggregate
 import com.kogo.content.storage.view.ReplyAggregateView
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,7 +23,9 @@ class ReplyService @Autowired constructor(
     private val replyRepository: ReplyRepository,
     private val likeRepository: LikeRepository,
     private val replyAggregateView: ReplyAggregateView,
-    private val viewerRepository: ViewerRepository
+    private val viewerRepository: ViewerRepository,
+    private val commentAggregateView: CommentAggregateView,
+    private val postAggregateView: PostAggregateView
 ) {
     fun find(replyId: String) = replyRepository.findByIdOrNull(replyId)
     fun findAggregate(replyId: String) = replyAggregateView.find(replyId)
@@ -41,6 +45,8 @@ class ReplyService @Autowired constructor(
             )
         )
         replyAggregateView.refreshView(reply.id!!)
+        commentAggregateView.refreshView(comment.id!!)
+        postAggregateView.refreshView(comment.post.id!!)
         return reply
     }
 
@@ -54,8 +60,10 @@ class ReplyService @Autowired constructor(
     }
 
     fun delete(reply: Reply) {
-        replyAggregateView.delete(reply.id!!)
         replyRepository.deleteById(reply.id!!)
+        replyAggregateView.delete(reply.id!!)
+        commentAggregateView.refreshView(reply.comment.id!!)
+        postAggregateView.refreshView(reply.comment.post.id!!)
     }
 
     fun addLike(reply: Reply, user: User): Like? {

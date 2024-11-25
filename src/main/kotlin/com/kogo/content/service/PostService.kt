@@ -1,5 +1,6 @@
 package com.kogo.content.service
 
+import com.kogo.content.common.FilterOperator
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.common.PaginationRequest
@@ -9,19 +10,22 @@ import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.view.PostAggregate
 import com.kogo.content.storage.view.PostAggregateView
+import com.kogo.content.storage.view.TopicAggregateView
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @Service
-class PostService (
+class PostService(
     private val postRepository: PostRepository,
     private val attachmentRepository: AttachmentRepository,
     private val likeRepository: LikeRepository,
     private val viewerRepository: ViewerRepository,
     private val postAggregateView: PostAggregateView,
-    private val postAggregateSearchIndex: SearchIndex<PostAggregate>
+    private val postAggregateSearchIndex: SearchIndex<PostAggregate>,
+    private val topicAggregateView: TopicAggregateView
 ) {
     fun find(postId: String) = postRepository.findByIdOrNull(postId)
     fun findAggregate(postId: String) = postAggregateView.find(postId)
@@ -37,7 +41,9 @@ class PostService (
         )
 
     fun findPostAggregatesByPopularity(paginationRequest: PaginationRequest) = postAggregateView.findAll(
-        paginationRequest.withSort("popularityScore", SortDirection.DESC)
+        paginationRequest
+            .withFilter("createdAt", Instant.now().minus(7, ChronoUnit.DAYS), FilterOperator.GREATER_THAN)
+            .withSort("popularityScore", SortDirection.DESC)
     )
 
     fun searchPostAggregatesByKeyword(
@@ -71,6 +77,7 @@ class PostService (
             )
         )
         postAggregateView.refreshView(savedPost.id!!)
+        topicAggregateView.refreshView(topic.id!!)
         return savedPost
     }
 
@@ -95,8 +102,9 @@ class PostService (
     @Transactional
     fun delete(post: Post) {
         post.attachments.forEach { attachmentRepository.delete(it) }
-        postAggregateView.delete(post.id!!)
         postRepository.deleteById(post.id!!)
+        postAggregateView.delete(post.id!!)
+        topicAggregateView.delete(post.topic.id!!)
     }
 
     fun addLike(post: Post, user: User): Like? {

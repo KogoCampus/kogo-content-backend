@@ -116,11 +116,13 @@ enum class CursorValueType {
 }
 
 enum class FilterOperator {
-    EQUALS, IN
+    EQUALS, IN, LESS_THAN, GREATER_THAN
 }
 
 // Simplified extension function
 fun FilterOperator.toMongoOperator(): String = when (this) {
     FilterOperator.EQUALS -> "\$eq"
     FilterOperator.IN -> "\$in"
+    FilterOperator.LESS_THAN -> "\$lt"
+    FilterOperator.GREATER_THAN -> "\$gt"
 }
