@@ -5,14 +5,15 @@ import com.kogo.content.storage.entity.PushNotificationRequest
 import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
+import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.NotificationMessage
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 
 @Service
@@ -22,6 +23,8 @@ class NotificationService(
     @Value("\${kogo-api.base-url}") private val apiBaseUrl: String,
     @Value("\${kogo-api.push-notification-endpoint}") private val pushNotificationEndpoint: String
 ){
+    companion object : Logger()
+
     private val restTemplate = RestTemplate()
 
     fun createNotification(recipientId: String, message: NotificationMessage): Notification {
@@ -32,10 +35,6 @@ class NotificationService(
         )
         return notificationRepository.save(newNotification)
     }
-
-//    fun createNotifications(recipientIds: List<String>): List<Notification> {
-//
-//    }
 
     fun createPushNotification(recipientId: String, message: NotificationMessage): Notification {
         val newNotification = Notification(
@@ -61,15 +60,20 @@ class NotificationService(
         val entity = HttpEntity(pushNotificationRequest, headers)
 
         // Perform the API call
-        val response: ResponseEntity<String> = restTemplate.exchange(
-            url, HttpMethod.POST, entity, String::class.java
-        )
+        try {
+            val response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, String::class.java
+            )
 
-        // Check response (You can also add error handling or logging here)
-        if (response.statusCode.is2xxSuccessful) {
-            println("Push notification sent successfully.")
-        } else {
-            println("Failed to send push notification: ${response.statusCode}")
+            if (!response.statusCode.is2xxSuccessful) {
+                throw RestClientException(
+                    "Push notification request failed with status: ${response.statusCode}, body: ${response.body}"
+                )
+            }
+
+            log.info { "Push notification sent successfully to user $recipientId" }
+        } catch (e: RestClientException) {
+            log.error(e) { "Failed to send push notification to user $recipientId: ${e.message}" }
         }
 
         return savedNotification
