@@ -23,8 +23,3 @@ management:
 kogo-api:
     base-url: "https://api.staging.kogocampus.com"
     push-notification-endpoint: "/student/push-notification"
-
-search-engine:
-    index:
-        post: "post"
-        topic: "topic"
