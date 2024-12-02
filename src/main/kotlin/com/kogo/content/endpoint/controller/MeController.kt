@@ -141,6 +141,32 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.create(topicService.findAggregate(it.id!!), me) })
     }
 
+    @RequestMapping(
+        path = ["me/push-token"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @Operation(
+        summary = "update my push token",
+        parameters = [
+            Parameter(
+                name = "push_token",
+                description = "Push token",
+                required = true,
+                schema = Schema(type = "string")
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData::class))]
+        )])
+    fun updatePushToken(
+        @RequestParam("push_token") pushToken: String
+    ): ResponseEntity<*> = run {
+        val me = userService.getCurrentUser()
+        val updatedMe = notificationService.updatePushToken(me.id!!, pushToken)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedMe))
+    }
+
     @GetMapping(path = ["me/notifications"])
     @Operation(
         summary = "get notifications whose recipient is me",

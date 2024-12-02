@@ -7,6 +7,7 @@ import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.NotificationMessage
+import com.kogo.content.storage.entity.User
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
@@ -20,12 +21,17 @@ import org.springframework.web.client.RestTemplate
 class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
-    @Value("\${kogo-api.base-url}") private val apiBaseUrl: String,
-    @Value("\${kogo-api.push-notification-endpoint}") private val pushNotificationEndpoint: String
+    @Value("\${kogo-api.push-notification}") private val pushNotificationEndpoint: String
 ){
     companion object : Logger()
 
     private val restTemplate = RestTemplate()
+
+    fun updatePushToken(recipientId: String, pushToken: String): User {
+        val updatingUser = userRepository.findUserById(recipientId)
+        updatingUser!!.pushToken = pushToken
+        return userRepository.save(updatingUser)
+    }
 
     fun createNotification(recipientId: String, message: NotificationMessage): Notification {
         val newNotification = Notification(
@@ -55,7 +61,7 @@ class NotificationService(
             notification = savedNotification.message
         )
         // Make the API call to push notifications
-        val url = "$apiBaseUrl$pushNotificationEndpoint"
+        val url = "$pushNotificationEndpoint"
         val headers = HttpHeaders()
         val entity = HttpEntity(pushNotificationRequest, headers)
 
@@ -78,6 +84,7 @@ class NotificationService(
 
         return savedNotification
     }
+
     fun getNotificationsByRecipientId(recipientId: String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
         return notificationRepository.findAllByRecipientId(recipientId,paginationRequest)
     }

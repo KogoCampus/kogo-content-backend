@@ -32,7 +32,7 @@ class ExternalAuthRequestFilter (
     val userService: UserService
 ) : OncePerRequestFilter() {
 
-    @Value("\${kogo-api.base-url}")
+    @Value("\${kogo-api.authenticate}")
     lateinit var kogoApiUrl: String
 
     @Value("\${compile-version-key}")
@@ -43,7 +43,6 @@ class ExternalAuthRequestFilter (
     private val objectMapper = ObjectMapper()
 
     companion object : Logger() {
-        const val AUTH_ENDPOINT = "/student/authenticate"
         const val USERDATA = "userdata"
         const val USERNAME = "username"
         const val EMAIL = "email"
@@ -98,7 +97,7 @@ class ExternalAuthRequestFilter (
         val entity = HttpEntity<Any?>(headers)
         return try {
             val response = restTemplate.exchange(
-                "$kogoApiUrl$AUTH_ENDPOINT?grant_type=access_token",
+                "$kogoApiUrl?grant_type=access_token",
                 HttpMethod.GET, entity, String::class.java
             )
             if (response.statusCode != HttpStatus.OK) {

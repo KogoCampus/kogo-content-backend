@@ -13,6 +13,8 @@ data class User (
     @Indexed(unique = true)
     var idToken: UserIdToken? = null,
 
+    var pushToken: String? = null,
+
     @Indexed(unique = true)
     var username: String,
 
