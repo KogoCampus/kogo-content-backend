@@ -51,15 +51,13 @@ class CommentController @Autowired constructor(
 
         notificationService.createPushNotification(
             recipientId = post.author.id!!,
+            eventType = EventType.CREATE_COMMENT_TO_POST,
+            sender = author,
             message = NotificationMessage(
                 title = "New Comment",
-                body =  "There is a new comment in your post",
-                data = mapOf(
-                    "commentId" to newComment.id!!,
-                    "postId" to post.id!!,
-                    "commentAuthor" to newComment.author.username,
-                    "commentContent" to newComment.content
-                ),
+                body =  "${author.username} commented: ${newComment.content}",
+                dataType = DataType.COMMENT,
+                data = newComment
             )
         )
         HttpJsonResponse.successResponse(CommentResponse.create(commentService.findAggregate(newComment.id!!), author))
@@ -197,16 +195,16 @@ class CommentController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this comment Id: $commentId")
         }
 
-        val newLike = commentService.addLike(comment, user)
+        commentService.addLike(comment, user)
         notificationService.createPushNotification(
             recipientId = comment.author.id!!,
+            sender = user,
+            eventType = EventType.LIKE_TO_COMMENT,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${user.id!!} liked your comment",
-                data = mapOf(
-                    "commentId" to comment.id!!,
-                    "userId" to user.id!!,
-                )
+                body = "${user.username} liked your comment: ${comment.content}",
+                dataType = DataType.COMMENT,
+                data = comment,
             ),
         )
         return HttpJsonResponse.successResponse(

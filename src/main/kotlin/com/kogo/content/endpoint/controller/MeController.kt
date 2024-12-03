@@ -198,7 +198,7 @@ class MeController @Autowired constructor(
         paginationRequest: PaginationRequest
     ): ResponseEntity<*> = run {
         val me = userService.getCurrentUser()
-        val paginationResponse = notificationService.getNotificationsByRecipientId(me.id!!, paginationRequest)
+        val paginationResponse = notificationService.getNotificationsByRecipientEmail(me.email!!, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items,
