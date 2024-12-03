@@ -271,7 +271,7 @@
         "tags": [
           "reply-controller"
         ],
-        "summary": "Like a comment",
+        "summary": "Like a reply",
         "operationId": "addLikeToReply",
         "parameters": [
           {
@@ -655,6 +655,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/push-token": {
+      "put": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "update my push token",
+        "operationId": "updatePushToken",
+        "parameters": [
+          {
+            "name": "push_token",
+            "in": "query",
+            "description": "Push token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserData"
                 }
               }
             }
@@ -1536,7 +1568,7 @@
           "me-controller"
         ],
         "summary": "get notifications whose recipient is me",
-        "operationId": "sendNotification",
+        "operationId": "getNotification",
         "parameters": [
           {
             "name": "page_token",
@@ -1996,6 +2028,7 @@
           "email",
           "id",
           "idToken",
+          "pushToken",
           "schoolName",
           "schoolShortenedName",
           "username"
@@ -2006,6 +2039,9 @@
             "type": "string"
           },
           "idToken": {
+            "type": "string"
+          },
+          "pushToken": {
             "type": "string"
           },
           "username": {
@@ -2036,6 +2072,9 @@
             "format": "binary"
           }
         }
+      },
+      "UserData": {
+        "type": "object"
       },
       "TopicDto": {
         "required": [
@@ -2216,9 +2255,11 @@
       "Notification": {
         "required": [
           "createdAt",
+          "eventType",
           "isPushNotification",
           "message",
-          "recipientId"
+          "recipientId",
+          "sender"
         ],
         "type": "object",
         "properties": {
@@ -2227,6 +2268,20 @@
           },
           "recipientId": {
             "type": "string"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LIKE_TO_POST",
+              "LIKE_TO_COMMENT",
+              "LIKE_TO_REPLY",
+              "CREATE_POST_TO_TOPIC",
+              "CREATE_COMMENT_TO_POST",
+              "CREATE_REPLY_TO_COMMENT"
+            ]
           },
           "message": {
             "$ref": "#/components/schemas/NotificationMessage"
@@ -2243,6 +2298,8 @@
       "NotificationMessage": {
         "required": [
           "body",
+          "data",
+          "dataType",
           "title"
         ],
         "type": "object",
@@ -2253,11 +2310,17 @@
           "body": {
             "type": "string"
           },
+          "dataType": {
+            "type": "string",
+            "enum": [
+              "POST",
+              "COMMENT",
+              "REPLY",
+              "SYSTEM"
+            ]
+          },
           "data": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object"
-            }
+            "type": "object"
           }
         }
       }
