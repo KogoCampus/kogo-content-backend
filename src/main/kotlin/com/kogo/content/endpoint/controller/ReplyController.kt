@@ -106,15 +106,13 @@ class ReplyController @Autowired constructor(
 
         notificationService.createPushNotification(
             recipientId = comment.author.id!!,
+            sender = author,
+            eventType = EventType.CREATE_REPLY_TO_COMMENT,
             message = NotificationMessage(
                 title = "New Reply",
-                body =  "There is a new reply in your comment",
-                data = mapOf(
-                    "replyId" to newReply.id!!,
-                    "commentId" to comment.id!!,
-                    "replyAuthor" to newReply.author.username,
-                    "replyContent" to newReply.content
-                ),
+                body =  "${author.username} replied: ${newReply.content}",
+                dataType = DataType.REPLY,
+                data = newReply
             )
         )
 
@@ -179,7 +177,7 @@ class ReplyController @Autowired constructor(
         method = [RequestMethod.PUT],
     )
     @Operation(
-        summary = "Like a comment",
+        summary = "Like a reply",
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
@@ -194,16 +192,16 @@ class ReplyController @Autowired constructor(
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user has already liked this reply Id: $replyId")
         }
 
-        val newLike = replyService.addLike(reply, user)
+        replyService.addLike(reply, user)
         notificationService.createPushNotification(
             recipientId = reply.author.id!!,
+            sender = user,
+            eventType = EventType.LIKE_TO_REPLY,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${user.id} liked your reply",
-                data = mapOf(
-                    "replyId" to reply.id!!,
-                    "userId" to user.id!!,
-                )
+                body = "${user.id} liked your reply: ${reply.content}",
+                dataType = DataType.REPLY,
+                data = reply
             )
         )
         HttpJsonResponse.successResponse(

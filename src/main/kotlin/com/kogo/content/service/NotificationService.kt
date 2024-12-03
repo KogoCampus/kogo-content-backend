@@ -1,85 +1,88 @@
 package com.kogo.content.service
 
-import com.kogo.content.storage.entity.Notification
-import com.kogo.content.storage.entity.PushNotificationRequest
 import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.common.PaginationRequest
 import com.kogo.content.common.PaginationSlice
+import com.kogo.content.endpoint.model.UserData
 import com.kogo.content.logging.Logger
-import com.kogo.content.storage.entity.NotificationMessage
+import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.UserRepository
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
+import org.springframework.http.*
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
+import java.util.concurrent.CompletableFuture
 
 @Service
 class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
-    @Value("\${kogo-api.base-url}") private val apiBaseUrl: String,
-    @Value("\${kogo-api.push-notification-endpoint}") private val pushNotificationEndpoint: String
 ){
     companion object : Logger()
 
     private val restTemplate = RestTemplate()
 
-    fun createNotification(recipientId: String, message: NotificationMessage): Notification {
-        val newNotification = Notification(
+    fun updatePushToken(recipientId: String, pushToken: String): User {
+        val updatingUser = userRepository.findUserById(recipientId)
+        updatingUser!!.pushToken = pushToken
+        return userRepository.save(updatingUser)
+    }
+
+    fun createNotification(recipientId: String, sender: User, eventType:EventType, message: NotificationMessage): Notification {
+        val notification = Notification(
             recipientId = recipientId,
+            sender = UserData.Public.from(sender),
+            eventType = eventType,
             message = message,
             isPushNotification = false,
         )
-        return notificationRepository.save(newNotification)
+        return notificationRepository.save(notification)
     }
 
-    fun createPushNotification(recipientId: String, message: NotificationMessage): Notification {
-        val newNotification = Notification(
+    @Async
+    fun createPushNotification(recipientId: String, sender: User, eventType:EventType, message: NotificationMessage): Notification {
+        val notification = Notification(
             recipientId = recipientId,
+            sender = UserData.Public.from(sender),
+            eventType = eventType,
             message = message,
             isPushNotification = true,
         )
+        val recipientPushToken = userRepository.findUserById(recipientId)!!.pushToken
+        val newNotification = notificationRepository.save(notification)
 
-        // Save the notification to the database first
-        val savedNotification = notificationRepository.save(newNotification)
-
-        // Retrieve recipient ID Token
-        val recipient = userRepository.findUserById(newNotification.recipientId)
-
-        // Prepare the PushNotificationRequest
+        // Send the push notification to the Expo server
         val pushNotificationRequest = PushNotificationRequest(
-            recipients = listOf(recipient?.idToken.toString()),
-            notification = savedNotification.message
+            to = recipientPushToken!!,
+            title = message.title,
+            body = message.body,
+            data = message.data,
+            dataType = message.dataType.name
         )
-        // Make the API call to push notifications
-        val url = "$apiBaseUrl$pushNotificationEndpoint"
-        val headers = HttpHeaders()
-        val entity = HttpEntity(pushNotificationRequest, headers)
 
-        // Perform the API call
-        try {
-            val response = restTemplate.exchange(
-                url, HttpMethod.POST, entity, String::class.java
-            )
-
-            if (!response.statusCode.is2xxSuccessful) {
-                throw RestClientException(
-                    "Push notification request failed with status: ${response.statusCode}, body: ${response.body}"
-                )
-            }
-
-            log.info { "Push notification sent successfully to user $recipientId" }
-        } catch (e: RestClientException) {
-            log.error(e) { "Failed to send push notification to user $recipientId: ${e.message}" }
+        val headers = HttpHeaders().apply {
+            contentType = MediaType.APPLICATION_JSON
         }
 
-        return savedNotification
+        val requestEntity = HttpEntity(pushNotificationRequest, headers)
+        val expoApiUrl = "https://exp.host/--/api/v2/push/send"
+
+        try {
+            val response: ResponseEntity<String> = restTemplate.postForEntity(expoApiUrl, requestEntity, String::class.java)
+            if (response.statusCode.is2xxSuccessful) {
+                log.info{"Push notification sent successfully to $recipientId: ${response.body}"}
+            } else {
+                log.error{"Failed to send push notification to $recipientId: ${response.body}"}
+            }
+        } catch (ex: Exception) {
+            log.error(ex){"Error while sending push notification to $recipientId: ${ex.message}"}
+        }
+
+        return newNotification
     }
+
     fun getNotificationsByRecipientId(recipientId: String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
-        return notificationRepository.findAllByRecipientId(recipientId,paginationRequest)
+        return notificationRepository.findAllByRecipientId(recipientId, paginationRequest)
     }
 }
 

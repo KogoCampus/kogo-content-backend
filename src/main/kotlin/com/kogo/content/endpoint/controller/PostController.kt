@@ -179,16 +179,16 @@ class PostController @Autowired constructor(
         if (postService.hasUserLikedPost(post, user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "user already liked this post: $postId")
 
-        val newLike = postService.addLike(post, user)
+        postService.addLike(post, user)
         notificationService.createPushNotification(
             recipientId = post.author.id!!,
+            sender = user,
+            eventType = EventType.LIKE_TO_POST,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${user.id} liked your post",
-                data = mapOf(
-                    "postId" to post.id!!,
-                    "userId" to user.id!!,
-                )
+                body = "${user.username} liked your post",
+                dataType = DataType.POST,
+                data = post
             )
         )
         HttpJsonResponse.successResponse(PostResponse.create(postService.findAggregate(post.id!!), user), "User's like added successfully to post: $postId")

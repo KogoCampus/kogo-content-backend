@@ -21,5 +21,4 @@ management:
                 include: health
 
 kogo-api:
-    base-url: "https://api.staging.kogocampus.com"
-    push-notification-endpoint: "/student/push-notification"
+    authenticate: "https://api.staging.kogocampus.com/student/authenticate"

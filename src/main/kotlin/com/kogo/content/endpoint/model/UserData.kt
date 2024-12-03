@@ -7,6 +7,7 @@ class UserData {
     data class IncludeCredentials (
         var id: String,
         var idToken: String,
+        var pushToken: String,
         var username: String,
         var email: String,
         var profileImage: AttachmentResponse?= null,
@@ -17,6 +18,7 @@ class UserData {
             fun from(user: User) = IncludeCredentials(
                 id = user.id!!,
                 idToken = user.idToken.toString(),
+                pushToken = user.pushToken.toString(),
                 username = user.username,
                 email = user.email!!,
                 profileImage = user.profileImage?.let { AttachmentResponse.create(it) },

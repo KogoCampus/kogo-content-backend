@@ -4,9 +4,7 @@ import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.*
-import com.kogo.content.storage.entity.Comment
-import com.kogo.content.storage.entity.NotificationMessage
-import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.entity.*
 import com.kogo.content.storage.repository.UserRepository
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -172,7 +170,7 @@ class CommentControllerTest @Autowired constructor(
 
         // mock message
         val notificationMessageSlot = slot<NotificationMessage>()
-        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+        every { notificationService.createPushNotification(comment.author.id!!, user, EventType.LIKE_TO_COMMENT, capture(notificationMessageSlot))} returns mockk()
 
         mockMvc.perform(
             multipart(buildCommentApiUrl(comment.id!!, "likes"))
@@ -183,7 +181,9 @@ class CommentControllerTest @Autowired constructor(
             .andExpect(jsonPath("$.message").value("User's like added successfully to comment ${comment.id}"))
         val capturedNotificationMessage = notificationMessageSlot.captured
         assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
-        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your comment")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.username} liked your comment: ${comment.content}")
+        assertThat(capturedNotificationMessage.dataType).isEqualTo(DataType.COMMENT)
+        assertThat(capturedNotificationMessage.data).isEqualTo(comment)
     }
 
     @Test
