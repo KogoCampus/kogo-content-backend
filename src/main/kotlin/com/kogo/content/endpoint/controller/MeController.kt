@@ -143,8 +143,8 @@ class MeController @Autowired constructor(
 
     @RequestMapping(
         path = ["me/push-token"],
-        method = [RequestMethod.POST],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+        method = [RequestMethod.PUT],
+        consumes = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
         summary = "update my push token",
         parameters = [
@@ -194,11 +194,11 @@ class MeController @Autowired constructor(
                 schema = Schema(implementation = Notification::class)
             ))],
         )]
-    ) fun sendNotification(
+    ) fun getNotification(
         paginationRequest: PaginationRequest
     ): ResponseEntity<*> = run {
         val me = userService.getCurrentUser()
-        val paginationResponse = notificationService.getNotificationsByRecipientEmail(me.email!!, paginationRequest)
+        val paginationResponse = notificationService.getNotificationsByRecipientId(me.id!!, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items,

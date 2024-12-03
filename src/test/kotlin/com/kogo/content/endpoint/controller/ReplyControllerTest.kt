@@ -4,6 +4,8 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.common.*
 import com.kogo.content.service.*
+import com.kogo.content.storage.entity.DataType
+import com.kogo.content.storage.entity.EventType
 import com.kogo.content.storage.entity.NotificationMessage
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -119,7 +121,7 @@ class ReplyControllerTest @Autowired constructor(
 
         // mock message
         val notificationMessageSlot = slot<NotificationMessage>()
-        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+        every { notificationService.createPushNotification(comment.author.id!!, user, EventType.CREATE_REPLY_TO_COMMENT, capture(notificationMessageSlot))} returns mockk()
 
         every { replyService.create(comment, user, any()) } returns newReply
         every { replyService.findAggregate(newReply.id!!) } returns newReplyStat
@@ -140,7 +142,9 @@ class ReplyControllerTest @Autowired constructor(
 
         val capturedNotificationMessage = notificationMessageSlot.captured
         assertThat(capturedNotificationMessage.title).isEqualTo("New Reply")
-        assertThat(capturedNotificationMessage.body).isEqualTo("There is a new reply in your comment")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.username} replied: ${newReply.content}")
+        assertThat(capturedNotificationMessage.dataType).isEqualTo(DataType.REPLY)
+        assertThat(capturedNotificationMessage.data).isEqualTo(newReply)
     }
 
     @Test
@@ -173,7 +177,7 @@ class ReplyControllerTest @Autowired constructor(
 
         // mock message
         val notificationMessageSlot = slot<NotificationMessage>()
-        every { notificationService.createPushNotification(comment.author.id!!, capture(notificationMessageSlot))} returns mockk()
+        every { notificationService.createPushNotification(comment.author.id!!, user, EventType.LIKE_TO_REPLY, capture(notificationMessageSlot))} returns mockk()
 
         mockMvc.put(buildReplyApiUrl(replyId, "likes")) {
             contentType = MediaType.APPLICATION_JSON
@@ -186,7 +190,9 @@ class ReplyControllerTest @Autowired constructor(
         }
         val capturedNotificationMessage = notificationMessageSlot.captured
         assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
-        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your reply")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your reply: ${reply.content}")
+        assertThat(capturedNotificationMessage.dataType).isEqualTo(DataType.REPLY)
+        assertThat(capturedNotificationMessage.data).isEqualTo(reply)
     }
 
     @Test

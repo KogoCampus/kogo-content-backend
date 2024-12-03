@@ -101,7 +101,7 @@ class CommentController @Autowired constructor(
         val paginationResponse = commentService.findAggregatesByPost(post, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map{ CommentResponse.create(it, userService.getCurrentUser()) },
+            data = paginationResponse.items.map{ CommentResponse.create(it, user) },
             headers = paginationResponse.toHttpHeaders()
         )
     }

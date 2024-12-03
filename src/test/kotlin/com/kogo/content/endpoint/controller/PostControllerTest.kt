@@ -4,12 +4,9 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.PostService
 import com.kogo.content.service.TopicService
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.entity.User
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.NotificationService
-import com.kogo.content.storage.entity.NotificationMessage
+import com.kogo.content.storage.entity.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
@@ -242,7 +239,7 @@ class PostControllerTest @Autowired constructor(
 
         // mock message
         val notificationMessageSlot = slot<NotificationMessage>()
-        every { notificationService.createPushNotification(post.author.id!!, capture(notificationMessageSlot))} returns mockk()
+        every { notificationService.createPushNotification(post.author.id!!, user, EventType.LIKE_TO_POST, capture(notificationMessageSlot))} returns mockk()
 
         mockMvc.put(buildPostApiUrl(postId, "likes")) {
             contentType = MediaType.APPLICATION_JSON
@@ -254,7 +251,9 @@ class PostControllerTest @Autowired constructor(
         }
         val capturedNotificationMessage = notificationMessageSlot.captured
         assertThat(capturedNotificationMessage.title).isEqualTo("New Like")
-        assertThat(capturedNotificationMessage.body).isEqualTo("${user.id!!} liked your post")
+        assertThat(capturedNotificationMessage.body).isEqualTo("${user.username} liked your post")
+        assertThat(capturedNotificationMessage.dataType).isEqualTo(DataType.POST)
+        assertThat(capturedNotificationMessage.data).isEqualTo(post)
     }
 
     @Test

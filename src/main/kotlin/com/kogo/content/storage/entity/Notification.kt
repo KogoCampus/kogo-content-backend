@@ -28,8 +28,11 @@ data class NotificationMessage(
 )
 
 data class PushNotificationRequest(
-    val recipients: List<String>,
-    val notification: NotificationMessage
+    val to: String,
+    val title: String,
+    val body: String,
+    val data: Any,
+    val dataType: String
 )
 
 enum class DataType{

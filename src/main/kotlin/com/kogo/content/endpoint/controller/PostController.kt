@@ -186,7 +186,7 @@ class PostController @Autowired constructor(
             eventType = EventType.LIKE_TO_POST,
             message = NotificationMessage(
                 title = "New Like",
-                body = "${user.id} liked your post",
+                body = "${user.username} liked your post",
                 dataType = DataType.POST,
                 data = post
             )
