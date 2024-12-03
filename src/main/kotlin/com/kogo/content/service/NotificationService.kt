@@ -48,7 +48,7 @@ class NotificationService(
             message = message,
             isPushNotification = true,
         )
-        val recipientPushToken = userRepository.findUserById(recipientId)!!.pushToken
+        val recipientPushToken = userRepository.findUserById(recipientId)?.pushToken ?: return notification
         val newNotification = notificationRepository.save(notification)
 
         // Send the push notification to the Expo server
