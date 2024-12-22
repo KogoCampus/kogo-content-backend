@@ -5,7 +5,6 @@ import com.kogo.content.common.PaginationSlice
 import com.kogo.content.storage.MongoPaginationQueryBuilder
 import com.kogo.content.storage.entity.Notification
 import com.kogo.content.storage.entity.User
-import com.kogo.content.storage.entity.UserIdToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query

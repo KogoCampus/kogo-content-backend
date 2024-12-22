@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.UUID
 
@@ -36,8 +38,8 @@ class LocalStorageFileHandler : FileHandler {
     override fun issueFilePublicSourceUrl(storeKey: FileStoreKey): String = storeKey.toString()
 
     private fun fileStoreLocation(): String {
-        val calendar: Calendar = Calendar.getInstance()
-        return String.format("%s/%s-%s", calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+        val utcDate = ZonedDateTime.now(ZoneOffset.UTC) // Get current date and time in UTC
+        return String.format("%d/%d-%d", utcDate.year, utcDate.monthValue, utcDate.dayOfMonth)
     }
 
     private fun fileStoreName(fileName: String): String {

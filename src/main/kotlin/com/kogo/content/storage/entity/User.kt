@@ -10,9 +10,6 @@ data class User (
     @Id
     var id: String? = null,
 
-    @Indexed(unique = true)
-    var idToken: UserIdToken? = null,
-
     var pushToken: String? = null,
 
     @Indexed(unique = true)
