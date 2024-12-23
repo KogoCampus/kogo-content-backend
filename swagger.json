@@ -2027,7 +2027,6 @@
         "required": [
           "email",
           "id",
-          "idToken",
           "pushToken",
           "schoolName",
           "schoolShortenedName",
@@ -2036,9 +2035,6 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "idToken": {
             "type": "string"
           },
           "pushToken": {
