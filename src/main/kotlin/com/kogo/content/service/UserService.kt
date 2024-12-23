@@ -4,7 +4,6 @@ import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.entity.User
-import com.kogo.content.storage.entity.UserIdToken
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,9 +32,8 @@ class UserService @Autowired constructor(
     fun getAllUsersFollowingTopic(topicId: String, paginationRequest: PaginationRequest)
         = userRepository.findUsersByTopicId(topicId, paginationRequest)
 
-    fun createUser(idToken: UserIdToken, username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): User =
+    fun createUser(username: String, email: String, schoolName: String = "", schoolShortenedName: String = ""): User =
         userRepository.save(User(
-            idToken = idToken,
             username = username,
             email = email,
             schoolName = schoolName,

@@ -6,7 +6,6 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.UserIdToken
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -38,13 +37,14 @@ class ExternalAuthRequestFilter (
     @Value("\${compile-version-key}")
     lateinit var compileVersionKey: String
 
+    lateinit var username: String
+
     private val restTemplate = RestTemplate()
     private val pathMatcher = AntPathMatcher()
     private val objectMapper = ObjectMapper()
 
     companion object : Logger() {
         const val USERDATA = "userdata"
-        const val USERNAME = "username"
         const val EMAIL = "email"
         const val SCHOOLINFO = "schoolData"
         const val SCHOOL_NAME = "name"
@@ -61,7 +61,10 @@ class ExternalAuthRequestFilter (
                 val accessToken = getAccessTokenFromRequestHeader(request)
                 // Call external authentication API
                 val userInfoJson = authenticateUserWithApi(accessToken).get(USERDATA)
-                val username = userInfoJson.get(USERNAME).toString().removeSurrounding("\"")
+                while(true) {
+                    username = generateRandomUsername()
+                    if (userService.findUserByUsername(username) == null) break
+                }
 
                 if (userService.findUserByUsername(username) == null) {
                     val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
@@ -69,7 +72,6 @@ class ExternalAuthRequestFilter (
                     val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
                     val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
                     userService.createUser(
-                        idToken = UserIdToken(username, email),
                         username = username,
                         email = email,
                         schoolName = schoolName,
@@ -144,5 +146,15 @@ class ExternalAuthRequestFilter (
         response.contentType = "application/json"
         response.characterEncoding = "UTF-8"
         response.writer.write(objectMapper.writeValueAsString(errorResponse))
+    }
+
+    private fun generateRandomUsername(): String {
+        val randomString = (1..6)
+            .map { ('a'..'z') + ('0'..'9') }
+            .flatten()
+            .shuffled()
+            .take(6)
+            .joinToString("")
+        return "#KogoUser$randomString"
     }
 }

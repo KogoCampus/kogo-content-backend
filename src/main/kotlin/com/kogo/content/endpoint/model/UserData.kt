@@ -6,7 +6,6 @@ import com.kogo.content.storage.entity.User
 class UserData {
     data class IncludeCredentials (
         var id: String,
-        var idToken: String,
         var pushToken: String,
         var username: String,
         var email: String,
@@ -17,7 +16,6 @@ class UserData {
         companion object {
             fun from(user: User) = IncludeCredentials(
                 id = user.id!!,
-                idToken = user.idToken.toString(),
                 pushToken = user.pushToken.toString(),
                 username = user.username,
                 email = user.email!!,
