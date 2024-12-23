@@ -2,14 +2,14 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.SortDirection
-import com.kogo.content.storage.entity.Comment
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.User
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.SortDirection
+import com.kogo.content.storage.model.Comment
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.CommentRepository
 import com.kogo.content.storage.repository.LikeRepository
-import com.kogo.content.storage.entity.Like
+import com.kogo.content.storage.model.Like
 import com.kogo.content.storage.repository.ViewerRepository
 import com.kogo.content.storage.view.CommentAggregate
 import com.kogo.content.storage.view.CommentAggregateView

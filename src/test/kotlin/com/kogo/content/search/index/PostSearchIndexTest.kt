@@ -1,9 +1,10 @@
 package com.kogo.content.search.index
 
 import com.kogo.content.common.*
-import com.kogo.content.storage.entity.Post
-import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.entity.User
+import com.kogo.content.endpoint.common.*
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.view.PostAggregate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -50,16 +51,16 @@ class PostSearchIndexTest @Autowired constructor(
             )
 
             // Create test topic
-            val topic = Topic(
+            val group = Group(
                 id = "topic1",
-                topicName = "Programming",
+                groupName = "Programming",
                 description = "Programming related discussions",
                 owner = user,
                 tags = listOf("programming", "technology")
             )
 
             staticMongoTemplate.save(user)
-            staticMongoTemplate.save(topic)
+            staticMongoTemplate.save(group)
 
             val testData = listOf(
                 PostAggregate(
@@ -68,7 +69,7 @@ class PostSearchIndexTest @Autowired constructor(
                         id = "1",
                         title = "Introduction to Kotlin Coroutines",
                         content = "Learn about Kotlin coroutines for async programming. This comprehensive guide covers the basics of coroutines and their practical applications.",
-                        topic = topic,
+                        group = group,
                         author = user,
                         createdAt = Instant.now().minusSeconds(3600)
                     ),
@@ -84,7 +85,7 @@ class PostSearchIndexTest @Autowired constructor(
                         id = "2",
                         title = "Advanced Kotlin Features",
                         content = "Deep dive into Kotlin's advanced features including coroutines, flow, and channels. Perfect for experienced developers.",
-                        topic = topic,
+                        group = group,
                         author = user,
                         createdAt = Instant.now().minusSeconds(7200)
                     ),
@@ -100,7 +101,7 @@ class PostSearchIndexTest @Autowired constructor(
                         id = "3",
                         title = "Spring Boot with Kotlin",
                         content = "Building web applications using Spring Boot and Kotlin. Learn how to create robust backend services with modern tools.",
-                        topic = topic,
+                        group = group,
                         author = user,
                         createdAt = Instant.now().minusSeconds(1800)
                     ),
@@ -116,7 +117,7 @@ class PostSearchIndexTest @Autowired constructor(
                         id = "4",
                         title = "Python Django Framework",
                         content = "Learn about Python web development with Django framework. Most popular web framework for rapid development.",
-                        topic = topic,
+                        group = group,
                         author = user,
                         createdAt = Instant.now().minusSeconds(900)
                     ),
@@ -132,7 +133,7 @@ class PostSearchIndexTest @Autowired constructor(
                         id = "5",
                         title = "JavaScript Ecosystem",
                         content = "Comprehensive guide to modern JavaScript and its ecosystem including Node.js and React.",
-                        topic = topic,
+                        group = group,
                         author = user,
                         createdAt = Instant.now().minusSeconds(300)
                     ),
@@ -288,7 +289,7 @@ class PostSearchIndexTest @Autowired constructor(
 
         assertThat(result.items).hasSize(3)
         assertThat(result.items).allSatisfy { postAggregate ->
-            assertThat(postAggregate.post.topic.topicName).isEqualTo("Programming")
+            assertThat(postAggregate.post.group.groupName).isEqualTo("Programming")
             assertThat(postAggregate.post.author.username).isEqualTo("testUser")
         }
     }
@@ -342,7 +343,7 @@ class PostSearchIndexTest @Autowired constructor(
         val paginationRequest = PaginationRequest(
             limit = 10,
             pageToken = PageToken(
-                filters = listOf(
+                filterFields = listOf(
                     FilterField("title", "Spring Boot", FilterOperator.EQUALS)  // Using alias instead of post.title
                 )
             )

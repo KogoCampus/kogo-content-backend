@@ -1,11 +1,11 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.User
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.service.GroupService
+import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.view.TopicAggregate
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -37,14 +37,14 @@ class MeControllerTest  @Autowired constructor(
     lateinit var postService: PostService
 
     @MockkBean
-    lateinit var topicService: TopicService
+    lateinit var groupService: GroupService
 
     /**
      * Fixtures
      */
     private final val user: User = Fixture.createUserFixture()
-    private final val topic: Topic = Fixture.createTopicFixture(user)
-    private final val topicAggregate: TopicAggregate = Fixture.createTopicAggregateFixture(topic)
+    private final val group: Group = Fixture.createTopicFixture(user)
+    private final val topicAggregate: TopicAggregate = Fixture.createTopicAggregateFixture(group)
 
     private fun buildMeApiUrl(vararg paths: String) =
         if (paths.isNotEmpty()) "$ME_API_BASE_URL/" + paths.joinToString("/")
@@ -52,12 +52,12 @@ class MeControllerTest  @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        every { topicService.findAggregate(topic.id!!) } returns topicAggregate
+        every { groupService.findAggregate(group.id!!) } returns topicAggregate
     }
 
     @Test
     fun `should return current user's info`() {
-        every { userService.getCurrentUser() } returns user
+        every { userService.findCurrentUser() } returns user
         mockMvc.get(buildMeApiUrl())
             .andExpect { status { isOk() } }
             .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
@@ -72,10 +72,10 @@ class MeControllerTest  @Autowired constructor(
             Fixture.createTopicFixture(owner = user)
         )
 
-        every { userService.getCurrentUser() } returns user
-        every { topicService.findTopicsByOwner(user) } returns topics
-        every { topicService.findAggregate(any()) } returns Fixture.createTopicAggregateFixture(topics[0])
-        every { topicService.hasUserFollowedTopic(any(), any()) } returns true
+        every { userService.findCurrentUser() } returns user
+        every { groupService.findByOwner(user) } returns topics
+        every { groupService.findAggregate(any()) } returns Fixture.createTopicAggregateFixture(topics[0])
+        every { groupService.hasUserFollowedTopic(any(), any()) } returns true
 
         mockMvc.get("$ME_API_BASE_URL/ownership/topics")
             .andExpect { status { isOk() } }

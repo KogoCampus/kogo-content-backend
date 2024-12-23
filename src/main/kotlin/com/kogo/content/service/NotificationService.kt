@@ -1,17 +1,20 @@
 package com.kogo.content.service
 
 import com.kogo.content.storage.repository.NotificationRepository
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.PaginationSlice
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.model.UserData
 import com.kogo.content.logging.Logger
-import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.EventType
+import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.NotificationMessage
+import com.kogo.content.storage.model.PushNotificationRequest
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.http.*
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
-import java.util.concurrent.CompletableFuture
 
 @Service
 class NotificationService(
@@ -24,11 +27,11 @@ class NotificationService(
 
     fun updatePushToken(recipientId: String, pushToken: String): User {
         val updatingUser = userRepository.findUserById(recipientId)
-        updatingUser!!.pushToken = pushToken
+        updatingUser!!.pushNotificationToken = pushToken
         return userRepository.save(updatingUser)
     }
 
-    fun createNotification(recipientId: String, sender: User, eventType:EventType, message: NotificationMessage): Notification {
+    fun createNotification(recipientId: String, sender: User, eventType: EventType, message: NotificationMessage): Notification {
         val notification = Notification(
             recipientId = recipientId,
             sender = UserData.Public.from(sender),
@@ -40,7 +43,7 @@ class NotificationService(
     }
 
     @Async
-    fun createPushNotification(recipientId: String, sender: User, eventType:EventType, message: NotificationMessage): Notification {
+    fun createPushNotification(recipientId: String, sender: User, eventType: EventType, message: NotificationMessage): Notification {
         val notification = Notification(
             recipientId = recipientId,
             sender = UserData.Public.from(sender),
@@ -48,7 +51,7 @@ class NotificationService(
             message = message,
             isPushNotification = true,
         )
-        val recipientPushToken = userRepository.findUserById(recipientId)?.pushToken ?: return notification
+        val recipientPushToken = userRepository.findUserById(recipientId)?.pushNotificationToken ?: return notification
         val newNotification = notificationRepository.save(notification)
 
         // Send the push notification to the Expo server

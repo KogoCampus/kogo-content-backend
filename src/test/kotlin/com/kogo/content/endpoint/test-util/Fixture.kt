@@ -1,6 +1,11 @@
 package com.kogo.content.endpoint.`test-util`
 
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.Comment
+import com.kogo.content.storage.model.Reply
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.view.*
 import org.bson.types.ObjectId
 import java.time.Instant
@@ -68,17 +73,17 @@ class Fixture {
             mapOf("id" to generateObjectIdString())
         }
 
-        fun createTopicFixture(owner: User? = null) = fixture<Topic> {
+        fun createTopicFixture(owner: User? = null) = fixture<Group> {
             mapOf(
                 "id" to generateObjectIdString(),
                 "owner" to (owner ?: createUserFixture())
             )
         }
 
-        fun createPostFixture(topic: Topic, author: User? = null) = fixture<Post> {
+        fun createPostFixture(group: Group, author: User? = null) = fixture<Post> {
             mapOf(
                 "id" to generateObjectIdString(),
-                "topic" to topic,
+                "topic" to group,
                 "author" to (author ?: createUserFixture()),
                 "attachments" to emptyList<Any>(),
             )
@@ -110,9 +115,9 @@ class Fixture {
             lastUpdated = Instant.now()
         )
 
-        fun createTopicAggregateFixture(topic: Topic) = TopicAggregate(
-            topicId = topic.id!!,
-            topic = topic,
+        fun createTopicAggregateFixture(group: Group) = TopicAggregate(
+            topicId = group.id!!,
+            group = group,
             followerIds = (1..Random.nextInt(0, 100)).map { generateObjectIdString() }.toSet(),
             followerCount = Random.nextInt(0, 1000),
             postCount = Random.nextInt(0, 1000),

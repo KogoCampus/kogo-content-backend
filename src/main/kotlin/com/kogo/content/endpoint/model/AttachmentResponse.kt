@@ -1,19 +1,23 @@
 package com.kogo.content.endpoint.model
 
+import com.kogo.content.storage.model.Attachment
+
 data class AttachmentResponse (
-    val attachmentId: String? = null,
+    val id: String,
     val name: String,
+    val url: String,
     val size: Long,
     val contentType: String,
-    val url: String
 ) {
     companion object {
-        fun create(attachment: com.kogo.content.storage.entity.Attachment): AttachmentResponse = AttachmentResponse (
-            attachmentId = attachment.id,
-            name = attachment.name,
-            url = attachment.storeKey.toFileSourceUrl(),
-            contentType = attachment.contentType,
-            size = attachment.fileSize
-        )
+        fun from(attachment: Attachment): AttachmentResponse {
+            return AttachmentResponse(
+                id = attachment.id.toString(),
+                name = attachment.filename,
+                url = attachment.url,
+                size = attachment.size,
+                contentType = attachment.contentType
+            )
+        }
     }
 }

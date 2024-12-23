@@ -3,8 +3,13 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.AttachmentRepository
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.PostRepository
@@ -39,7 +44,7 @@ class PostServiceTest {
 
     @Test
     fun `should create new post and refresh aggregate view`() {
-        val topic = mockk<Topic> { every { id } returns "test-topic-id" }
+        val group = mockk<Group> { every { id } returns "test-topic-id" }
         val author = mockk<User> { every { id } returns "test-user-id" }
         val postDto = PostDto(
             title = "Test title",
@@ -51,7 +56,7 @@ class PostServiceTest {
             id = "test-post-id",
             title = postDto.title,
             content = postDto.content,
-            topic = topic,
+            group = group,
             author = author,
             attachments = listOf(mockk()),
             createdAt = Instant.now(),
@@ -63,14 +68,14 @@ class PostServiceTest {
         every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
         every { topicAggregateView.refreshView("test-topic-id") } returns mockk<TopicAggregate>()
 
-        val result = postService.create(topic, author, postDto)
+        val result = postService.create(group, author, postDto)
 
         assertThat(result).isEqualTo(savedPost)
         verify {
             postRepository.save(match {
                 it.title == postDto.title &&
                 it.content == postDto.content &&
-                it.topic == topic &&
+                it.group == group &&
                 it.author == author
             })
             postAggregateView.refreshView("test-post-id")
@@ -83,7 +88,7 @@ class PostServiceTest {
             id = "test-post-id",
             title = "Original title",
             content = "Original content",
-            topic = mockk(),
+            group = mockk(),
             author = mockk(),
             attachments = listOf(mockk { every { id } returns "att-1" }),
             createdAt = Instant.now().minusSeconds(3600),
@@ -94,7 +99,7 @@ class PostServiceTest {
             content = "Updated content",
             images = listOf(mockk()),
             videos = emptyList(),
-            attachmentDelete = listOf("att-1")
+            attachmentDeleteIds = listOf("att-1")
         )
 
         every { attachmentRepository.saveFiles(any()) } returns listOf(mockk())
@@ -120,13 +125,13 @@ class PostServiceTest {
 
     @Test
     fun `should find posts by topic with pagination`() {
-        val topic = mockk<Topic> { every { id } returns "test-topic-id" }
+        val group = mockk<Group> { every { id } returns "test-topic-id" }
         val paginationRequest = PaginationRequest(limit = 10)
-        val expectedRequest = paginationRequest.withFilter("topic", topic.id!!)
+        val expectedRequest = paginationRequest.withFilter("topic", group.id!!)
 
         every { postAggregateView.findAll(expectedRequest) } returns mockk()
 
-        postService.findPostsByTopic(topic, paginationRequest)
+        postService.findPostsByGroup(group, paginationRequest)
 
         verify { postAggregateView.findAll(expectedRequest) }
     }
@@ -164,7 +169,7 @@ class PostServiceTest {
         every { viewerRepository.addView("test-post-id", "test-user-id") } returns viewer
         every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
 
-        postService.markPostViewedByUser(post.id!!, user.id!!)
+        postService.addViewer(post.id!!, user.id!!)
         verify {
             viewerRepository.addView("test-post-id", "test-user-id")
             postAggregateView.refreshView("test-post-id")
@@ -173,7 +178,7 @@ class PostServiceTest {
         // Test unsuccessful view operation (already viewed)
         every { viewerRepository.addView("test-post-id", "test-user-id") } returns null
 
-        postService.markPostViewedByUser(post.id!!, user.id!!)
+        postService.addViewer(post.id!!, user.id!!)
         verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
     }
 }

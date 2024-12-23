@@ -1,12 +1,12 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.*
 import com.kogo.content.service.*
-import com.kogo.content.storage.entity.DataType
-import com.kogo.content.storage.entity.EventType
-import com.kogo.content.storage.entity.NotificationMessage
+import com.kogo.content.storage.model.DataType
+import com.kogo.content.storage.model.EventType
+import com.kogo.content.storage.model.NotificationMessage
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
@@ -43,7 +43,7 @@ class ReplyControllerTest @Autowired constructor(
 
     private val user = Fixture.createUserFixture()
     private val topic = Fixture.createTopicFixture(user)
-    private val post = Fixture.createPostFixture(topic = topic, author = user)
+    private val post = Fixture.createPostFixture(group = topic, author = user)
     private val comment = Fixture.createCommentFixture(post = post, author = user)
     private val reply = Fixture.createReplyFixture(comment = comment, author = user)
     private val replyAggregate = Fixture.createReplyAggregateFixture(reply)
@@ -66,7 +66,7 @@ class ReplyControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        every { userService.getCurrentUser() } returns user
+        every { userService.findCurrentUser() } returns user
         every { commentService.find(comment.id!!) } returns comment
         every { replyService.find(reply.id!!) } returns reply
         every { replyService.findAggregate(reply.id!!) } returns replyAggregate

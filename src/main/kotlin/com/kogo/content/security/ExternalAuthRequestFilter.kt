@@ -6,6 +6,7 @@ import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserService
+import com.kogo.content.storage.model.entity.SchoolInfo
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -32,10 +33,7 @@ class ExternalAuthRequestFilter (
 ) : OncePerRequestFilter() {
 
     @Value("\${kogo-api.authenticate}")
-    lateinit var kogoApiUrl: String
-
-    @Value("\${compile-version-key}")
-    lateinit var compileVersionKey: String
+    lateinit var authenticationApiUrl: String
 
     lateinit var username: String
 
@@ -46,7 +44,8 @@ class ExternalAuthRequestFilter (
     companion object : Logger() {
         const val USERDATA = "userdata"
         const val EMAIL = "email"
-        const val SCHOOLINFO = "schoolData"
+        const val SCHOOL = "schoolData"
+        const val SCHOOL_KEY = "schoolKey"
         const val SCHOOL_NAME = "name"
         const val SCHOOL_SHORTENED_NAME = "shortenedName"
     }
@@ -68,14 +67,20 @@ class ExternalAuthRequestFilter (
 
                 if (userService.findUserByUsername(username) == null) {
                     val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
-                    val schoolInfoJson = userInfoJson.get(SCHOOLINFO)
+                    val schoolInfoJson = userInfoJson.get(SCHOOL)
+                    val schoolKey = schoolInfoJson.get(SCHOOL_KEY).toString().removeSurrounding("\"")
                     val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
                     val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
-                    userService.createUser(
+
+                    userService.create(
                         username = username,
                         email = email,
-                        schoolName = schoolName,
-                        schoolShortenedName = schoolShortenedName,)
+                        schoolInfo = SchoolInfo(
+                            schoolKey = schoolKey,
+                            schoolName = schoolName,
+                            schoolShortenedName = schoolShortenedName
+                        )
+                    )
                 }
                 val authorities = listOf(SimpleGrantedAuthority("ROLE_USER")) // You can assign roles or authorities
                 val authentication = UsernamePasswordAuthenticationToken(username, null, authorities)
@@ -92,14 +97,12 @@ class ExternalAuthRequestFilter (
     }
 
     private fun authenticateUserWithApi(accessToken: String): JsonNode {
-        val headers = HttpHeaders().apply {
-            set("Authorization", "Bearer $accessToken")
-            set("APP-VERSION-KEY", compileVersionKey)
-        }
+        val headers = HttpHeaders().apply { set("Authorization", "Bearer $accessToken") }
         val entity = HttpEntity<Any?>(headers)
+
         return try {
             val response = restTemplate.exchange(
-                "$kogoApiUrl?grant_type=access_token",
+                "$authenticationApiUrl?grant_type=access_token",
                 HttpMethod.GET, entity, String::class.java
             )
             if (response.statusCode != HttpStatus.OK) {

@@ -1,83 +1,94 @@
 package com.kogo.content.service
 
-import com.kogo.content.common.FilterOperator
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.storage.entity.*
-import com.kogo.content.common.SortDirection
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.SortDirection
+import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.search.SearchIndex
+import com.kogo.content.storage.model.Comment
+import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.Reply
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
-import com.kogo.content.storage.view.PostAggregate
-import com.kogo.content.storage.view.PostAggregateView
-import com.kogo.content.storage.view.TopicAggregateView
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 @Service
 class PostService(
     private val postRepository: PostRepository,
-    private val attachmentRepository: AttachmentRepository,
-    private val likeRepository: LikeRepository,
-    private val viewerRepository: ViewerRepository,
-    private val postAggregateView: PostAggregateView,
-    private val postAggregateSearchIndex: SearchIndex<PostAggregate>,
-    private val topicAggregateView: TopicAggregateView
-) {
-    fun find(postId: String) = postRepository.findByIdOrNull(postId)
-    fun findAggregate(postId: String) = postAggregateView.find(postId)
+    private val postSearchIndex: SearchIndex<Post>
+) : BaseEntityService<Post, String>(Post::class, postRepository) {
 
-    fun findPostsByTopic(topic: Topic, paginationRequest: PaginationRequest)
-        = postAggregateView.findAll(paginationRequest.withFilter("topic", topic.id!!))
-
-    fun findPostsByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)
-
-    fun findPostAggregatesByLatest(paginationRequest: PaginationRequest)
-        = postAggregateView.findAll(
-            paginationRequest.withSort("createdAt", SortDirection.DESC)
+    fun findAllInFollowing(paginationRequest: PaginationRequest, user: User) = run {
+        val matchOperation = Aggregation.match(
+            Criteria.where("group._id").`in`(user.followingGroupIds)
         )
 
-    fun findPostAggregatesByPopularity(paginationRequest: PaginationRequest) = postAggregateView.findAll(
-        paginationRequest
-            .withFilter("createdAt", Instant.now().minus(7, ChronoUnit.DAYS), FilterOperator.GREATER_THAN)
-            .withSort("popularityScore", SortDirection.DESC)
-    )
+        mongoPaginationQueryBuilder.getPage(
+            entityClass = Post::class,
+            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC),
+            preAggregationOperations = listOf(matchOperation)
+        )
+    }
 
-    fun searchPostAggregatesByKeyword(
-        searchText: String,
+    fun findCommentOrThrow(postId: String, commentId: String): Comment {
+        val post = findOrThrow(postId)
+        return post.comments.find { it.id.toString() == commentId }
+            ?: throw ResourceNotFoundException.of<Comment>(commentId)
+    }
+
+    fun findReplyOrThrow(postId: String, commentId: String, replyId: String): Reply {
+        val comment = findCommentOrThrow(postId, commentId)
+        return comment.replies.find { it.id.toString() == replyId }
+            ?: throw ResourceNotFoundException.of<Reply>(replyId)
+    }
+
+    fun findPostsByGroup(group: Group, paginationRequest: PaginationRequest)
+        = mongoPaginationQueryBuilder.getPage(
+            entityClass = Post::class,
+            paginationRequest = paginationRequest
+        )
+
+    fun findAllByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)
+
+    fun findAllTrending(paginationRequest: PaginationRequest) = run {
+        val preAggregationOperations = Post.addPopularityAggregationOperations()
+
+        mongoPaginationQueryBuilder.getPage(
+            entityClass = Post::class,
+            paginationRequest = paginationRequest.withSort("popularityScore", SortDirection.DESC),
+            preAggregationOperations = preAggregationOperations
+        )
+    }
+
+    fun search(
+        searchKeyword: String,
         paginationRequest: PaginationRequest
-    ) = postAggregateSearchIndex.search(
-        searchText = searchText,
+    ) = postSearchIndex.search(
+        searchText = searchKeyword,
         paginationRequest = paginationRequest,
     )
 
-    fun searchPostAggregatesByKeywordAndTopic(
-        topic: Topic,
-        searchText: String,
-        paginationRequest: PaginationRequest
-    ) = postAggregateSearchIndex.search(
-        searchText = searchText,
-        paginationRequest = paginationRequest.withFilter("topic.id", topic.id!!)
-    )
-
     @Transactional
-    fun create(topic: Topic, author: User, dto: PostDto): Post {
+    fun create(group: Group, author: User, dto: PostDto): Post {
         val savedPost = postRepository.save(
             Post(
                 title = dto.title,
                 content = dto.content,
-                topic = topic,
+                group = group,
                 author = author,
-                attachments = attachmentRepository.saveFiles(dto.images!! + dto.videos!!),
+                attachments = mutableListOf(), // TODO
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
             )
         )
-        postAggregateView.refreshView(savedPost.id!!)
-        topicAggregateView.refreshView(topic.id!!)
         return savedPost
     }
 
@@ -87,48 +98,209 @@ class PostService(
         postUpdate.content?.let { post.content = it }
         post.updatedAt = Instant.now()
 
-        val attachmentsToKeep = post.attachments.filter { it.id !in postUpdate.attachmentDelete!! }
-        val newAttachments = attachmentRepository.saveFiles(postUpdate.images!! + postUpdate.videos!!)
+        val attachmentsToKeep = post.attachments.filter { it.id.toString() !in postUpdate.attachmentDeleteIds!! }
+        // TODO
+        //val newAttachments = attachmentRepository.saveFiles(postUpdate.images!! + postUpdate.videos!!)
 
-        post.attachments.filter { it.id in postUpdate.attachmentDelete!! }
-            .forEach { attachmentRepository.delete(it) }
+        //post.attachments.filter { it.id in postUpdate.attachmentDeleteIds!! }
+        //    .forEach { attachmentRepository.delete(it) }
+        // post.attachments = attachmentsToKeep + newAttachments
 
-        post.attachments = attachmentsToKeep + newAttachments
+        post.attachments = attachmentsToKeep.toMutableList()
         val updatedPost = postRepository.save(post)
-        postAggregateView.refreshView(post.id!!)
         return updatedPost
     }
 
     @Transactional
     fun delete(post: Post) {
-        post.attachments.forEach { attachmentRepository.delete(it) }
+        // TODO
+        // 이건 async로 처리하는게 좋을 수 있음
+        // post.attachments.forEach { attachmentRepository.delete(it) }
         postRepository.deleteById(post.id!!)
-        postAggregateView.delete(post.id!!)
-        topicAggregateView.delete(post.topic.id!!)
     }
 
-    fun addLike(post: Post, user: User): Like? {
-        val like = likeRepository.addLike(post.id!!, user.id!!)
+    @Transactional
+    fun addCommentToPost(post: Post, content: String, author: User): Comment {
+        val newComment = Comment(
+            content = content,
+            author = author,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+        post.comments.add(newComment)
+        postRepository.save(post)
+        return newComment
+    }
+
+    @Transactional
+    fun removeCommentFromPost(post: Post, commentId: String): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }!!
+
+        val removed = post.comments.remove(comment)
+        if (removed) {
+            postRepository.save(post)
+        }
+        return removed
+    }
+
+    @Transactional
+    fun addReplyToComment(post: Post, commentId: String, content: String, author: User): Reply {
+        val comment = post.comments.find { it.id.toString() == commentId }!!
+        val newReply = Reply(
+            content = content,
+            author = author,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+        comment.replies.add(newReply)
+        postRepository.save(post)
+        return newReply
+    }
+
+    @Transactional
+    fun removeReplyFromComment(post: Post, commentId: String, replyId: String): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }!!
+        val reply = comment.replies.find { it.id.toString() == replyId }!!
+
+        comment.replies.remove(reply)
+        postRepository.save(post)
+        return true
+    }
+
+    @Transactional
+    fun updateComment(post: Post, commentId: String, commentUpdate: CommentUpdate): Comment {
+        val comment = post.comments.find { it.id.toString() == commentId }!!
+        comment.content = commentUpdate.content
+        comment.updatedAt = Instant.now()
+
+        postRepository.save(post)
+        return comment
+    }
+
+    @Transactional
+    fun updateReply(post: Post, commentId: String, replyId: String, replyUpdate: CommentUpdate): Reply {
+        val comment = post.comments.find { it.id.toString() == commentId }!!
+        val reply = comment.replies.find { it.id.toString() == replyId }!!
+
+        reply.content = replyUpdate.content
+        reply.updatedAt = Instant.now()
+
+        postRepository.save(post)
+        return reply
+    }
+
+    @Transactional
+    fun addLikeToPost(post: Post, user: User): Boolean {
+        val like = post.likes.find { it.userId == user.id }
         if (like != null) {
-            postAggregateView.refreshView(post.id!!)
+            if (!like.isActive) {
+                like.isActive = true
+                like.updatedAt = Instant.now()
+                postRepository.save(post)
+                return true
+            }
+            return false
+        } else {
+            post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+            postRepository.save(post)
+            return true
         }
-        return like
     }
 
-    fun removeLike(post: Post, user: User) {
-        likeRepository.removeLike(post.id!!, user.id!!)
-        postAggregateView.refreshView(post.id!!)
-    }
-
-    fun markPostViewedByUser(postId: String, userId: String): Viewer? {
-        val viewer = viewerRepository.addView(postId, userId)
-        if (viewer != null) {
-            postAggregateView.refreshView(postId)
+    @Transactional
+    fun removeLikeFromPost(post: Post, user: User): Boolean {
+        val like = post.likes.find { it.userId == user.id && it.isActive }
+        if (like != null) {
+            like.isActive = false
+            like.updatedAt = Instant.now()
+            postRepository.save(post)
+            return true
         }
-        return viewer
+        return false
     }
 
-    fun hasUserLikedPost(post: Post, user: User): Boolean = likeRepository.findLike(post.id!!, user.id!!) != null
-    fun hasUserViewedPost(post: Post, user: User): Boolean = viewerRepository.findView(post.id!!, user.id!!) != null
-    fun isPostAuthor(post: Post, user: User): Boolean = post.author == user
+    @Transactional
+    fun addLikeToComment(post: Post, commentId: String, user: User): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }
+        if (comment != null) {
+            val like = comment.likes.find { it.userId == user.id }
+            if (like != null) {
+                if (!like.isActive) {
+                    like.isActive = true
+                    like.updatedAt = Instant.now()
+                    postRepository.save(post)
+                    return true
+                }
+                return false
+            } else {
+                comment.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+                postRepository.save(post)
+                return true
+            }
+        }
+        return false
+    }
+
+    @Transactional
+    fun removeLikeFromComment(post: Post, commentId: String, user: User): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }
+        if (comment != null) {
+            val like = comment.likes.find { it.userId == user.id && it.isActive }
+            if (like != null) {
+                like.isActive = false
+                like.updatedAt = Instant.now()
+                postRepository.save(post)
+                return true
+            }
+        }
+        return false
+    }
+
+    @Transactional
+    fun addLikeToReply(post: Post, commentId: String, replyId: String, user: User): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }
+        val reply = comment?.replies?.find { it.id.toString() == replyId }
+        if (reply != null) {
+            val like = reply.likes.find { it.userId == user.id }
+            if (like != null) {
+                if (!like.isActive) {
+                    like.isActive = true
+                    like.updatedAt = Instant.now()
+                    postRepository.save(post)
+                    return true
+                }
+                return false
+            } else {
+                reply.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+                postRepository.save(post)
+                return true
+            }
+        }
+        return false
+    }
+
+    @Transactional
+    fun removeLikeFromReply(post: Post, commentId: String, replyId: String, user: User): Boolean {
+        val comment = post.comments.find { it.id.toString() == commentId }
+        val reply = comment?.replies?.find { it.id.toString() == replyId }
+        if (reply != null) {
+            val like = reply.likes.find { it.userId == user.id && it.isActive }
+            if (like != null) {
+                like.isActive = false
+                like.updatedAt = Instant.now()
+                postRepository.save(post)
+                return true
+            }
+        }
+        return false
+    }
+
+    fun addViewer(post: Post, user: User): Boolean {
+        if (post.viewerIds.contains(user.id)) {
+            return false
+        }
+        post.viewerIds.add(user.id!!)
+        postRepository.save(post)
+        return true
+    }
 }

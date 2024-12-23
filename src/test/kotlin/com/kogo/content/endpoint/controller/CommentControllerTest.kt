@@ -1,10 +1,12 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.common.PaginationRequest
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.*
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.DataType
+import com.kogo.content.storage.model.EventType
+import com.kogo.content.storage.model.NotificationMessage
 import com.kogo.content.storage.repository.UserRepository
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -22,7 +24,6 @@ import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -39,7 +40,7 @@ class CommentControllerTest @Autowired constructor(
     lateinit var postService: PostService
 
     @MockkBean
-    lateinit var topicService: TopicService
+    lateinit var groupService: GroupService
 
     @MockkBean
     lateinit var replyService: ReplyService
@@ -53,7 +54,7 @@ class CommentControllerTest @Autowired constructor(
     private val user = Fixture.createUserFixture()
     private val topic = Fixture.createTopicFixture(user)
     private val topicAggregate = Fixture.createTopicAggregateFixture(topic)
-    private val post = Fixture.createPostFixture(topic = topic, author = user)
+    private val post = Fixture.createPostFixture(group = topic, author = user)
     private val postAggregate = Fixture.createPostAggregateFixture(post)
     private val comment = Fixture.createCommentFixture(post = post, author = user)
     private val commentAggregate = Fixture.createCommentAggregateFixture(comment)
@@ -68,8 +69,8 @@ class CommentControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        every { userService.getCurrentUser() } returns user
-        every { topicService.find(topic.id!!) } returns topic
+        every { userService.findCurrentUser() } returns user
+        every { groupService.find(topic.id!!) } returns topic
         every { postService.find(post.id!!) } returns post
         every { commentService.find(comment.id!!) } returns comment
         every { commentService.findAggregate(comment.id!!) } returns commentAggregate
@@ -124,7 +125,7 @@ class CommentControllerTest @Autowired constructor(
     @Test
     fun `should return 403 when updating comment if user is not the author`() {
         val differentUser = Fixture.createUserFixture()
-        every { userService.getCurrentUser() } returns differentUser
+        every { userService.findCurrentUser() } returns differentUser
         every { commentService.isUserAuthor(comment, differentUser) } returns false
 
         mockMvc.perform(

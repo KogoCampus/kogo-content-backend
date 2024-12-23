@@ -2,11 +2,17 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
+import com.kogo.content.service.GroupService
 import com.kogo.content.service.UserService
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.service.NotificationService
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.DataType
+import com.kogo.content.storage.model.EventType
+import com.kogo.content.storage.model.NotificationMessage
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
@@ -40,7 +46,7 @@ class PostControllerTest @Autowired constructor(
     lateinit var postService: PostService
 
     @MockkBean
-    lateinit var topicService: TopicService
+    lateinit var groupService: GroupService
 
     @MockkBean
     lateinit var userService: UserService
@@ -52,8 +58,8 @@ class PostControllerTest @Autowired constructor(
      * Fixtures
      */
     private final val user: User = Fixture.createUserFixture()
-    private final val topic: Topic = Fixture.createTopicFixture(user)
-    private final val post: Post = Fixture.createPostFixture(topic = topic, author = user)
+    private final val group: Group = Fixture.createTopicFixture(user)
+    private final val post: Post = Fixture.createPostFixture(group = group, author = user)
     private final val postStat = Fixture.createPostAggregateFixture(post)
 
     private fun buildTopicApiUrl(vararg paths: String, params: Map<String, String> = emptyMap()): String {
@@ -74,8 +80,8 @@ class PostControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        every { userService.getCurrentUser() } returns user
-        every { topicService.find(topic.id!!) } returns topic
+        every { userService.findCurrentUser() } returns user
+        every { groupService.find(group.id!!) } returns group
         every { postService.find(post.id!!) } returns post
         every { postService.findAggregate(post.id!!) } returns postStat
         every { postService.hasUserLikedPost(post, user) } returns false
@@ -86,7 +92,7 @@ class PostControllerTest @Autowired constructor(
     fun `should return a single post`() {
         val postId = post.id!!
 
-        every { postService.markPostViewedByUser(post.id!!, user.id!!) } returns mockk()
+        every { postService.addViewer(post.id!!, user.id!!) } returns mockk()
 
         mockMvc.get(buildPostApiUrl(postId))
             .andExpect { status { isOk() } }
@@ -102,17 +108,17 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create a new post in topic if user is following the topic`() {
-        val topicId = topic.id!!
-        val newPost = Fixture.createPostFixture(topic = topic, author = user)
+        val topicId = group.id!!
+        val newPost = Fixture.createPostFixture(group = group, author = user)
         val newPostStat = Fixture.createPostAggregateFixture(newPost)
 
-        every { topicService.find(topicId) } returns topic
-        every { topicService.hasUserFollowedTopic(topic, user) } returns true
-        every { postService.create(topic, user, any()) } returns newPost
+        every { groupService.find(topicId) } returns group
+        every { groupService.hasUserFollowedTopic(group, user) } returns true
+        every { postService.create(group, user, any()) } returns newPost
         every { postService.findAggregate(newPost.id!!) } returns newPostStat
         every { postService.hasUserLikedPost(newPost, user) } returns true
         every { postService.hasUserViewedPost(newPost, user) } returns true
-        every { postService.markPostViewedByUser(newPost.id!!, user.id!!) } returns mockk()
+        every { postService.addViewer(newPost.id!!, user.id!!) } returns mockk()
 
         mockMvc.perform(
             multipart(buildTopicApiUrl(topicId, "posts"))
@@ -125,7 +131,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.title").value(newPost.title))
             .andExpect(jsonPath("$.data.content").value(newPost.content))
-            .andExpect(jsonPath("$.data.topicId").value(topic.id))
+            .andExpect(jsonPath("$.data.topicId").value(group.id))
             .andExpect { jsonPath("$.data.createdAt").exists() }
     }
 
@@ -133,7 +139,7 @@ class PostControllerTest @Autowired constructor(
     fun `should increment view count when return a single post`() {
         val postId = post.id!!
 
-        every { postService.markPostViewedByUser(postId, user.id!!) } returns mockk()
+        every { postService.addViewer(postId, user.id!!) } returns mockk()
 
         mockMvc.get(buildPostApiUrl(postId)).andExpect { status { isOk() } }
     }
@@ -159,7 +165,7 @@ class PostControllerTest @Autowired constructor(
         updatedStat.post.title = "updated post title"
         updatedStat.post.content = "updated post content"
 
-        every { userService.getCurrentUser() } returns user
+        every { userService.findCurrentUser() } returns user
         every { postService.isPostAuthor(post, user) } returns true // User is the post owner
         every { postService.update(post, any()) } returns updatedPost
         every { postService.findAggregate(post.id!!) } returns updatedStat
@@ -176,7 +182,7 @@ class PostControllerTest @Autowired constructor(
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.data.title").value(updatedPost.title))
             .andExpect(jsonPath("$.data.content").value(updatedPost.content))
-            .andExpect(jsonPath("$.data.topicId").value(topic.id))
+            .andExpect(jsonPath("$.data.topicId").value(group.id))
             .andExpect(jsonPath("$.data.createdAt").exists())
             .andExpect(jsonPath("$.data.updatedAt").exists())
     }
@@ -186,7 +192,7 @@ class PostControllerTest @Autowired constructor(
         val postId = post.id!!
         val differentUser = Fixture.createUserFixture() // Different user from the post owner
 
-        every { userService.getCurrentUser() } returns differentUser // Different user
+        every { userService.findCurrentUser() } returns differentUser // Different user
         every { postService.isPostAuthor(post, differentUser) } returns false // User is not the post owner
 
         mockMvc.perform(
@@ -221,9 +227,9 @@ class PostControllerTest @Autowired constructor(
         val postId = post.id!!
         val anonymousUser = Fixture.createUserFixture() // A different user who is neither the post nor topic owner
 
-        every { userService.getCurrentUser() } returns anonymousUser
+        every { userService.findCurrentUser() } returns anonymousUser
         every { postService.isPostAuthor(post, anonymousUser) } returns false // User is not the post owner
-        every { topicService.isUserTopicOwner(topic, anonymousUser) } returns false // User is not the topic owner
+        every { groupService.isUserTopicOwner(group, anonymousUser) } returns false // User is not the topic owner
 
         mockMvc.delete(buildPostApiUrl(postId))
             .andExpect { status().isForbidden }

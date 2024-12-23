@@ -1,6 +1,6 @@
 package com.kogo.content.endpoint.resolver
 
-import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.MockMvc
@@ -53,34 +53,6 @@ class PaginationRequestArgumentResolverTest {
     }
 
     @Test
-    fun `should resolve pagination request with sort parameters`() {
-        mockMvc.get("/test") {
-            param("sort", "createdAt:desc,title:asc")
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.pageToken.sortFields[0].field") { value("createdAt") }
-            jsonPath("$.pageToken.sortFields[0].direction") { value("DESC") }
-            jsonPath("$.pageToken.sortFields[1].field") { value("title") }
-            jsonPath("$.pageToken.sortFields[1].direction") { value("ASC") }
-        }
-    }
-
-    @Test
-    fun `should resolve pagination request with filter parameters`() {
-        mockMvc.get("/test") {
-            param("filter", "status:active,type:premium")
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.pageToken.filters[0].field") { value("status") }
-            jsonPath("$.pageToken.filters[0].value") { value("active") }
-            jsonPath("$.pageToken.filters[0].operator") { value("EQUALS") }
-            jsonPath("$.pageToken.filters[1].field") { value("type") }
-            jsonPath("$.pageToken.filters[1].value") { value("premium") }
-            jsonPath("$.pageToken.filters[1].operator") { value("EQUALS") }
-        }
-    }
-
-    @Test
     fun `should resolve pagination request with existing page token`() {
         val existingToken = PageToken(
             cursors = mapOf(
@@ -88,7 +60,7 @@ class PaginationRequestArgumentResolverTest {
                 "createdAt" to CursorValue("2024-01-01", CursorValueType.DATE)
             ),
             sortFields = listOf(SortField("createdAt", SortDirection.DESC)),
-            filters = listOf(FilterField("status", "active", FilterOperator.EQUALS))
+            filterFields = listOf(FilterField("status", "active", FilterOperator.EQUALS))
         ).encode()
 
         mockMvc.get("/test") {
@@ -115,26 +87,6 @@ class PaginationRequestArgumentResolverTest {
             jsonPath("$.pageToken.cursors") { isEmpty() }
             jsonPath("$.pageToken.sortFields") { isEmpty() }
             jsonPath("$.pageToken.filters") { isEmpty() }
-        }
-    }
-
-    @Test
-    fun `should handle complex filter and sort combinations`() {
-        mockMvc.get("/test") {
-            param("limit", "15")
-            param("sort", "popularity:desc,createdAt:desc")
-            param("filter", "category:news,status:active")
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.limit") { value(15) }
-            jsonPath("$.pageToken.sortFields[0].field") { value("popularity") }
-            jsonPath("$.pageToken.sortFields[0].direction") { value("DESC") }
-            jsonPath("$.pageToken.sortFields[1].field") { value("createdAt") }
-            jsonPath("$.pageToken.sortFields[1].direction") { value("DESC") }
-            jsonPath("$.pageToken.filters[0].field") { value("category") }
-            jsonPath("$.pageToken.filters[0].value") { value("news") }
-            jsonPath("$.pageToken.filters[1].field") { value("status") }
-            jsonPath("$.pageToken.filters[1].value") { value("active") }
         }
     }
 

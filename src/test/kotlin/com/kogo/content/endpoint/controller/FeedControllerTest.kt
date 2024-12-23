@@ -2,6 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.`test-util`.Fixture
 import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.*
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService
 import com.ninjasquad.springmockk.MockkBean
@@ -45,7 +46,7 @@ class FeedControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        every { userService.getCurrentUser() } returns user
+        every { userService.findCurrentUser() } returns user
         posts.forEachIndexed { index, post ->
             every { postService.findAggregate(post.id!!) } returns postStats[index]
             every { postService.hasUserLikedPost(post, user) } returns false
@@ -61,7 +62,7 @@ class FeedControllerTest @Autowired constructor(
         val paginationSlice = PaginationSlice(postAggregates, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { postService.findPostAggregatesByLatest(capture(paginationRequestSlot)) } returns paginationSlice
+        every { postService.findPostsByLatest(capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildFeedApiUrl("latest", mapOf("limit" to "${paginationRequest.limit}")))
             .andExpect { status { isOk() } }
@@ -85,7 +86,7 @@ class FeedControllerTest @Autowired constructor(
         val paginationSlice = PaginationSlice(postAggregates, nextPageToken)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { postService.findPostAggregatesByPopularity(capture(paginationRequestSlot)) } returns paginationSlice
+        every { postService.findAllTrending(capture(paginationRequestSlot)) } returns paginationSlice
 
         mockMvc.get(buildFeedApiUrl("trending", mapOf("limit" to "${paginationRequest.limit}")))
             .andExpect { status { isOk() } }

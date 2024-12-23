@@ -1,42 +1,43 @@
 package com.kogo.content.search
 
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.PaginationSlice
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
+import org.springframework.beans.factory.annotation.Autowired
+import kotlin.reflect.KClass
 
-interface SearchIndex<T : Any> {
+abstract class SearchIndex<TModel : Any>(protected val entity: KClass<TModel>) {
 
-    class Helper {
-        companion object {
-            fun createAliasedPaginationRequest(
-                paginationRequest: PaginationRequest,
-                fieldAliases: Map<String, String>
-            ): PaginationRequest {
-                val mappedSortFields = paginationRequest.pageToken.sortFields.map { sortField ->
-                    sortField.copy(field = fieldAliases[sortField.field] ?: sortField.field)
-                }
+    @Autowired
+    lateinit var atlasSearchQueryBuilder: AtlasSearchQueryBuilder
 
-                val mappedFilters = paginationRequest.pageToken.filters.map { filter ->
-                    filter.copy(field = fieldAliases[filter.field] ?: filter.field)
-                }
+    open fun indexName(): String = entity.simpleName!!
 
-                return paginationRequest.copy(
-                    pageToken = paginationRequest.pageToken.copy(
-                        sortFields = mappedSortFields,
-                        filters = mappedFilters
-                    )
-                )
-            }
-        }
-    }
+    open fun searchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition.builder().dynamic(true).build()
+
+    open fun mongoEntityCollectionName(): String = entity.simpleName!!
+
+    protected open fun defaultSearchConfiguration(): SearchConfiguration? = null
+
+    fun search(
+        searchText: String,
+        paginationRequest: PaginationRequest
+    ): PaginationSlice<TModel> = atlasSearchQueryBuilder.search(
+        entityClass = entity,
+        searchIndex = indexName(),
+        paginationRequest = paginationRequest,
+        searchText = searchText,
+        configuration = defaultSearchConfiguration()
+    )
 
     fun search(
         searchText: String,
         paginationRequest: PaginationRequest,
-        configOverride: SearchConfiguration? = null
-    ): PaginationSlice<T>
-
-    fun getIndexName(): String
-    fun getTargetCollectionName(): String
-    fun getSearchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition()
-    fun getSearchConfiguration(): SearchConfiguration
+        searchConfiguration: SearchConfiguration
+    ): PaginationSlice<TModel> = atlasSearchQueryBuilder.search(
+        entityClass = entity,
+        searchIndex = indexName(),
+        paginationRequest = paginationRequest,
+        searchText = searchText,
+        configuration = searchConfiguration
+    )
 }

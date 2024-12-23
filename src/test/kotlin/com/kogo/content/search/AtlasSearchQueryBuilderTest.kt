@@ -1,6 +1,7 @@
 package com.kogo.content.search
 
-import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.FilterOperator
+import com.kogo.content.endpoint.common.PaginationRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
 import org.junit.jupiter.api.AfterAll
@@ -12,7 +13,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
-import java.util.Date
 
 @SpringBootTest
 @ActiveProfiles("test")

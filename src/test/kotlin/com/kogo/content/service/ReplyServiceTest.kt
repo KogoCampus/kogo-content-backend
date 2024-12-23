@@ -3,7 +3,13 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.CommentDto
 import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.Comment
+import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.Reply
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.LikeRepository
 import com.kogo.content.storage.repository.ReplyRepository
 import com.kogo.content.storage.repository.ViewerRepository

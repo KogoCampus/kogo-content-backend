@@ -1,7 +1,7 @@
 package com.kogo.content.search
 
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.PaginationSlice
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
@@ -128,7 +128,7 @@ class AtlasSearchConfigTest {
     @BeforeEach
     fun setup() {
         mongoTemplate.dropCollection(testSearchIndex.getTargetCollectionName())
-        
+
         val now = Instant.now()
         val testData = listOf(
             TestEntity(

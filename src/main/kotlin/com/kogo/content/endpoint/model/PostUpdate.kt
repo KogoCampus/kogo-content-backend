@@ -12,7 +12,7 @@ data class PostUpdate (
     var content: String? = null,
 
     @ArraySchema(schema = Schema(description = "list of attachment ids to delete from the post", type = "String"))
-    var attachmentDelete: List<String>? = listOf(),
+    var attachmentDeleteIds: List<String>? = listOf(),
 
     @ArraySchema(schema = Schema(description = "list of image files to add to the post", type = "File"))
     @field:ValidFile(
@@ -22,7 +22,7 @@ data class PostUpdate (
     var images: List<MultipartFile>? = listOf(),
 
     /**
-     * Video attachment is currently not in use
+     * TODO: Video attachment is currently not in use
      */
     @ArraySchema(schema = Schema(description = "list of video files to add to the post", type = "File"))
     @field:ValidFile(
