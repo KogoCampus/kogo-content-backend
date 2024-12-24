@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # App Runner service information
-SERVICE_ARN="arn:aws:apprunner:us-west-2:992382730467:service/staging-kogo-content-service/ec2bb1efaada4088b9e783c1091a0068"
+SERVICE_ARN="arn:aws:apprunner:us-west-2:992382730467:service/staging-kogo-content-service/45fa577a7edb40de9072949e99c2142d"
 REGION="us-west-2"
 
 # Check if auto deploy is enabled (i.e., skipping confirmation)
