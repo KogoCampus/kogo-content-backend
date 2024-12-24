@@ -34,12 +34,6 @@ class AtlasSearchConfig @Autowired constructor(
             val collectionName = searchIndex.mongoEntityCollectionName()
             val currentVersion = calculateDefinitionVersion(definition)
 
-            // Create collection if it doesn't exist
-            if (!mongoTemplate.collectionExists(collectionName)) {
-                log.info { "Creating collection '$collectionName'..." }
-                mongoTemplate.createCollection(searchIndex.entity.java)
-            }
-
             when {
                 !isIndexExists(indexName, collectionName) -> {
                     createSearchIndex(indexName, collectionName, definition)
@@ -103,27 +97,32 @@ class AtlasSearchConfig @Autowired constructor(
     }
 
     private fun createSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
-        val command = Document().apply {
-            put("createSearchIndexes", collectionName)
-            put("indexes", listOf(Document().apply {
-                put("name", indexName)
-                put("definition", mapping.toDocument())
-            }))
-        }
+        if (mongoTemplate.collectionExists(collectionName)) {
+            val command = Document().apply {
+                put("createSearchIndexes", collectionName)
+                put("indexes", listOf(Document().apply {
+                    put("name", indexName)
+                    put("definition", mapping.toDocument())
+                }))
+            }
 
-        try {
-            mongoTemplate.db.runCommand(command)
-            log.info { "Search index '$indexName' created successfully." }
+            try {
+                mongoTemplate.db.runCommand(command)
+                log.info { "Search index '$indexName' created successfully." }
 
-        } catch (e: MongoCommandException) {
-            if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
-                log.info { "Search index '$indexName' already exists, skipping creation." }
-            } else {
+            } catch (e: MongoCommandException) {
+                if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
+                    log.info { "Search index '$indexName' already exists, skipping creation." }
+                } else {
+                    throw e
+                }
+            } catch (e: Exception) {
+                log.error { "Failed to create search index '$indexName': ${e.message}" }
                 throw e
             }
-        } catch (e: Exception) {
-            log.error { "Failed to create search index '$indexName': ${e.message}" }
-            throw e
+        }
+        else {
+            log.info { "Collection does not exist. Search index $indexName will not be created." }
         }
     }
 
