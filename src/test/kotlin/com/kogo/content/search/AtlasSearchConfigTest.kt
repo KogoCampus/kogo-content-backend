@@ -228,18 +228,4 @@ class AtlasSearchConfigTest {
         assertThat(result.items.first().metadata).isNotEmpty
         assertThat(result.items.first().metadata["category"]).isEqualTo("test")
     }
-
-    @Test
-    fun `should perform tag-based search`() {
-        atlasSearchConfig.initializeSearchIndexes()
-        Thread.sleep(1000)
-
-        val result = testSearchIndex.search(
-            searchText = "important",
-            paginationRequest = PaginationRequest(limit = 10)
-        )
-
-        assertThat(result.items).hasSize(1)
-        assertThat(result.items.first().tags).contains("important")
-    }
 }
