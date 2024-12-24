@@ -38,6 +38,9 @@ jobs:
                 echo "Waiting for MongoDB to be ready..."
                 timeout 30 bash -c 'until docker compose -f docker-compose.test.yml logs mongod | grep "Waiting for connections"; do sleep 1; done'
                 echo "MongoDB is ready"
+                echo "Waiting for MongoDB Atlas Search to be ready..."
+                timeout 30 bash -c 'until docker compose -f docker-compose.test.yml logs mongot | grep "starting on 0.0.0.0/0.0.0.0"; do sleep 1; done'
+                echo "MongoDB Atlas Search is ready"
 
             - name: Build and Test
               run: |
