@@ -20,12 +20,6 @@ jobs:
               with:
                   ref: ${{ github.event.pull_request.head.sha }}
 
-            - name: Set Release Context
-              if: github.event_name == 'release'
-              run: |
-                echo "Triggered by release ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
-                echo "RELEASE_CONTEXT=true" >> $GITHUB_ENV
-
             - uses: actions/setup-java@v3
               with:
                   distribution: temurin
@@ -52,11 +46,3 @@ jobs:
             - name: Cleanup Docker Compose
               if: always()
               run: docker compose -f docker-compose.test.yml down -v
-
-            - name: Create Release Context Commit
-              if: env.RELEASE_CONTEXT == 'true'
-              run: |
-                git config --global user.name 'GitHub Actions'
-                git config --global user.email 'actions@github.com'
-                git commit --allow-empty -m "Triggered by release ${{ github.event.release.tag_name }}"
-                git push
