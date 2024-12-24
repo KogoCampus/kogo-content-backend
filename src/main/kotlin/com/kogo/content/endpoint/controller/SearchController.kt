@@ -2,11 +2,11 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.endpoint.model.TopicResponse
+import com.kogo.content.endpoint.model.GroupResponse
 import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.PaginationSlice
+import com.kogo.content.service.GroupService
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("media/search")
 class SearchController(
     private val postService: PostService,
-    private val topicService: TopicService,
+    private val groupService: GroupService,
     private val userService: UserService
 ) {
 
@@ -68,12 +68,12 @@ class SearchController(
         @RequestParam("q") keyword: String,
         paginationRequest: PaginationRequest
     ) = run {
-        val user = userService.getCurrentUser()
-        val paginationResponse = postService.searchPostAggregatesByKeyword(keyword, paginationRequest)
+        val user = userService.findCurrentUser()
+        val paginationResponse = postService.search(keyword, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { post ->
-                PostResponse.create(post, user)
+            data = paginationResponse.items.map { it ->
+                PostResponse.from(it, user)
             },
             headers = paginationResponse.toHttpHeaders()
         )
@@ -111,7 +111,7 @@ class SearchController(
             ],
             content = [Content(
                 mediaType = "application/json",
-                array = ArraySchema(schema = Schema(implementation = TopicResponse::class))
+                array = ArraySchema(schema = Schema(implementation = GroupResponse::class))
             )]
         )]
     )
@@ -119,13 +119,11 @@ class SearchController(
         @RequestParam("q") keyword: String,
         paginationRequest: PaginationRequest
     ) = run {
-        val user = userService.getCurrentUser()
-        val paginationResponse = topicService.searchTopicAggregatesByKeyword(keyword, paginationRequest)
+        val user = userService.findCurrentUser()
+        val paginationResponse = groupService.search(keyword, paginationRequest)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { topic ->
-                TopicResponse.create(topic, user)
-            },
+            data = paginationResponse.items.map { GroupResponse.from(it, user) },
             headers = paginationResponse.toHttpHeaders()
         )
     }

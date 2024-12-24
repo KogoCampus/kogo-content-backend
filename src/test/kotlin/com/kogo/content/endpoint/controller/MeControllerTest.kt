@@ -1,87 +1,194 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.User
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.endpoint.common.ErrorCode
+import com.kogo.content.service.*
 import com.kogo.content.endpoint.`test-util`.Fixture
-import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
-import com.kogo.content.storage.entity.Topic
-import com.kogo.content.storage.view.TopicAggregate
+import com.kogo.content.storage.model.*
+import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.User
+import com.kogo.content.endpoint.model.UserData
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.slot
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.mock.web.MockPart
+import org.springframework.test.web.servlet.*
+import java.time.Instant
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filter chain during testing
-class MeControllerTest  @Autowired constructor(
+@AutoConfigureMockMvc(addFilters = false)
+class MeControllerTest @Autowired constructor(
     private val mockMvc: MockMvc
 ) {
+    @MockkBean private lateinit var userService: UserService
+    @MockkBean private lateinit var groupService: GroupService
+    @MockkBean private lateinit var postService: PostService
+    @MockkBean private lateinit var notificationService: NotificationService
 
-    companion object {
-        private const val ME_API_BASE_URL = "/me"
-    }
-
-    @MockkBean
-    lateinit var userService: UserService
-
-    @MockkBean
-    lateinit var postService: PostService
-
-    @MockkBean
-    lateinit var topicService: TopicService
-
-    /**
-     * Fixtures
-     */
-    private final val user: User = Fixture.createUserFixture()
-    private final val topic: Topic = Fixture.createTopicFixture(user)
-    private final val topicAggregate: TopicAggregate = Fixture.createTopicAggregateFixture(topic)
-
-    private fun buildMeApiUrl(vararg paths: String) =
-        if (paths.isNotEmpty()) "$ME_API_BASE_URL/" + paths.joinToString("/")
-        else ME_API_BASE_URL
+    private lateinit var currentUser: User
+    private lateinit var group: Group
+    private lateinit var post: Post
 
     @BeforeEach
     fun setup() {
-        every { topicService.findAggregate(topic.id!!) } returns topicAggregate
+        currentUser = Fixture.createUserFixture()
+        group = Fixture.createGroupFixture(owner = currentUser)
+        post = Fixture.createPostFixture(group = group, author = currentUser)
+
+        every { userService.findCurrentUser() } returns currentUser
     }
 
     @Test
-    fun `should return current user's info`() {
-        every { userService.getCurrentUser() } returns user
-        mockMvc.get(buildMeApiUrl())
-            .andExpect { status { isOk() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data.id") { value(user.id) } }
-            .andExpect { jsonPath("$.data.username") { value(user.username) } }
-            .andExpect { jsonPath("$.data.createdAt").exists() }
+    fun `should get current user info successfully`() {
+        mockMvc.get("/me") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.id") { value(currentUser.id) }
+            jsonPath("$.data.username") { value(currentUser.username) }
+            jsonPath("$.data.email") { value(currentUser.email) }
+            jsonPath("$.data.schoolInfo.schoolName") { value(currentUser.schoolInfo.schoolName) }
+        }
     }
 
     @Test
-    fun `should return topics which user is the owner`() {
-        val topics = listOf(
-            Fixture.createTopicFixture(owner = user)
+    fun `should update user info successfully`() {
+        val updatedUsername = "updated-username"
+        val updatedUser = currentUser.copy().apply {
+            username = updatedUsername
+        }
+
+        every { userService.update(currentUser, any()) } returns updatedUser
+
+        mockMvc.multipart("/me") {
+            part(MockPart("username", updatedUsername.toByteArray()))
+            with { it.method = "PUT"; it }
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.username") { value(updatedUsername) }
+            jsonPath("$.data.email") { value(currentUser.email) }
+        }
+    }
+
+    @Test
+    fun `should get user's owned posts`() {
+        val userPosts = listOf(post)
+        every { postService.findAllByAuthor(currentUser) } returns userPosts
+
+        mockMvc.get("/me/ownership/posts") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].id") { value(post.id) }
+            jsonPath("$.data[0].author.id") { value(currentUser.id) }
+        }
+    }
+
+    @Test
+    fun `should get user's owned groups`() {
+        val userGroups = listOf(group)
+        every { groupService.findByOwner(currentUser) } returns userGroups
+
+        mockMvc.get("/me/ownership/groups") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].id") { value(group.id) }
+            jsonPath("$.data[0].owner.id") { value(currentUser.id) }
+        }
+    }
+
+    @Test
+    fun `should transfer group ownership successfully`() {
+        val newOwner = Fixture.createUserFixture()
+        val updatedGroup = group.copy().apply {
+            owner = newOwner
+        }
+
+        every { groupService.findOrThrow(group.id!!) } returns group
+        every { userService.findOrThrow(newOwner.id!!) } returns newOwner
+        every { groupService.follow(group, newOwner) } returns true
+        every { groupService.transferOwnership(group, newOwner) } returns updatedGroup
+
+        mockMvc.multipart("/me/ownership/groups/${group.id}/transfer") {
+            part(MockPart("transfer_to", newOwner.id!!.toByteArray()))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.owner.id") { value(newOwner.id) }
+        }
+    }
+
+    @Test
+    fun `should get user's following groups`() {
+        val followingGroups = listOf(group)
+        every { groupService.findAllByFollowerId(currentUser.id!!) } returns followingGroups
+
+        mockMvc.get("/me/following") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].id") { value(group.id) }
+            jsonPath("$.data[0].followedByCurrentUser") { value(true) }
+        }
+    }
+
+    @Test
+    fun `should update push token successfully`() {
+        val pushToken = "new-push-token"
+        val updatedUser = currentUser.copy().apply {
+            pushNotificationToken = pushToken
+        }
+
+        every { notificationService.updatePushToken(currentUser.id!!, pushToken) } returns updatedUser
+
+        mockMvc.put("/me/push-token?push_token=$pushToken") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.pushNotificationToken") { value(pushToken) }
+        }
+    }
+
+    @Test
+    fun `should get user notifications with pagination`() {
+        val sender = Fixture.createUserFixture()
+        val notifications = listOf(
+            Notification(
+                recipientId = currentUser.id!!,
+                sender = UserData.Public.from(sender),
+                eventType = EventType.LIKE_TO_POST,
+                message = NotificationMessage(
+                    title = "New Like",
+                    body = "${sender.username} liked your post",
+                    dataType = DataType.POST,
+                    data = post
+                ),
+                isPushNotification = true,
+                createdAt = Instant.now()
+            )
         )
+        val paginationSlice = PaginationSlice(items = notifications)
 
-        every { userService.getCurrentUser() } returns user
-        every { topicService.findTopicsByOwner(user) } returns topics
-        every { topicService.findAggregate(any()) } returns Fixture.createTopicAggregateFixture(topics[0])
-        every { topicService.hasUserFollowedTopic(any(), any()) } returns true
+        every { notificationService.getNotificationsByRecipientId(currentUser.id!!, any()) } returns paginationSlice
 
-        mockMvc.get("$ME_API_BASE_URL/ownership/topics")
-            .andExpect { status { isOk() } }
-            .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
-            .andExpect { jsonPath("$.data[0].id") { value(topics[0].id) } }
-            .andExpect { jsonPath("$.data[0].createdAt").exists() }
-            .andExpect { jsonPath("$.data[0].updatedAt").exists() }
+        mockMvc.get("/me/notifications") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].recipientId") { value(currentUser.id) }
+            jsonPath("$.data[0].eventType") { value(EventType.LIKE_TO_POST.name) }
+            jsonPath("$.data[0].message.title") { value("New Like") }
+            jsonPath("$.data[0].message.dataType") { value(DataType.POST.name) }
+        }
     }
 }

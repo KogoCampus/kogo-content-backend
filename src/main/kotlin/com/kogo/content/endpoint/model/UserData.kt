@@ -1,27 +1,25 @@
 package com.kogo.content.endpoint.model
 
-import com.kogo.content.storage.entity.User
-
+import com.kogo.content.storage.model.entity.SchoolInfo
+import com.kogo.content.storage.model.entity.User
 
 class UserData {
     data class IncludeCredentials (
         var id: String,
-        var pushToken: String,
         var username: String,
         var email: String,
-        var profileImage: AttachmentResponse?= null,
-        var schoolName: String,
-        var schoolShortenedName: String
+        var profileImage: AttachmentResponse? = null,
+        var schoolInfo: SchoolInfo,
+        var pushNotificationToken: String?,
     ) {
         companion object {
             fun from(user: User) = IncludeCredentials(
                 id = user.id!!,
-                pushToken = user.pushToken.toString(),
                 username = user.username,
-                email = user.email!!,
-                profileImage = user.profileImage?.let { AttachmentResponse.create(it) },
-                schoolName = user.schoolName!!,
-                schoolShortenedName = user.schoolShortenedName!!
+                email = user.email,
+                profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
+                schoolInfo = user.schoolInfo,
+                pushNotificationToken = user.pushNotificationToken
             )
         }
     }
@@ -29,18 +27,20 @@ class UserData {
     data class Public(
         val id: String,
         val username: String,
-        var profileImage: AttachmentResponse?= null,
+        var profileImage: AttachmentResponse? = null,
         val schoolName: String,
         val schoolShortenedName: String,
     ) {
         companion object {
-            fun from(user: User) = Public(
-                id = user.id!!,
-                username = user.username,
-                profileImage = user.profileImage?.let { AttachmentResponse.create(it) },
-                schoolName = user.schoolName!!,
-                schoolShortenedName = user.schoolShortenedName!!
-            )
+            fun from(user: User): Public {
+                return Public(
+                    id = user.id!!,
+                    username = user.username,
+                    profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
+                    schoolName = user.schoolInfo.schoolName,
+                    schoolShortenedName = user.schoolInfo.schoolShortenedName
+                )
+            }
         }
     }
 }

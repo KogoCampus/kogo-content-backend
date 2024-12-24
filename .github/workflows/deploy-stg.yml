@@ -1,12 +1,12 @@
 name: Deploy Staging Image
 
 on:
-    workflow_dispatch:
-    push:
+    workflow_run:
+        workflows: ["build and test"]
+        types:
+            - completed
         branches:
             - main
-        paths:
-            - 'src/**'
 
 env:
     AWS_REGION: us-west-2
@@ -16,6 +16,7 @@ env:
 jobs:
     deploy-staging:
         runs-on: ubuntu-latest
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
         steps:
             - name: Checkout Code
@@ -25,6 +26,12 @@ jobs:
               with:
                   distribution: temurin
                   java-version: 21
+
+            - name: Install SOPS
+              run: |
+                  curl -L https://github.com/mozilla/sops/releases/download/v3.9.1/sops-v3.9.1.linux.amd64 -o sops
+                  chmod +x sops
+                  sudo mv sops /usr/local/bin/sops
 
             - name: Setup AWS CLI
               uses: aws-actions/configure-aws-credentials@v1
@@ -47,6 +54,10 @@ jobs:
                   VERSION=$(grep "^version" build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
                   echo "KCB_VERSION=$VERSION" >> $GITHUB_ENV
 
+            - name: Decrypt Configuration
+              run: |
+                  sops --config=src/main/resources/sops.yml -d -i src/main/resources/application-stg.yml
+
             - name: Build with Gradle (stg profile)
               run: ./gradlew clean build -x test
 
@@ -56,9 +67,6 @@ jobs:
                   docker build \
                     --build-arg KCB_VERSION=${{ env.KCB_VERSION }} \
                     --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
-                    --build-arg AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }} \
-                    --build-arg AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }} \
-                    --build-arg AWS_REGION=${{ env.AWS_REGION }} \
                     -t ${{ env.ECR_REPOSITORY }}:latest \
                     -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} \
                     .
@@ -68,4 +76,4 @@ jobs:
                   docker push ${{ env.ECR_REPOSITORY }} --all-tags
 
             - name: Run App Runner Deployment
-              run: ./bin/deploy-apprunner-stg.sh --auto
+              run: .github/deploy-apprunner-stg.sh --auto

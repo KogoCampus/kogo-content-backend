@@ -5,7 +5,7 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.exception.*
 import org.springframework.http.HttpStatus
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.storage.entity.Topic
+import com.kogo.content.storage.model.entity.Group
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,13 +23,13 @@ class ExceptionHandlerTest {
 
     @Test
     fun `handleResourceNotFoundException should return NOT_FOUND`() {
-        val ex = ResourceNotFoundException.of<Topic>("123")
+        val ex = ResourceNotFoundException.of<Group>("123")
 
         val response: ResponseEntity<HttpJsonResponse.ErrorResponse> = exceptionHandler.handleResourceNotFoundException(ex)
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertEquals(ErrorCode.NOT_FOUND.name, response.body?.error)
-        assertEquals("Topic not found for id: 123", response.body?.details)
+        assertEquals("Group not found for id: 123", response.body?.details)
     }
 
     @Test

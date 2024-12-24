@@ -1,6 +1,6 @@
 package com.kogo.content.search
 
-import com.kogo.content.common.*
+import com.kogo.content.endpoint.common.*
 import org.bson.Document
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
@@ -19,15 +19,15 @@ class AtlasSearchQueryBuilder(
 
     fun <T : Any> search(
         entityClass: KClass<T>,
-        searchIndexName: String,
+        searchIndex: String,
         paginationRequest: PaginationRequest,
         searchText: String,
-        configuration: SearchConfiguration,
+        configuration: SearchConfiguration?,
     ): PaginationSlice<T> {
         val operations = mutableListOf<AggregationOperation>()
 
         operations.addAll(buildSearchOperations(
-            searchIndexName = searchIndexName,
+            searchIndexName = searchIndex,
             searchText = searchText,
             configuration = configuration,
             paginationRequest = paginationRequest,
@@ -44,20 +44,32 @@ class AtlasSearchQueryBuilder(
     private fun buildSearchOperations(
         searchIndexName: String,
         searchText: String,
-        configuration: SearchConfiguration,
+        configuration: SearchConfiguration?,
         paginationRequest: PaginationRequest,
     ): List<AggregationOperation> = listOf(
         // Search operation
         AggregationOperation {
             Document("\$search", Document().apply {
                 put("index", searchIndexName)
-                put("compound", buildCompoundQuery(searchText, configuration, paginationRequest.pageToken.filters))
-                // Add searchAfter if cursor exists
+                val (key, value) = when (configuration) {
+                    null -> "text" to Document().apply {
+                        put("query", searchText)
+                        put("path", Document("wildcard", "*"))
+                    }
+                    else -> "compound" to buildSearchCompoundQuery(
+                        searchText,
+                        configuration,
+                        paginationRequest.pageToken.filterFields
+                    )
+                }
+                put(key, value)
+
                 paginationRequest.pageToken.cursors["searchAfter"]?.let { cursor ->
                     put("searchAfter", cursor.value)
                 }
             })
         },
+
         // Add metadata fields
         AggregationOperation {
             Document("\$addFields", Document().apply {
@@ -65,6 +77,7 @@ class AtlasSearchQueryBuilder(
                 put("_searchAfter", Document("\$meta", "searchSequenceToken"))
             })
         },
+
         // Limit results
         AggregationOperation {
             Document("\$limit", minOf(paginationRequest.limit, ATLAS_SEARCH_MAX_RESULTS))
@@ -78,7 +91,7 @@ class AtlasSearchQueryBuilder(
         is Score.Function -> Document("function", score.expression)
     }
 
-    private fun buildCompoundQuery(
+    private fun buildSearchCompoundQuery(
         searchText: String,
         configuration: SearchConfiguration,
         filters: List<FilterField>
@@ -91,9 +104,9 @@ class AtlasSearchQueryBuilder(
         })))
 
         // Should clause for boosting and near queries
+        // Add score field boosts
         val shouldClauses = mutableListOf<Document>()
 
-        // Add score field boosts
         configuration.scoreFields.forEach { scoreField ->
             shouldClauses.add(Document("text", Document().apply {
                 put("query", searchText)

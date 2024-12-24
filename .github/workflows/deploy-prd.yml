@@ -1,0 +1,80 @@
+name: Deploy Production Image
+
+on:
+    workflow_run:
+        workflows: ["build and test"]
+        types:
+            - completed
+
+env:
+    AWS_REGION: us-west-2
+    ECR_REPOSITORY: 992382730467.dkr.ecr.us-west-2.amazonaws.com/production-kogo-content-backend
+    ACTIVE_PROFILE: prd
+
+jobs:
+    deploy-production:
+        runs-on: ubuntu-latest
+        if: |
+            github.event.workflow_run.conclusion == 'success' && 
+            github.event.workflow_run.head_branch == 'main' &&
+            contains(github.event.workflow_run.head_commit.message, 'Triggered by release')
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
+
+            - uses: actions/setup-java@v3
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - name: Install SOPS
+              run: |
+                  curl -L https://github.com/mozilla/sops/releases/download/v3.9.1/sops-v3.9.1.linux.amd64 -o sops
+                  chmod +x sops
+                  sudo mv sops /usr/local/bin/sops
+
+            - name: Setup AWS CLI
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Login to Amazon ECR
+              id: ecr_login
+              uses: aws-actions/amazon-ecr-login@v1
+
+            - name: Generate Timestamp
+              id: timestamp
+              run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+
+            - name: Extract KCB_VERSION from build.gradle.kts
+              id: extract_version
+              run: |
+                  VERSION=$(grep "^version" build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
+                  echo "KCB_VERSION=$VERSION" >> $GITHUB_ENV
+
+            - name: Decrypt Configuration
+              run: |
+                  sops --config=src/main/resources/sops.yml -d -i src/main/resources/application-prd.yml
+
+            - name: Build with Gradle (prd profile)
+              run: ./gradlew clean build -x test
+
+            - name: Build Docker image
+              run: |
+                  COMMIT_HASH=${{ github.sha }}
+                  docker build \
+                    --build-arg KCB_VERSION=${{ env.KCB_VERSION }} \
+                    --build-arg ACTIVE_PROFILE=${{ env.ACTIVE_PROFILE }} \
+                    -t ${{ env.ECR_REPOSITORY }}:latest \
+                    -t ${{ env.ECR_REPOSITORY }}:${{ env.TIMESTAMP }}-${COMMIT_HASH::7} \
+                    .
+
+            - name: Push Docker images to ECR
+              run: |
+                  docker push ${{ env.ECR_REPOSITORY }} --all-tags
+
+            - name: Run App Runner Deployment
+              run: .github/deploy-apprunner-prd.sh --auto

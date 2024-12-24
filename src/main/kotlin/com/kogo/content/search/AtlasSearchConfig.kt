@@ -22,7 +22,6 @@ class AtlasSearchConfig @Autowired constructor(
 
     @PostConstruct
     fun initializeSearchIndexes() {
-        // Create version collection if it doesn't exist
         if (!mongoTemplate.collectionExists(VERSION_COLLECTION)) {
             mongoTemplate.createCollection(VERSION_COLLECTION)
         }
@@ -30,9 +29,9 @@ class AtlasSearchConfig @Autowired constructor(
         val searchIndexBeans = applicationContext.getBeansOfType(SearchIndex::class.java)
 
         searchIndexBeans.values.forEach { searchIndex ->
-            val indexName = searchIndex.getIndexName()
-            val collectionName = searchIndex.getTargetCollectionName()
-            val definition = searchIndex.getSearchIndexDefinition()
+            val indexName = searchIndex.indexName()
+            val definition = searchIndex.searchIndexDefinition()
+            val collectionName = searchIndex.mongoEntityCollectionName()
             val currentVersion = calculateDefinitionVersion(definition)
 
             when {
@@ -76,45 +75,6 @@ class AtlasSearchConfig @Autowired constructor(
             ?.getString("version")
 
         return storedVersion == currentVersion
-    }
-
-    private fun saveIndexVersion(indexName: String, version: String) {
-        val versionDoc = Document()
-            .append("indexName", indexName)
-            .append("version", version)
-            .append("updatedAt", java.time.Instant.now())
-
-        val updateCommand = Document().apply {
-            put("update", VERSION_COLLECTION)
-            put("updates", listOf(Document().apply {
-                put("q", Document("indexName", indexName))
-                put("u", Document("\$set", versionDoc))
-                put("upsert", true)
-            }))
-        }
-
-        try {
-            mongoTemplate.db.runCommand(updateCommand)
-        } catch (e: Exception) {
-            log.error { "Failed to save index version for '$indexName': ${e.message}" }
-            throw e
-        }
-    }
-
-    private fun updateSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
-        try {
-            val command = Document().apply {
-                put("updateSearchIndex", collectionName)
-                put("name", indexName)
-                put("definition", mapping.toDocument())
-            }
-
-            mongoTemplate.db.runCommand(command)
-            log.info { "Updated search index '$indexName' successfully." }
-        } catch (e: Exception) {
-            log.error { "Failed to update search index '$indexName': ${e.message}" }
-            throw e
-        }
     }
 
     private fun isIndexExists(indexName: String, collectionName: String): Boolean {
@@ -163,6 +123,45 @@ class AtlasSearchConfig @Autowired constructor(
         }
         else {
             log.info { "Collection does not exist. Search index $indexName will not be created." }
+        }
+    }
+
+    private fun updateSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
+        try {
+            val command = Document().apply {
+                put("updateSearchIndex", collectionName)
+                put("name", indexName)
+                put("definition", mapping.toDocument())
+            }
+
+            mongoTemplate.db.runCommand(command)
+            log.info { "Updated search index '$indexName' successfully." }
+        } catch (e: Exception) {
+            log.error { "Failed to update search index '$indexName': ${e.message}" }
+            throw e
+        }
+    }
+
+    private fun saveIndexVersion(indexName: String, version: String) {
+        val versionDoc = Document()
+            .append("indexName", indexName)
+            .append("version", version)
+            .append("updatedAt", java.time.Instant.now())
+
+        val updateCommand = Document().apply {
+            put("update", VERSION_COLLECTION)
+            put("updates", listOf(Document().apply {
+                put("q", Document("indexName", indexName))
+                put("u", Document("\$set", versionDoc))
+                put("upsert", true)
+            }))
+        }
+
+        try {
+            mongoTemplate.db.runCommand(updateCommand)
+        } catch (e: Exception) {
+            log.error { "Failed to save index version for '$indexName': ${e.message}" }
+            throw e
         }
     }
 }

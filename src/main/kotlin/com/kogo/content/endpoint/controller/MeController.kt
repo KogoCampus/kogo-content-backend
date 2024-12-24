@@ -1,17 +1,16 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.common.PaginationRequest
-import com.kogo.content.common.PaginationSlice
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.model.*
-import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.NotificationService
 import com.kogo.content.service.PostService
-import com.kogo.content.service.TopicService
+import com.kogo.content.service.GroupService
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.Notification
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -29,7 +28,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 class MeController @Autowired constructor(
     private val userService: UserService,
-    private val topicService: TopicService,
+    private val groupService: GroupService,
     private val postService: PostService,
     private val notificationService: NotificationService
 ) {
@@ -44,7 +43,7 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )])
     fun getMe() = run {
-        val me = userService.getCurrentUser()
+        val me = userService.findCurrentUser()
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
     }
 
@@ -62,11 +61,10 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )]
     )
-    fun updateMe(
-        @Valid meUpdate: UserUpdate) = run {
-            val me = userService.getCurrentUser()
-            val updatedUser = userService.updateUser(me, meUpdate)
-            HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    fun updateMe(@Valid meUpdate: UserUpdate) = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.update(me, meUpdate)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
     @GetMapping("me/ownership/posts")
@@ -79,66 +77,73 @@ class MeController @Autowired constructor(
                 schema = Schema(implementation = PostResponse::class)))],
         )])
     fun getPostsAuthoredByUser() = run {
-        val me = userService.getCurrentUser()
-        HttpJsonResponse.successResponse(postService.findPostsByAuthor(me).map { PostResponse.create(postService.findAggregate(it.id!!), me) })
+        val me = userService.findCurrentUser()
+        HttpJsonResponse.successResponse(postService.findAllByAuthor(me).map {
+            PostResponse.from(it, me)
+        })
     }
 
-    @GetMapping("me/ownership/topics")
+    @GetMapping("me/ownership/groups")
     @Operation(
-        summary = "get my topics",
+        summary = "get my groups",
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
             content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = TopicResponse::class)))],
+                schema = Schema(implementation = GroupResponse::class)))],
         )])
-    fun getTopicsOwnedByUser() = run {
-        val me = userService.getCurrentUser()
-        HttpJsonResponse.successResponse(topicService.findTopicsByOwner(me).map { TopicResponse.create(topicService.findAggregate(it.id!!), me) })
+    fun getGroupOwnedByUser() = run {
+        val me = userService.findCurrentUser()
+        HttpJsonResponse.successResponse(groupService.findByOwner(me).map {
+            GroupResponse.from(it, me)
+        })
     }
 
     @RequestMapping(
-        path = ["me/ownership/topics/{topicId}/transfer"],
+        path = ["me/ownership/groups/{groupId}/transfer"],
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Operation(
-        summary = "transfer the topic ownership",
+        summary = "transfer the group ownership",
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))]
         )]
     )
     fun transferOwner(
-        @PathVariable("topicId") topicId: String,
+        @PathVariable("groupId") groupId: String,
         @RequestParam("transfer_to") newOwnerId: String): ResponseEntity<*> = run {
-        val topic = topicService.find(topicId) ?: throwTopicNotFound(topicId)
-        val newOwner = userService.find(newOwnerId) ?: throwUserNotFound(newOwnerId)
-        val originalOwner = userService.getCurrentUser()
+        val group = groupService.findOrThrow(groupId)
+        val newOwner = userService.findOrThrow(newOwnerId)
+        val originalOwner = userService.findCurrentUser()
 
-        if(!topicService.isUserTopicOwner(topic, originalOwner))
-            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this topic")
+        if(group.owner.id != originalOwner.id)
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this group")
 
-        if(originalOwner.id!! == newOwnerId)
+        if(originalOwner.id == newOwnerId)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot transfer ownership to yourself")
-        val transferredTopic = topicService.transferOwnership(topic, newOwner)
-        topicService.follow(topic, newOwner)
 
-        HttpJsonResponse.successResponse(TopicResponse.create(topicService.findAggregate(transferredTopic.id!!), originalOwner))
+        groupService.follow(group, newOwner)
+        val transferredGroup = groupService.transferOwnership(group, newOwner)
+
+        HttpJsonResponse.successResponse(GroupResponse.from(transferredGroup, originalOwner))
     }
 
     @GetMapping("me/following")
     @Operation(
-        summary = "get my following topics",
+        summary = "get my following groups",
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = TopicResponse::class))]
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))]
         )])
     fun getMeFollowing() = run {
-        val me = userService.getCurrentUser()
-        val followingTopics = topicService.getAllFollowingTopicsByUserId(me.id!!)
-        HttpJsonResponse.successResponse(followingTopics.map{ TopicResponse.create(topicService.findAggregate(it.id!!), me) })
+        val me = userService.findCurrentUser()
+        val followingGroups = groupService.findAllByFollowerId(me.id!!)
+        HttpJsonResponse.successResponse(followingGroups.map{
+            GroupResponse.from(it, me)
+        })
     }
 
     @RequestMapping(
@@ -162,7 +167,7 @@ class MeController @Autowired constructor(
     fun updatePushToken(
         @RequestParam("push_token") pushToken: String
     ): ResponseEntity<*> = run {
-        val me = userService.getCurrentUser()
+        val me = userService.findCurrentUser()
         val updatedMe = notificationService.updatePushToken(me.id!!, pushToken)
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedMe))
     }
@@ -197,7 +202,7 @@ class MeController @Autowired constructor(
     ) fun getNotification(
         paginationRequest: PaginationRequest
     ): ResponseEntity<*> = run {
-        val me = userService.getCurrentUser()
+        val me = userService.findCurrentUser()
         val paginationResponse = notificationService.getNotificationsByRecipientId(me.id!!, paginationRequest)
 
         HttpJsonResponse.successResponse(
@@ -205,8 +210,5 @@ class MeController @Autowired constructor(
             headers = paginationResponse.toHttpHeaders()
         )
     }
-
-    private fun throwUserNotFound(userId: String): Nothing = throw ResourceNotFoundException.of<User>(userId)
-    private fun throwTopicNotFound(topicId: String): Nothing = throw ResourceNotFoundException.of<Topic>(topicId)
 }
 

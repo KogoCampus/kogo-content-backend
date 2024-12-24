@@ -1,6 +1,9 @@
 server:
   port: 8080
 
+kogo-api:
+    authenticate: "https://api.staging.kogocampus.com/student/authenticate"
+
 springdoc:
     api-docs:
         path: /api-docs
@@ -12,6 +15,13 @@ spring:
         name: kogo-content-backend
     profiles:
         default: "local"
+    data:
+        mongodb:
+            database: kogo_content_backend
+            uri: mongodb://localhost:27017/kogo-content-backend
+            username: admin
+            password: password
+            auto-index-creation: true
 
 management:
     endpoints:
@@ -19,6 +29,3 @@ management:
             base-path: /-
             exposure:
                 include: health
-
-kogo-api:
-    authenticate: "https://api.staging.kogocampus.com/student/authenticate"
