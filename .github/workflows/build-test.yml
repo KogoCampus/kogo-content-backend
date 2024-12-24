@@ -41,7 +41,7 @@ jobs:
 
             - name: Build and Test
               run: |
-                ./gradlew test --info --stacktrace
+                ./gradlew build --no-daemon --stacktrace
 
             - name: Cleanup Docker Compose
               if: always()
