@@ -17,9 +17,10 @@ class MongoPaginationQueryBuilder(
     fun <T : Any> getPage(
         entityClass: KClass<T>,
         paginationRequest: PaginationRequest,
-        preAggregationOperations: List<AggregationOperation> = emptyList()
+        preAggregationOperations: List<AggregationOperation> = emptyList(),
+        allowedDynamicFields: Set<String> = emptySet()
     ): PaginationSlice<T> {
-        validateFields(paginationRequest, entityClass, entityClass.simpleName ?: "Unknown")
+        validateFields(paginationRequest, entityClass, entityClass.simpleName ?: "Unknown", allowedDynamicFields)
 
         val operations = mutableListOf<AggregationOperation>()
         operations.addAll(preAggregationOperations)
@@ -153,25 +154,26 @@ class MongoPaginationQueryBuilder(
     private fun validateFields(
         request: PaginationRequest,
         entityClass: KClass<*>,
-        entityName: String
+        entityName: String,
+        allowedDynamicFields: Set<String> = emptySet()
     ) {
         // Check sort fields
         request.pageToken.sortFields.forEach { sortField ->
-            if (!isFieldValid(sortField.field, entityClass)) {
+            if (!isFieldValid(sortField.field, entityClass) && !allowedDynamicFields.contains(sortField.field)) {
                 throw InvalidFieldException(sortField.field, entityName, "sorting")
             }
         }
 
         // Check filter fields
         request.pageToken.filterFields.forEach { filter ->
-            if (!isFieldValid(filter.field, entityClass)) {
+            if (!isFieldValid(filter.field, entityClass) && !allowedDynamicFields.contains(filter.field)) {
                 throw InvalidFieldException(filter.field, entityName, "filtering")
             }
         }
 
         // Check cursor fields
         request.pageToken.cursors.keys.forEach { field ->
-            if (!isFieldValid(field, entityClass)) {
+            if (!isFieldValid(field, entityClass) && !allowedDynamicFields.contains(field)) {
                 throw InvalidFieldException(field, entityName, "cursor pagination")
             }
         }

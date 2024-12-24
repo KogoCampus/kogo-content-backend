@@ -2,44 +2,44 @@
 
 This is a Kotlin Spring Boot application serving as a backend API service for the Kogo content platform.
 
-**Prerequisites:**
-- JDK 21 (or higher) is required.
-- AWS CLI v2
+## Edit Spring configuration for the remote environments
 
-
-
+Decrypt configuration:
+```bash
+sops --config=src/main/resources/sops.yml -d -i src/main/resources/application-{env}.yml
 ```
-# Build and Run:
+
+Encrypt configuration before push:
+```bash
+sops --config=src/main/resources/sops.yml -e -i src/main/resources/application-{env}.yml
+```
+
+## Development
+
+### Create docker-compose test environment (Only required for integration tests)  
+```bash
+# Start test MongoDB
+docker compose -f docker-compose.test.yml up
+```
+
+if you want to run the full test cases  
+```bash
+# Run all tests (including integration)
+./gradlew test
+```
+
+### Run application  
+```bash
+# Development
 ./gradlew bootRun
 
-# Running Tests:
-./gradlew test
-
-# Generate OpenAPI spec
-./gradlew generateOpenApiDocs
+# Specific profile
+./gradlew bootRun --args='--spring.profiles.active=stg'
 ```
 
-The API documentation is hosted at
-https://kogocampus.github.io/kogo-content-backend/  
-
-### Retrieve AWS Cognito Oauth2 Access Token
-
-**Install AWS CLI (if not already installed):**
-
-Use the official AWS CLI v2 installation instructions: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
-```
-aws configure // enter your access id and secret
-./bin/cognito-accesskey.sh
+###Build
+```bash
+./gradlew clean build -x test  # Skip tests
+./gradlew clean build          # With tests
 ```
 
-### Dependencies
-
-**Install MongoDB Locally (if not already installed):**  
-Follow the official MongoDB installation guide: https://www.mongodb.com/try/download/community  
-Start the MongoDB Server in your local machine.
-
-**Run Meilisearch Locally:**
-```
-./bin/run-local-meilisearch.sh
-```
-This script starts a local instance of Meilisearch for development purposes.

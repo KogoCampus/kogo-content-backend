@@ -14,6 +14,7 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
+import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -25,18 +26,6 @@ class PostService(
     private val postRepository: PostRepository,
     private val postSearchIndex: SearchIndex<Post>
 ) : BaseEntityService<Post, String>(Post::class, postRepository) {
-
-    fun findAllInFollowing(paginationRequest: PaginationRequest, user: User) = run {
-        val matchOperation = Aggregation.match(
-            Criteria.where("group._id").`in`(user.followingGroupIds)
-        )
-
-        mongoPaginationQueryBuilder.getPage(
-            entityClass = Post::class,
-            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC),
-            preAggregationOperations = listOf(matchOperation)
-        )
-    }
 
     fun findCommentOrThrow(postId: String, commentId: String): Comment {
         val post = findOrThrow(postId)
@@ -58,13 +47,26 @@ class PostService(
 
     fun findAllByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)
 
+    fun findAllInFollowing(paginationRequest: PaginationRequest, user: User) = run {
+        val matchOperation = Aggregation.match(
+            Criteria.where("group").`in`(user.followingGroupIds.map { ObjectId(it) })
+        )
+
+        mongoPaginationQueryBuilder.getPage(
+            entityClass = Post::class,
+            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC),
+            preAggregationOperations = listOf(matchOperation)
+        )
+    }
+
     fun findAllTrending(paginationRequest: PaginationRequest) = run {
         val preAggregationOperations = Post.addPopularityAggregationOperations()
 
         mongoPaginationQueryBuilder.getPage(
             entityClass = Post::class,
             paginationRequest = paginationRequest.withSort("popularityScore", SortDirection.DESC),
-            preAggregationOperations = preAggregationOperations
+            preAggregationOperations = preAggregationOperations,
+            allowedDynamicFields = setOf("popularityScore")
         )
     }
 

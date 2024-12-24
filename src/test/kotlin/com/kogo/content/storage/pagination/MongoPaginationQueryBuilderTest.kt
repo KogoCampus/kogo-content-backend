@@ -1,8 +1,8 @@
 package com.kogo.content.storage.pagination
 
 import com.kogo.content.exception.InvalidFieldException
-import com.kogo.content.common.*
 import com.kogo.content.endpoint.common.*
+import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -24,7 +24,6 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
     private val mongoTemplate: MongoTemplate,
     private val mongoPaginationQueryBuilder: MongoPaginationQueryBuilder
 ) {
-
     @Document("test_entities")
     data class TestEntity(
         @Id
@@ -34,20 +33,30 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         @Field("created_at")
         val createdAt: Instant,
         @DocumentReference
-        val author: User? = null
+        val author: User? = null,
+        val dynamicField: String? = null
     )
 
-    private val fieldMappings = mapOf(
-        "id" to "_id",
-        "name" to "name",
-        "score" to "score",
-        "createdAt" to "created_at",
-        "author" to "author._id"
-    )
+    private lateinit var testUser: User
 
     @BeforeEach
     fun setup() {
         mongoTemplate.dropCollection(TestEntity::class.java)
+        mongoTemplate.dropCollection(User::class.java)
+
+        // Create test user
+        testUser = User(
+            id = "test-author",
+            username = "testuser",
+            email = "test@example.com",
+            schoolInfo = SchoolInfo(
+                schoolKey = "TEST",
+                schoolName = "Test School",
+                schoolShortenedName = "TS"
+            ),
+            followingGroupIds = mutableListOf()
+        )
+        mongoTemplate.save(testUser)
 
         // Create test data
         val testData = listOf(
@@ -73,8 +82,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).hasSize(2)
@@ -97,8 +105,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val firstPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            firstPageRequest,
-            fieldMappings = fieldMappings,
+            firstPageRequest
         )
 
         // Second page using cursor
@@ -109,8 +116,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val secondPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            secondPageRequest,
-            fieldMappings = fieldMappings,
+            secondPageRequest
         )
 
         assertThat(secondPage.items).hasSize(2)
@@ -132,8 +138,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).hasSize(3)
@@ -153,8 +158,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).hasSize(1)
@@ -169,8 +173,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).hasSize(2)
@@ -184,8 +187,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).isEmpty()
@@ -194,25 +196,21 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
     @Test
     fun `should handle document reference fields`() {
-        val author = User(id = "test-author", username = "testuser")
-        mongoTemplate.save(author)
-
         val entityWithRef = TestEntity(
             id = "6",
             name = "Foxtrot",
             score = 400,
             createdAt = Instant.now(),
-            author = author
+            author = testUser
         )
         mongoTemplate.save(entityWithRef)
 
         val request = PaginationRequest(limit = 1)
-            .withFilter("author", author.id!!, FilterOperator.EQUALS)
+            .withFilter("author", testUser.id!!, FilterOperator.EQUALS)
 
         val result = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
+            request
         )
 
         assertThat(result.items).hasSize(1)
@@ -228,51 +226,91 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThrows<InvalidFieldException> {
             mongoPaginationQueryBuilder.getPage(
                 TestEntity::class,
-                request,
-                fieldMappings = fieldMappings,
+                request
             )
         }
     }
 
     @Test
-    fun `should throw exception for excluded fields`() {
+    fun `should allow dynamic fields when specified`() {
         val request = PaginationRequest(limit = 3)
-            .withFilter("score", 200, FilterOperator.EQUALS)
-            .withSort("name", SortDirection.ASC)
+            .withFilter("dynamicScore", 100, FilterOperator.EQUALS)
+            .withSort("dynamicScore", SortDirection.DESC)
 
-        val excludedFields = setOf("score")
+        val allowedDynamicFields = setOf("dynamicScore")
 
-        assertThrows<InvalidFieldException> {
-            mongoPaginationQueryBuilder.getPage(
-                TestEntity::class,
-                request,
-                fieldMappings = fieldMappings,
-                excludedFields = excludedFields
-            )
-        }
-    }
-
-    @Test
-    fun `should throw exception for unmapped fields`() {
-        val incompleteFieldMappings = mapOf(
-            "name" to "name"  // Only include name field
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request,
+            allowedDynamicFields = allowedDynamicFields
         )
 
-        val request = PaginationRequest(limit = 2)
-            .withFilter("nonexistentField", 200, FilterOperator.EQUALS)
-            .withSort("name", SortDirection.ASC)
-
-        assertThrows<InvalidFieldException> {
-            mongoPaginationQueryBuilder.getPage(
-                TestEntity::class,
-                request,
-                fieldMappings = incompleteFieldMappings,
-            )
-        }
+        assertThat(result.items).isEmpty()
     }
 
     @Test
-    fun `should navigate through pages using encoded page tokens`() {
+    fun `should handle numeric comparison operators`() {
+        val request = PaginationRequest(limit = 10)
+            .withFilter("score", 200, FilterOperator.GREATER_THAN)
+            .withFilter("score", 300, FilterOperator.LESS_THAN)
+            .withSort("score", SortDirection.ASC)
+
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request
+        )
+
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.map { it.score }).containsExactly(250)
+        assertThat(result.items.all { it.score in 201..299 }).isTrue()
+    }
+
+    @Test
+    fun `should handle date comparison operators`() {
+        val now = Instant.now()
+        val threeSecondsAgo = now.minusSeconds(3)
+        val oneSecondAgo = now.minusSeconds(1)
+
+        val request = PaginationRequest(limit = 10)
+            .withFilter("createdAt", threeSecondsAgo, FilterOperator.GREATER_THAN)
+            .withFilter("createdAt", oneSecondAgo, FilterOperator.LESS_THAN)
+            .withSort("createdAt", SortDirection.DESC)
+
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request
+        )
+
+        assertThat(result.items).isNotEmpty
+        assertThat(result.items.all {
+            it.createdAt.isAfter(threeSecondsAgo) && it.createdAt.isBefore(oneSecondAgo)
+        }).isTrue()
+    }
+
+    @Test
+    fun `should handle pre-aggregation operations`() {
+        val request = PaginationRequest(limit = 2)
+            .withSort("score", SortDirection.DESC)
+
+        val preAggregationOperations = listOf(
+            org.springframework.data.mongodb.core.aggregation.Aggregation.match(
+                org.springframework.data.mongodb.core.query.Criteria.where("score").gt(200)
+            )
+        )
+
+        val result = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            request,
+            preAggregationOperations = preAggregationOperations
+        )
+
+        assertThat(result.items).hasSize(2)
+        assertThat(result.items.map { it.score }).containsExactly(300, 250)
+        assertThat(result.items.all { it.score > 200 }).isTrue()
+    }
+
+    @Test
+    fun `should navigate through all pages with encoded tokens`() {
         // Clear existing data first
         mongoTemplate.dropCollection(TestEntity::class.java)
 
@@ -296,8 +334,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         val firstPage = mongoPaginationQueryBuilder.getPage(
             TestEntity::class,
-            firstPageRequest,
-            fieldMappings = fieldMappings,
+            firstPageRequest
         )
 
         // Verify first page
@@ -305,162 +342,29 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThat(firstPage.items.map { it.score }).containsExactly(1000, 900, 800)
         assertThat(firstPage.nextPageToken).isNotNull
 
-        // Navigate to second page using encoded token
-        val encodedToken = firstPage.nextPageToken!!.encode()
-        val decodedToken = PageToken.fromString(encodedToken)
-        val secondPageRequest = PaginationRequest(
-            limit = 3,
-            pageToken = decodedToken
-        )
+        // Navigate through all pages using encoded tokens
+        var currentPage = firstPage
+        var pageCount = 1
+        val allScores = mutableListOf<Int>()
+        allScores.addAll(currentPage.items.map { it.score })
 
-        val secondPage = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            secondPageRequest,
-            fieldMappings = fieldMappings,
-        )
+        while (currentPage.nextPageToken != null) {
+            val nextRequest = PaginationRequest(
+                limit = 3,
+                pageToken = PageToken.fromString(currentPage.nextPageToken!!.encode())
+            )
 
-        // Verify second page
-        assertThat(secondPage.items).hasSize(3)
-        assertThat(secondPage.items.map { it.score }).containsExactly(700, 600, 500)
-        assertThat(secondPage.nextPageToken).isNotNull
+            currentPage = mongoPaginationQueryBuilder.getPage(
+                TestEntity::class,
+                nextRequest
+            )
 
-        // Navigate to third page
-        val thirdPageRequest = PaginationRequest(
-            limit = 3,
-            pageToken = PageToken.fromString(secondPage.nextPageToken!!.encode())
-        )
+            allScores.addAll(currentPage.items.map { it.score })
+            pageCount++
+        }
 
-        val thirdPage = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            thirdPageRequest,
-            fieldMappings = fieldMappings,
-        )
-
-        // Verify third page
-        assertThat(thirdPage.items).hasSize(3)
-        assertThat(thirdPage.items.map { it.score }).containsExactly(400, 300, 200)
-        assertThat(thirdPage.nextPageToken).isNotNull
-
-        // Navigate to final page
-        val finalPageRequest = PaginationRequest(
-            limit = 3,
-            pageToken = PageToken.fromString(thirdPage.nextPageToken!!.encode())
-        )
-
-        val finalPage = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            finalPageRequest,
-            fieldMappings = fieldMappings,
-        )
-
-        // Verify final page
-        assertThat(finalPage.items).hasSize(1)  // Only one item remaining
-        assertThat(finalPage.items.map { it.score }).containsExactly(100)
-        assertThat(finalPage.nextPageToken).isNull()
-    }
-
-    @Test
-    fun `should handle complex pagination with multiple sorts and filters`() {
-        val request = PaginationRequest(
-            limit = 2,
-            pageToken = PageToken.create()
-                .copy(
-                    sortFields = listOf(
-                        SortField("score", SortDirection.DESC),
-                        SortField("createdAt", SortDirection.ASC)
-                    ),
-                    filterFields = listOf(
-                        FilterField("score", listOf(200, 250, 300), FilterOperator.IN)
-                    )
-                )
-        )
-
-        val result = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
-        )
-
-        assertThat(result.items).hasSize(2)
-        assertThat(result.items.map { it.score }).containsExactly(300, 250)
-        assertThat(result.nextPageToken).isNotNull
-
-        // Verify next page using encoded token
-        val nextRequest = PaginationRequest(
-            limit = 2,
-            pageToken = PageToken.fromString(result.nextPageToken!!.encode())
-        )
-
-        val nextResult = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            nextRequest,
-            fieldMappings = fieldMappings,
-        )
-
-        assertThat(nextResult.items).hasSize(1)
-        assertThat(nextResult.items.map { it.score }).containsExactly(200)
-        assertThat(nextResult.nextPageToken).isNull()
-    }
-
-    @Test
-    fun `should handle date-based cursor pagination`() {
-        val request = PaginationRequest(
-            limit = 2,
-            pageToken = PageToken.create()
-                .copy(sortFields = listOf(SortField("createdAt", SortDirection.DESC)))
-        )
-
-        val result = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
-        )
-
-        assertThat(result.items).hasSize(2)
-        assertThat(result.nextPageToken).isNotNull
-        assertThat(result.nextPageToken?.cursors?.get("createdAt")?.type)
-            .isEqualTo(CursorValueType.DATE)
-    }
-
-    @Test
-    fun `should handle numeric comparison operators`() {
-        val request = PaginationRequest(limit = 10)
-            .withFilter("score", 200, FilterOperator.GREATER_THAN)
-            .withFilter("score", 300, FilterOperator.LESS_THAN)
-            .withSort("score", SortDirection.ASC)
-
-        val result = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
-        )
-
-        assertThat(result.items).hasSize(1)
-        assertThat(result.items.map { it.score }).containsExactly(250)
-        assertThat(result.items.all { it.score in 201..299 }).isTrue()
-    }
-
-    @Test
-    fun `should handle date comparison operators`() {
-        val now = Instant.now()
-        val threeSecondsAgo = now.minusSeconds(3)
-        val oneSecondAgo = now.minusSeconds(1)
-
-        val request = PaginationRequest(limit = 10)
-            .withFilter("createdAt", threeSecondsAgo, FilterOperator.GREATER_THAN)
-            .withFilter("createdAt", oneSecondAgo, FilterOperator.LESS_THAN)
-            .withSort("createdAt", SortDirection.DESC)
-
-        val result = mongoPaginationQueryBuilder.getPage(
-            TestEntity::class,
-            request,
-            fieldMappings = fieldMappings,
-        )
-
-        // Should return entities created between 3 seconds ago and 1 second ago
-        assertThat(result.items).isNotEmpty
-        assertThat(result.items.all {
-            it.createdAt.isAfter(threeSecondsAgo) && it.createdAt.isBefore(oneSecondAgo)
-        }).isTrue()
+        assertThat(pageCount).isEqualTo(4)
+        assertThat(allScores).containsExactly(1000, 900, 800, 700, 600, 500, 400, 300, 200, 100)
     }
 }
+

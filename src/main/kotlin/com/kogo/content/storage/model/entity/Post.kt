@@ -58,7 +58,10 @@ data class Post (
             return listOf(
                 // Add recency score operations
                 *recencyPipeline.map { doc ->
-                    Aggregation.addFields().addField(doc.getString("\$addFields")).withValue(doc).build()
+                    // Get the field name and value from the $addFields document
+                    val addFieldsDoc = doc.get("\$addFields") as Document
+                    val (fieldName, value) = addFieldsDoc.entries.first()
+                    Aggregation.addFields().addField(fieldName).withValue(value).build()
                 }.toTypedArray(),
 
                 // Calculate likes score

@@ -1,54 +1,32 @@
 package com.kogo.content.security
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.logging.Logger
-import com.kogo.content.service.UserService
-import com.kogo.content.storage.model.entity.SchoolInfo
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpEntity
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher
 import org.springframework.util.StringUtils
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.filter.OncePerRequestFilter
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.client.HttpServerErrorException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.AuthenticationException
 
 @Component
-class ExternalAuthRequestFilter (
-    val userService: UserService
+class ExternalAuthRequestFilter(
+    private val authenticationApiClient: AuthenticationApiClient
 ) : OncePerRequestFilter() {
 
-    @Value("\${kogo-api.authenticate}")
-    lateinit var authenticationApiUrl: String
+    companion object : Logger()
 
-    lateinit var username: String
-
-    private val restTemplate = RestTemplate()
     private val pathMatcher = AntPathMatcher()
     private val objectMapper = ObjectMapper()
-
-    companion object : Logger() {
-        const val USERDATA = "userdata"
-        const val EMAIL = "email"
-        const val SCHOOL = "schoolData"
-        const val SCHOOL_KEY = "schoolKey"
-        const val SCHOOL_NAME = "name"
-        const val SCHOOL_SHORTENED_NAME = "shortenedName"
-    }
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -58,32 +36,10 @@ class ExternalAuthRequestFilter (
         try {
             if (isAuthenticationRequiredUri(request.requestURI)) {
                 val accessToken = getAccessTokenFromRequestHeader(request)
-                // Call external authentication API
-                val userInfoJson = authenticateUserWithApi(accessToken).get(USERDATA)
-                while(true) {
-                    username = generateRandomUsername()
-                    if (userService.findUserByUsername(username) == null) break
-                }
+                val user = authenticationApiClient.authenticateAndCreateUser(accessToken)
 
-                if (userService.findUserByUsername(username) == null) {
-                    val email = userInfoJson.get(EMAIL).toString().removeSurrounding("\"")
-                    val schoolInfoJson = userInfoJson.get(SCHOOL)
-                    val schoolKey = schoolInfoJson.get(SCHOOL_KEY).toString().removeSurrounding("\"")
-                    val schoolName = schoolInfoJson.get(SCHOOL_NAME).toString().removeSurrounding("\"")
-                    val schoolShortenedName = schoolInfoJson.get(SCHOOL_SHORTENED_NAME).toString().removeSurrounding("\"")
-
-                    userService.create(
-                        username = username,
-                        email = email,
-                        schoolInfo = SchoolInfo(
-                            schoolKey = schoolKey,
-                            schoolName = schoolName,
-                            schoolShortenedName = schoolShortenedName
-                        )
-                    )
-                }
-                val authorities = listOf(SimpleGrantedAuthority("ROLE_USER")) // You can assign roles or authorities
-                val authentication = UsernamePasswordAuthenticationToken(username, null, authorities)
+                val authorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
+                val authentication = UsernamePasswordAuthenticationToken(user.username, null, authorities)
                 SecurityContextHolder.getContext().authentication = authentication
             }
         } catch (ex: Exception) {
@@ -94,25 +50,6 @@ class ExternalAuthRequestFilter (
             return
         }
         filterChain.doFilter(request, response)
-    }
-
-    private fun authenticateUserWithApi(accessToken: String): JsonNode {
-        val headers = HttpHeaders().apply { set("Authorization", "Bearer $accessToken") }
-        val entity = HttpEntity<Any?>(headers)
-
-        return try {
-            val response = restTemplate.exchange(
-                "$authenticationApiUrl?grant_type=access_token",
-                HttpMethod.GET, entity, String::class.java
-            )
-            if (response.statusCode != HttpStatus.OK) {
-                throw BadCredentialsException("External authentication failed with status code: ${response.statusCode.value()}")
-            }
-            val objectMapper = ObjectMapper()
-            objectMapper.readTree(response.body)
-        } catch (ex: HttpServerErrorException) {
-            throw RuntimeException("Failed to connect to the external authentication server - ${ex.statusCode} - ${ex.responseBodyAsString}")
-        }
     }
 
     private fun getAccessTokenFromRequestHeader(request: HttpServletRequest): String {
@@ -149,15 +86,5 @@ class ExternalAuthRequestFilter (
         response.contentType = "application/json"
         response.characterEncoding = "UTF-8"
         response.writer.write(objectMapper.writeValueAsString(errorResponse))
-    }
-
-    private fun generateRandomUsername(): String {
-        val randomString = (1..6)
-            .map { ('a'..'z') + ('0'..'9') }
-            .flatten()
-            .shuffled()
-            .take(6)
-            .joinToString("")
-        return "#KogoUser$randomString"
     }
 }

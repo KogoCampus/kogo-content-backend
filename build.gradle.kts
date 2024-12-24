@@ -51,10 +51,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
-    // Spring Cloud AWS
-    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:${property("springCloudAwsVersion")}"))
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3")
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-secrets-manager")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
     // Swagger

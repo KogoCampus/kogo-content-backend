@@ -14,7 +14,7 @@ data class GroupDto (
 
     var description: String,
 
-    @ArraySchema(schema = Schema(description = "list of tags to attach to the topic. Valid tag must not contain any special characters.", type = "String"))
+    @ArraySchema(schema = Schema(description = "list of tags to attach to the group. Valid tag must not contain any special characters.", type = "String"))
     @field:ValidTag
     var tags: List<String> = emptyList(),
 

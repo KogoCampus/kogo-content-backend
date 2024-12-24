@@ -1,6 +1,9 @@
 package com.kogo.content.endpoint.resolver
 
-import com.kogo.content.endpoint.common.*
+import com.kogo.content.endpoint.common.PageToken
+import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.CursorValue
+import com.kogo.content.endpoint.common.CursorValueType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.MockMvc
@@ -37,8 +40,6 @@ class PaginationRequestArgumentResolverTest {
                 status { isOk() }
                 jsonPath("$.limit") { value(10) }
                 jsonPath("$.pageToken.cursors") { isEmpty() }
-                jsonPath("$.pageToken.sortFields") { isEmpty() }
-                jsonPath("$.pageToken.filters") { isEmpty() }
             }
     }
 
@@ -57,10 +58,8 @@ class PaginationRequestArgumentResolverTest {
         val existingToken = PageToken(
             cursors = mapOf(
                 "id" to CursorValue("last-id", CursorValueType.STRING),
-                "createdAt" to CursorValue("2024-01-01", CursorValueType.DATE)
-            ),
-            sortFields = listOf(SortField("createdAt", SortDirection.DESC)),
-            filterFields = listOf(FilterField("status", "active", FilterOperator.EQUALS))
+                "createdAt" to CursorValue("2024-01-01T00:00:00Z", CursorValueType.DATE)
+            )
         ).encode()
 
         mockMvc.get("/test") {
@@ -70,11 +69,6 @@ class PaginationRequestArgumentResolverTest {
             jsonPath("$.pageToken.cursors.id.value") { value("last-id") }
             jsonPath("$.pageToken.cursors.id.type") { value("STRING") }
             jsonPath("$.pageToken.cursors.createdAt.type") { value("DATE") }
-            jsonPath("$.pageToken.sortFields[0].field") { value("createdAt") }
-            jsonPath("$.pageToken.sortFields[0].direction") { value("DESC") }
-            jsonPath("$.pageToken.filters[0].field") { value("status") }
-            jsonPath("$.pageToken.filters[0].value") { value("active") }
-            jsonPath("$.pageToken.filters[0].operator") { value("EQUALS") }
         }
     }
 
@@ -85,8 +79,6 @@ class PaginationRequestArgumentResolverTest {
         }.andExpect {
             status { isOk() }
             jsonPath("$.pageToken.cursors") { isEmpty() }
-            jsonPath("$.pageToken.sortFields") { isEmpty() }
-            jsonPath("$.pageToken.filters") { isEmpty() }
         }
     }
 

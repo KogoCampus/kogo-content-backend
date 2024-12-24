@@ -29,7 +29,7 @@ class ExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertEquals(ErrorCode.NOT_FOUND.name, response.body?.error)
-        assertEquals("Topic not found for id: 123", response.body?.details)
+        assertEquals("Group not found for id: 123", response.body?.details)
     }
 
     @Test

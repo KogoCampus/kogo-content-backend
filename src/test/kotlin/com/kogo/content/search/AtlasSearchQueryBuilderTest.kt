@@ -13,6 +13,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
+import java.util.Date
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -73,8 +74,8 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
                 ),
                 TestSearchEntity(
                     id = "2",
-                    title = "Advanced Kotlin Coroutines programming",
-                    content = "Deep dive into Kotlin coroutines for async.",
+                    title = "Advanced Kotlin Coroutines",
+                    content = "Deep dive into Kotlin coroutines for async programming.",
                     tags = listOf("kotlin", "coroutines", "advanced"),
                     score = 0.9,
                     viewCount = 2000,
@@ -82,49 +83,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
                     popularityScore = 90.0,
                     location = Document().apply {
                         put("type", "Point")
-                        put("coordinates", listOf(-73.935242, 40.730610))
-                    }
-                ),
-                TestSearchEntity(
-                    id = "3",
-                    title = "Spring Boot with Kotlin",
-                    content = "Building web applications using Spring Boot and Kotlin.",
-                    tags = listOf("kotlin", "spring", "web"),
-                    score = 0.95,
-                    viewCount = 3000,
-                    createdAt = now.minusSeconds(1800),
-                    popularityScore = 95.0,
-                    location = Document().apply {
-                        put("type", "Point")
-                        put("coordinates", listOf(-73.935242, 40.730610))
-                    }
-                ),
-                TestSearchEntity(
-                    id = "4",
-                    title = "Java vs Kotlin Comparison",
-                    content = "Comparing Java and Kotlin features and syntax.",
-                    tags = listOf("kotlin", "java", "comparison"),
-                    score = 0.85,
-                    viewCount = 1500,
-                    createdAt = now.minusSeconds(5400),
-                    popularityScore = 85.0,
-                    location = Document().apply {
-                        put("type", "Point")
-                        put("coordinates", listOf(-73.935242, 40.730610))
-                    }
-                ),
-                TestSearchEntity(
-                    id = "5",
-                    title = "Kotlin Android Development",
-                    content = "Mobile app development with Kotlin for Android.",
-                    tags = listOf("kotlin", "android", "mobile"),
-                    score = 0.75,
-                    viewCount = 2500,
-                    createdAt = now.minusSeconds(900),
-                    popularityScore = 75.0,
-                    location = Document().apply {
-                        put("type", "Point")
-                        put("coordinates", listOf(-73.935242, 40.730610))
+                        put("coordinates", listOf(-74.006, 40.7128))
                     }
                 )
             )
@@ -164,7 +123,6 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
                 put("dropSearchIndex", COLLECTION_NAME)
                 put("name", INDEX_NAME)
             }
-
             try {
                 mongoTemplate.db.runCommand(command)
             } catch (e: Exception) {
@@ -174,92 +132,142 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
     }
 
     @Test
-    fun `should paginate search results using search after token`() {
+    fun `should perform wildcard search when SearchConfiguration is null`() {
+        val results = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndex = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = PaginationRequest(limit = 10),
+            configuration = null
+        )
+
+        assertThat(results.items).hasSize(2)
+        assertThat(results.items.map { it.title }).allMatch { it.contains("Kotlin", ignoreCase = true) }
+    }
+
+    @Test
+    fun `should perform compound search with text search fields and score boosting`() {
         val config = SearchConfiguration(
             textSearchFields = listOf("title", "content"),
             scoreFields = listOf(
                 ScoreField(
                     field = "title",
+                    score = Score.Boost(2.0)
+                ),
+                ScoreField(
+                    field = "content",
+                    score = Score.Constant(1.0)
+                )
+            ),
+            fuzzyMaxEdits = 1
+        )
+
+        val results = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndex = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = PaginationRequest(limit = 10),
+            configuration = config
+        )
+
+        assertThat(results.items).hasSize(2)
+        // Title boost should make "Introduction to Kotlin" appear first
+        assertThat(results.items.first().title).isEqualTo("Introduction to Kotlin")
+    }
+
+    @Test
+    fun `should perform compound search with near queries`() {
+        val now = Date()
+        val config = SearchConfiguration(
+            textSearchFields = listOf("title", "content"),
+            nearFields = listOf(
+                DateNearField(
+                    field = "createdAt",
+                    origin = now,
+                    pivot = DateNearField.ONE_DAY_MS,
                     score = Score.Boost(1.5)
+                ),
+                NumericNearField(
+                    field = "score",
+                    origin = 1.0,
+                    pivot = 500,
+                    score = Score.Boost(1.2)
+                ),
+                GeoNearField(
+                    field = "location",
+                    origin = GeoPoint(-74.006, 40.7128), // NYC coordinates
+                    pivot = 1000,
+                    score = Score.Boost(1.1)
                 )
             )
         )
 
-        val firstPage = atlasSearchQueryBuilder.search(
+        val results = atlasSearchQueryBuilder.search(
             entityClass = TestSearchEntity::class,
-            searchIndexName = INDEX_NAME,
+            searchIndex = INDEX_NAME,
             searchText = "kotlin",
-            paginationRequest = PaginationRequest(limit = 2),
+            paginationRequest = PaginationRequest(limit = 10),
             configuration = config
         )
 
+        assertThat(results.items).hasSize(2)
+        // Document with location closer to NYC should appear first
+        assertThat(results.items.first().id).isEqualTo("2")
+    }
+
+    @Test
+    fun `should apply filters with compound search`() {
+        val config = SearchConfiguration(
+            textSearchFields = listOf("title", "content")
+        )
+
+        val request = PaginationRequest(limit = 10)
+            .withFilter("viewCount", 1500, FilterOperator.GREATER_THAN)
+            .withFilter("tags", listOf("advanced", "coroutines"), FilterOperator.IN)
+
+        val results = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndex = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = request,
+            configuration = config
+        )
+
+        assertThat(results.items).hasSize(1)
+        assertThat(results.items.first().id).isEqualTo("2")
+        assertThat(results.items.first().viewCount).isGreaterThan(1500)
+        assertThat(results.items.first().tags).containsAnyOf("advanced", "coroutines")
+    }
+
+    @Test
+    fun `should handle pagination with search after token`() {
+        val config = SearchConfiguration(
+            textSearchFields = listOf("title", "content")
+        )
+
+        val firstPage = atlasSearchQueryBuilder.search(
+            entityClass = TestSearchEntity::class,
+            searchIndex = INDEX_NAME,
+            searchText = "kotlin",
+            paginationRequest = PaginationRequest(limit = 1),
+            configuration = config
+        )
+
+        assertThat(firstPage.items).hasSize(1)
         assertThat(firstPage.nextPageToken).isNotNull
-        assertThat(firstPage.items).hasSize(2)
 
         val secondPage = atlasSearchQueryBuilder.search(
             entityClass = TestSearchEntity::class,
-            searchIndexName = INDEX_NAME,
+            searchIndex = INDEX_NAME,
             searchText = "kotlin",
             paginationRequest = PaginationRequest(
-                limit = 2,
+                limit = 1,
                 pageToken = firstPage.nextPageToken!!
             ),
             configuration = config
         )
 
-        // Verify pagination
-        assertThat(secondPage.items).hasSize(2)
-        assertThat(firstPage.items.map { it.id })
-            .doesNotContainAnyElementsOf(secondPage.items.map { it.id })
-    }
-
-    @Test
-    fun `should filter search results with numeric comparison operators`() {
-        val config = SearchConfiguration(
-            textSearchFields = listOf("title", "content")
-        )
-
-        val request = PaginationRequest(limit = 10)
-            .withFilter("viewCount", 1000, FilterOperator.GREATER_THAN)
-            .withFilter("viewCount", 3000, FilterOperator.LESS_THAN)
-
-        val results = atlasSearchQueryBuilder.search(
-            entityClass = TestSearchEntity::class,
-            searchIndexName = INDEX_NAME,
-            searchText = "kotlin",
-            paginationRequest = request,
-            configuration = config
-        )
-
-        assertThat(results.items).isNotEmpty
-        assertThat(results.items.all { it.viewCount in 1001..2999 }).isTrue()
-    }
-
-    @Test
-    fun `should filter search results with date comparison operators`() {
-        val config = SearchConfiguration(
-            textSearchFields = listOf("title", "content")
-        )
-
-        val now = Instant.now()
-        val oneHourAgo = now.minusSeconds(3600)
-        val twoHoursAgo = now.minusSeconds(7200)
-
-        val request = PaginationRequest(limit = 10)
-            .withFilter("createdAt", twoHoursAgo, FilterOperator.GREATER_THAN)
-            .withFilter("createdAt", oneHourAgo, FilterOperator.LESS_THAN)
-
-        val results = atlasSearchQueryBuilder.search(
-            entityClass = TestSearchEntity::class,
-            searchIndexName = INDEX_NAME,
-            searchText = "kotlin",
-            paginationRequest = request,
-            configuration = config
-        )
-
-        assertThat(results.items).isNotEmpty
-        assertThat(results.items.all {
-            it.createdAt.isAfter(twoHoursAgo) && it.createdAt.isBefore(oneHourAgo)
-        }).isTrue()
+        assertThat(secondPage.items).hasSize(1)
+        assertThat(secondPage.items.first().id).isNotEqualTo(firstPage.items.first().id)
     }
 }

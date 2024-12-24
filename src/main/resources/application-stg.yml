@@ -1,23 +1,25 @@
----
+kogo-api:
+    authenticate: ENC[AES256_GCM,data:X+BCStSnWvKV3OgAB7VQ5MFb5ULDddecl6lDtKXPrJyrXuev0RxgEIpa5VzpctoDCCSePK/9+g==,iv:hdsTsL9T4IabroIQSF0jlpqVywkNiVEM5I42ji08y00=,tag:KbKlTYOxIiWb/kcyvfl7kA==,type:str]
 spring:
-    config:
-        import: aws-secretsmanager:/staging/kogo-content/application.properties
     data:
         mongodb:
-            database: ${mongodb.database}
-            uri: ${mongodb.uri}
-            username: ${mongodb.username}
-            password: ${mongodb.password}
-            auto-index-creation: true
-
-aws:
-    s3:
-        bucket: ${s3.bucket}
-        region: ${s3.region}
-
-sentry:
-    dsn: ${sentry.dsn}
-    traces-sample-rate: 1.0
-
-filehandler:
-    prefix: files
+            database: ENC[AES256_GCM,data:xly13CINr7uqF7bINCJLppzRJFw=,iv:sK4rEMTO6C7Q2SOE5cF87aJAwCb5znlrUYV25IWHnBE=,tag:Y68Kj+1yRZ7vUZx58lfe0g==,type:str]
+            uri: ENC[AES256_GCM,data:RfHODH3gaphKcS7GRFzkPbL26yc59uAVckGLqg42xrEXG4T2IGoblOwkaxERqeF+3bSZDaNaNa/JvR3q19TuN2SSJt3NnLWm4xPO/YsEBB36zLRyIcYYN78aBWP6ZG0V0Q9E5C8L85E6OtmRXgRmiXGJUoZIMw9BkAUri7zUuzXuPVM3td87/lYw4nVljhkrHgUTZYwxeyoqPA==,iv:DapF+7sZHGQpzbtyT/SVBQAD9qxLWkD3yTTYZ8FjuoA=,tag:MzdhmcmdY8i/8iJD1zVOwQ==,type:str]
+            username: ENC[AES256_GCM,data:oH7XTosB39+1F4wLKgHG7Q==,iv:YZP5pZUr+OhYj4Js7xxQ3FDx9Txg4w8Oa9ETDKSJ0Fk=,tag:pF2o0bxS7iemu2Movkpl9A==,type:str]
+            password: ENC[AES256_GCM,data:kHqSva+eEamFNlAX6V8ogQaeHKSZ6KRtYucLgR2QqIA=,iv:433+yF7Wp8g9U2F0BiQZpw65RGtDEujRy5Ocz7JjLb4=,tag:IjrbwoXqrg7UscAVjMggMw==,type:str]
+            auto-index-creation: ENC[AES256_GCM,data:SR6bxQ==,iv:wdJTHGjBOU8kM28afPzPAOfM8rlB6msfdAqafJcJ6l8=,tag:jLerczQN2ElHqY7uvJ+HIw==,type:bool]
+sops:
+    kms:
+        - arn: arn:aws:kms:us-west-2:992382730467:key/a195f3cb-f301-48b4-ba70-9ffb95f6ddd2
+          created_at: "2024-12-24T00:51:17Z"
+          enc: AQICAHhZgrxm0DnTWfKW65/rZF7H04iuSIwsXgTk9YAalC3+YQFe9TejTwaHjWWRUSwx16N8AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMSeN2GG+jB822DFqvAgEQgDvB//0lwbkOwBptcZttmUYUwaq2a6r95ZLogEkWAgtz8au44Th0qO9fr7DUeabe10XNwghYu8AC71amAw==
+          aws_profile: ""
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2024-12-24T00:51:18Z"
+    mac: ENC[AES256_GCM,data:yKUvaSLMZE1eFS/RTG2exGZb6dOjfO8l4XwbI8fiUtN7/2aBRA1NawquGB440V8B8mLZZ3BaL/f4+AoSobPOtoUlPaTi7Hua41hVlLyKSdcaHC8oVFc9AVs+Wm731Qhxu5q/c1fe7++/KKy63P1XkPRsc61w4nPnPG5dJ7ddqDM=,iv:Eww447/dwfBRPVk7w4ZeGnGP1958ZgSdVEH7rZ1mmOg=,tag:f5fIvvPeUaS5J78o2iLZmg==,type:str]
+    pgp: []
+    unencrypted_suffix: _unencrypted
+    version: 3.9.1

@@ -2,183 +2,262 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
-import com.kogo.content.common.*
 import com.kogo.content.endpoint.common.PaginationRequest
+import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.search.SearchIndex
-import com.kogo.content.storage.entity.*
+import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
+import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
-import com.kogo.content.storage.repository.AttachmentRepository
-import com.kogo.content.storage.repository.LikeRepository
+import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.repository.PostRepository
-import com.kogo.content.storage.repository.ViewerRepository
-import com.kogo.content.storage.view.PostAggregate
-import com.kogo.content.storage.view.PostAggregateView
-import com.kogo.content.storage.view.TopicAggregate
-import com.kogo.content.storage.view.TopicAggregateView
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class PostServiceTest {
     private val postRepository: PostRepository = mockk()
-    private val attachmentRepository: AttachmentRepository = mockk()
-    private val likeRepository: LikeRepository = mockk()
-    private val viewerRepository: ViewerRepository = mockk()
-    private val postAggregateView: PostAggregateView = mockk()
-    private val topicAggregateView: TopicAggregateView = mockk()
-    private val postAggregateSearchIndex: SearchIndex<PostAggregate> = mockk()
+    private val postSearchIndex: SearchIndex<Post> = mockk()
+
+    private val mongoPaginationQueryBuilder: MongoPaginationQueryBuilder = mockk()
 
     private val postService = PostService(
         postRepository = postRepository,
-        attachmentRepository = attachmentRepository,
-        likeRepository = likeRepository,
-        viewerRepository = viewerRepository,
-        postAggregateView = postAggregateView,
-        postAggregateSearchIndex = postAggregateSearchIndex,
-        topicAggregateView = topicAggregateView
-    )
+        postSearchIndex = postSearchIndex
+    ).apply {
+        mongoPaginationQueryBuilder = this@PostServiceTest.mongoPaginationQueryBuilder
+    }
 
-    @Test
-    fun `should create new post and refresh aggregate view`() {
-        val group = mockk<Group> { every { id } returns "test-topic-id" }
-        val author = mockk<User> { every { id } returns "test-user-id" }
-        val postDto = PostDto(
-            title = "Test title",
-            content = "Test content",
-            images = listOf(mockk()),
-            videos = emptyList()
+    private lateinit var user: User
+    private lateinit var group: Group
+    private lateinit var post: Post
+
+    @BeforeEach
+    fun setup() {
+        user = User(
+            id = "test-user-id",
+            username = "testuser",
+            email = "test@example.com",
+            schoolInfo = SchoolInfo(
+                schoolKey = "TEST",
+                schoolName = "Test School",
+                schoolShortenedName = "TS"
+            )
         )
-        val savedPost = Post(
-            id = "test-post-id",
-            title = postDto.title,
-            content = postDto.content,
-            group = group,
-            author = author,
-            attachments = listOf(mockk()),
+
+        group = Group(
+            id = "test-group-id",
+            groupName = "Test Group",
+            description = "Test Description",
+            owner = user,
+            tags = mutableListOf("test", "group"),
+            followerIds = mutableListOf(user.id!!),
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
 
-        every { attachmentRepository.saveFiles(any()) } returns listOf(mockk())
-        every { postRepository.save(any()) } returns savedPost
-        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
-        every { topicAggregateView.refreshView("test-topic-id") } returns mockk<TopicAggregate>()
-
-        val result = postService.create(group, author, postDto)
-
-        assertThat(result).isEqualTo(savedPost)
-        verify {
-            postRepository.save(match {
-                it.title == postDto.title &&
-                it.content == postDto.content &&
-                it.group == group &&
-                it.author == author
-            })
-            postAggregateView.refreshView("test-post-id")
-        }
-    }
-
-    @Test
-    fun `should update existing post and refresh aggregate view`() {
-        val post = Post(
+        post = Post(
             id = "test-post-id",
-            title = "Original title",
-            content = "Original content",
-            group = mockk(),
-            author = mockk(),
-            attachments = listOf(mockk { every { id } returns "att-1" }),
-            createdAt = Instant.now().minusSeconds(3600),
-            updatedAt = Instant.now().minusSeconds(3600)
+            title = "Test Post",
+            content = "Test Content",
+            group = group,
+            author = user,
+            attachments = mutableListOf(),
+            comments = mutableListOf(),
+            likes = mutableListOf(),
+            viewerIds = mutableListOf(),
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
         )
-        val update = PostUpdate(
-            title = "Updated title",
-            content = "Updated content",
-            images = listOf(mockk()),
-            videos = emptyList(),
-            attachmentDeleteIds = listOf("att-1")
+    }
+
+    @Test
+    fun `should create new post`() {
+        val postDto = PostDto(
+            title = "Test Post",
+            content = "Test Content",
+            images = emptyList(),
+            videos = emptyList()
         )
 
-        every { attachmentRepository.saveFiles(any()) } returns listOf(mockk())
-        every { attachmentRepository.delete(any()) } just runs
         every { postRepository.save(any()) } answers { firstArg() }
-        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
 
-        val result = postService.update(post, update)
+        val result = postService.create(group, user, postDto)
 
-        assertThat(result.title).isEqualTo(update.title)
-        assertThat(result.content).isEqualTo(update.content)
-        assertThat(result.updatedAt).isAfter(post.createdAt)
-        verify {
-            postRepository.save(match {
-                it.id == post.id &&
-                it.title == update.title &&
-                it.content == update.content
-            })
-            postAggregateView.refreshView("test-post-id")
-            attachmentRepository.delete(any())
-        }
+        assertThat(result.title).isEqualTo(postDto.title)
+        assertThat(result.content).isEqualTo(postDto.content)
+        assertThat(result.group).isEqualTo(group)
+        assertThat(result.author).isEqualTo(user)
+        verify { postRepository.save(any()) }
     }
 
     @Test
-    fun `should find posts by topic with pagination`() {
-        val group = mockk<Group> { every { id } returns "test-topic-id" }
+    fun `should update post`() {
+        val postUpdate = PostUpdate(
+            title = "Updated Title",
+            content = "Updated Content",
+            attachmentDeleteIds = emptyList()
+        )
+
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.update(post, postUpdate)
+
+        assertThat(result.title).isEqualTo(postUpdate.title)
+        assertThat(result.content).isEqualTo(postUpdate.content)
+        assertThat(result.updatedAt).isAfterOrEqualTo(post.updatedAt)
+        verify { postRepository.save(any()) }
+    }
+
+    @Test
+    fun `should delete post`() {
+        every { postRepository.deleteById(post.id!!) } just Runs
+
+        postService.delete(post)
+
+        verify { postRepository.deleteById(post.id!!) }
+    }
+
+    @Test
+    fun `should add comment to post`() {
+        val commentContent = "Test Comment"
+
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.addCommentToPost(post, commentContent, user)
+
+        assertThat(result.content).isEqualTo(commentContent)
+        assertThat(result.author).isEqualTo(user)
+        assertThat(post.comments).contains(result)
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should remove comment from post`() {
+        val comment = Comment(
+            id = ObjectId(),
+            content = "Test Comment",
+            author = user
+        )
+        post.comments.add(comment)
+
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.removeCommentFromPost(post, comment.id.toString())
+
+        assertThat(result).isTrue()
+        assertThat(post.comments).doesNotContain(comment)
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should add reply to comment`() {
+        val comment = Comment(
+            id = ObjectId(),
+            content = "Test Comment",
+            author = user
+        )
+        post.comments.add(comment)
+        val replyContent = "Test Reply"
+
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.addReplyToComment(post, comment.id.toString(), replyContent, user)
+
+        assertThat(result.content).isEqualTo(replyContent)
+        assertThat(result.author).isEqualTo(user)
+        assertThat(comment.replies).contains(result)
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should add like to post`() {
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.addLikeToPost(post, user)
+
+        assertThat(result).isTrue()
+        assertThat(post.likes).hasSize(1)
+        assertThat(post.likes.first().userId).isEqualTo(user.id)
+        assertThat(post.likes.first().isActive).isTrue()
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should not add duplicate active like to post`() {
+        post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+
+        val result = postService.addLikeToPost(post, user)
+
+        assertThat(result).isFalse()
+        assertThat(post.likes).hasSize(1)
+        verify(exactly = 0) { postRepository.save(any()) }
+    }
+
+    @Test
+    fun `should reactivate inactive like on post`() {
+        post.likes.add(Like(userId = user.id!!, isActive = false, updatedAt = Instant.now()))
+
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.addLikeToPost(post, user)
+
+        assertThat(result).isTrue()
+        assertThat(post.likes).hasSize(1)
+        assertThat(post.likes.first().isActive).isTrue()
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should add viewer to post`() {
+        every { postRepository.save(any()) } answers { firstArg() }
+
+        val result = postService.addViewer(post, user)
+
+        assertThat(result).isTrue()
+        assertThat(post.viewerIds).contains(user.id)
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should not add duplicate viewer to post`() {
+        post.viewerIds.add(user.id!!)
+
+        val result = postService.addViewer(post, user)
+
+        assertThat(result).isFalse()
+        assertThat(post.viewerIds).hasSize(1)
+        verify(exactly = 0) { postRepository.save(any()) }
+    }
+
+    @Test
+    fun `should search posts`() {
+        val searchKeyword = "test"
         val paginationRequest = PaginationRequest(limit = 10)
-        val expectedRequest = paginationRequest.withFilter("topic", group.id!!)
+        val expectedResult = PaginationSlice(items = listOf(post))
 
-        every { postAggregateView.findAll(expectedRequest) } returns mockk()
+        every {
+            postSearchIndex.search(
+                searchText = searchKeyword,
+                paginationRequest = paginationRequest
+            )
+        } returns expectedResult
 
-        postService.findPostsByGroup(group, paginationRequest)
+        val result = postService.search(searchKeyword, paginationRequest)
 
-        verify { postAggregateView.findAll(expectedRequest) }
-    }
-
-    @Test
-    fun `should handle like operations correctly`() {
-        val post = mockk<Post> { every { id } returns "test-post-id" }
-        val user = mockk<User> { every { id } returns "test-user-id" }
-
-        // Test successful like operation
-        val like = mockk<Like>()
-        every { likeRepository.addLike("test-post-id", "test-user-id") } returns like
-        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
-
-        postService.addLike(post, user)
+        assertThat(result).isEqualTo(expectedResult)
         verify {
-            likeRepository.addLike("test-post-id", "test-user-id")
-            postAggregateView.refreshView("test-post-id")
+            postSearchIndex.search(
+                searchText = searchKeyword,
+                paginationRequest = paginationRequest
+            )
         }
-
-        // Test unsuccessful like operation (already liked)
-        every { likeRepository.addLike("test-post-id", "test-user-id") } returns null
-
-        postService.addLike(post, user)
-        verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
-    }
-
-    @Test
-    fun `should handle viewer operations correctly`() {
-        val post = mockk<Post> { every { id } returns "test-post-id" }
-        val user = mockk<User> { every { id } returns "test-user-id" }
-
-        // Test successful view operation
-        val viewer = mockk<Viewer>()
-        every { viewerRepository.addView("test-post-id", "test-user-id") } returns viewer
-        every { postAggregateView.refreshView("test-post-id") } returns mockk<PostAggregate>()
-
-        postService.addViewer(post.id!!, user.id!!)
-        verify {
-            viewerRepository.addView("test-post-id", "test-user-id")
-            postAggregateView.refreshView("test-post-id")
-        }
-
-        // Test unsuccessful view operation (already viewed)
-        every { viewerRepository.addView("test-post-id", "test-user-id") } returns null
-
-        postService.addViewer(post.id!!, user.id!!)
-        verify(exactly = 1) { postAggregateView.refreshView("test-post-id") } // Should not be called again
     }
 }

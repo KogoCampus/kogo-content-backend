@@ -2,13 +2,8 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
-<<<<<<< HEAD
-import com.kogo.content.storage.entity.User
-import com.kogo.content.storage.repository.AttachmentRepository
-=======
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
->>>>>>> 83a4b20 (fix: refactor entity structure and remove views)
 import com.kogo.content.storage.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
@@ -23,6 +18,7 @@ class UserService @Autowired constructor(
     companion object : Logger()
 
     fun findUserByUsername(username: String) = userRepository.findByUsername(username)
+    fun findUserByEmail(email: String) = userRepository.findByEmail(email)
 
     fun findCurrentUser(): User {
         val authentication = SecurityContextHolder.getContext().authentication

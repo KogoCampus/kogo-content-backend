@@ -73,7 +73,7 @@ class RecencyScorer(
             Document("\$addFields", Document("ageInSeconds",
                 Document("\$divide", listOf(
                     Document("\$subtract", listOf(
-                        Document("\$toLong", currentTime.toString()),
+                        currentTime.toEpochMilli(),
                         Document("\$toLong", "\$$timestampField")
                     )),
                     1000 // Convert milliseconds to seconds

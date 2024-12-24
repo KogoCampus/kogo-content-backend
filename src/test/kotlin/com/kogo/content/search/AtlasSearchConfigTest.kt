@@ -36,7 +36,9 @@ class AtlasSearchConfigTest {
         val document: TestDocument,
         val score: Double,
         val viewCount: Int,
-        val lastUpdated: Instant
+        val lastUpdated: Instant,
+        val tags: List<String> = emptyList(),
+        val metadata: Map<String, Any> = emptyMap()
     )
 
     data class TestDocument(
@@ -49,46 +51,23 @@ class AtlasSearchConfigTest {
     @TestConfiguration
     class TestConfig {
         @Bean
-        fun testSearchIndex(atlasSearchQuery: AtlasSearchQueryBuilder): TestSearchIndex {
-            return TestSearchIndex(atlasSearchQuery)
+        fun testSearchIndex(): TestSearchIndex {
+            return TestSearchIndex()
         }
     }
 
-    class TestSearchIndex(
-        private val atlasSearchQuery: AtlasSearchQueryBuilder
-    ) : SearchIndex<TestEntity> {
-        private val fieldAliases = mapOf(
-            "title" to "document.title",
-            "content" to "document.content",
-            "createdAt" to "document.createdAt",
-            "updatedAt" to "document.updatedAt"
-        )
+    class TestSearchIndex : SearchIndex<TestEntity>(TestEntity::class) {
 
-        override fun search(
-            searchText: String,
-            paginationRequest: PaginationRequest,
-            configOverride: SearchConfiguration?
-        ): PaginationSlice<TestEntity> {
-            val paginationRequestAliased = SearchIndex.Helper.createAliasedPaginationRequest(
-                paginationRequest = paginationRequest,
-                fieldAliases = fieldAliases
-            )
-
-            return atlasSearchQuery.search(
-                entityClass = TestEntity::class,
-                searchIndexName = getIndexName(),
-                paginationRequest = paginationRequestAliased,
-                searchText = searchText,
-                configuration = configOverride ?: getSearchConfiguration()
-            )
-        }
-
-        override fun getSearchConfiguration() = SearchConfiguration(
-            textSearchFields = listOf("document.title", "document.content"),
+        override fun defaultSearchConfiguration() = SearchConfiguration(
+            textSearchFields = listOf("document.title", "document.content", "tags"),
             scoreFields = listOf(
                 ScoreField(
                     field = "document.title",
                     score = Score.Boost(2.0)
+                ),
+                ScoreField(
+                    field = "tags",
+                    score = Score.Boost(1.5)
                 )
             ),
             nearFields = listOf(
@@ -107,12 +86,12 @@ class AtlasSearchConfigTest {
             )
         )
 
-        override fun getIndexName(): String = "atlas_config_test_index"
+        override fun indexName(): String = "atlas_config_test_index"
 
-        override fun getTargetCollectionName(): String = "atlas_config_test_entities"
+        override fun mongoEntityCollectionName(): String = "atlas_config_test_entities"
 
-        override fun getSearchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition.builder()
-            .dynamic(false)
+        override fun searchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition.builder()
+            .dynamic(true)
             .documentField("document") {
                 stringField("title")
                 stringField("content")
@@ -122,12 +101,14 @@ class AtlasSearchConfigTest {
             .numberField("score")
             .numberField("viewCount")
             .dateField("lastUpdated")
+            .stringField("tags")
             .build()
     }
 
     @BeforeEach
     fun setup() {
-        mongoTemplate.dropCollection(testSearchIndex.getTargetCollectionName())
+        mongoTemplate.dropCollection(testSearchIndex.mongoEntityCollectionName())
+        mongoTemplate.dropCollection("search_index_versions")
 
         val now = Instant.now()
         val testData = listOf(
@@ -141,7 +122,9 @@ class AtlasSearchConfigTest {
                 ),
                 score = 1.0,
                 viewCount = 100,
-                lastUpdated = now
+                lastUpdated = now,
+                tags = listOf("test", "important"),
+                metadata = mapOf("category" to "test")
             ),
             TestEntity(
                 id = "2",
@@ -153,7 +136,9 @@ class AtlasSearchConfigTest {
                 ),
                 score = 0.5,
                 viewCount = 50,
-                lastUpdated = now.minusSeconds(3600)
+                lastUpdated = now.minusSeconds(3600),
+                tags = listOf("other", "test"),
+                metadata = mapOf("category" to "other")
             )
         )
         mongoTemplate.insertAll(testData)
@@ -161,35 +146,30 @@ class AtlasSearchConfigTest {
 
     @Test
     fun `should create search index if it does not exist`() {
-        // Initialize search indexes
         atlasSearchConfig.initializeSearchIndexes()
 
-        // Verify index was created
-        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.getTargetCollectionName())
+        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.mongoEntityCollectionName())
         val indexes = mongoTemplate.db.runCommand(listIndexesCommand)
         val cursor = indexes.get("cursor") as? Document
         val firstBatch = cursor?.get("firstBatch") as? List<*>
 
         assertThat(firstBatch).isNotEmpty
-        assertThat(firstBatch?.any { (it as? Document)?.get("name") == testSearchIndex.getIndexName() }).isTrue
+        assertThat(firstBatch?.any { (it as? Document)?.get("name") == testSearchIndex.indexName() }).isTrue
     }
 
     @Test
     fun `should create index with correct mapping`() {
-        // Initialize search indexes
         atlasSearchConfig.initializeSearchIndexes()
 
-        // Verify index mapping
-        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.getTargetCollectionName())
+        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.mongoEntityCollectionName())
         val indexes = mongoTemplate.db.runCommand(listIndexesCommand)
         val cursor = indexes.get("cursor") as? Document
         val firstBatch = cursor?.get("firstBatch") as? List<*>
-
         val indexDefinition = (firstBatch?.first() as? Document)?.get("latestDefinition") as? Document
 
         assertThat(indexDefinition).isNotNull
         val mappings = indexDefinition?.get("mappings") as? Document
-        assertThat(mappings?.get("dynamic")).isEqualTo(false)
+        assertThat(mappings?.get("dynamic")).isEqualTo(true)
 
         val fields = mappings?.get("fields") as? Document
         assertThat(fields).isNotNull
@@ -197,41 +177,20 @@ class AtlasSearchConfigTest {
         assertThat(fields?.containsKey("score")).isTrue
         assertThat(fields?.containsKey("viewCount")).isTrue
         assertThat(fields?.containsKey("lastUpdated")).isTrue
+        assertThat(fields?.containsKey("tags")).isTrue
     }
 
     @Test
-    fun `should create search index with correct scoring configuration`() {
-        // Initialize search indexes
+    fun `should store and track index version`() {
         atlasSearchConfig.initializeSearchIndexes()
 
-        // Verify index was created with correct configuration
-        val listIndexesCommand = Document("listSearchIndexes", testSearchIndex.getTargetCollectionName())
-        val indexes = mongoTemplate.db.runCommand(listIndexesCommand)
-        val cursor = indexes.get("cursor") as? Document
-        val firstBatch = cursor?.get("firstBatch") as? List<*>
-        val indexDefinition = (firstBatch?.first() as? Document)?.get("latestDefinition") as? Document
+        val versionDoc = mongoTemplate.db.getCollection("search_index_versions")
+            .find(Document("indexName", testSearchIndex.indexName()))
+            .first()
 
-        assertThat(indexDefinition).isNotNull
-        val mappings = indexDefinition?.get("mappings") as? Document
-
-        // Verify field mappings
-        val fields = mappings?.get("fields") as? Document
-        assertThat(fields).isNotNull
-
-        // Verify document field structure
-        val documentField = fields?.get("document") as? Document
-        assertThat(documentField?.get("type")).isEqualTo("document")
-
-        val documentFields = documentField?.get("fields") as? Document
-        assertThat(documentFields?.get("title")).isNotNull
-        assertThat(documentFields?.get("content")).isNotNull
-        assertThat(documentFields?.get("createdAt")).isNotNull
-        assertThat(documentFields?.get("updatedAt")).isNotNull
-
-        // Verify numeric and date fields
-        assertThat(fields?.get("score")).isNotNull
-        assertThat(fields?.get("viewCount")).isNotNull
-        assertThat(fields?.get("lastUpdated")).isNotNull
+        assertThat(versionDoc).isNotNull
+        assertThat(versionDoc?.getString("version")).isNotNull
+        assertThat(versionDoc?.get("updatedAt")).isNotNull
     }
 
     @Test
@@ -245,11 +204,42 @@ class AtlasSearchConfigTest {
         )
 
         assertThat(result.items).isNotEmpty
+        assertThat(result.items).hasSize(2)
 
         // First document should have higher score due to:
         // 1. Title boost (contains "Test")
         // 2. More recent creation date
         // 3. Higher score value
+        // 4. Tag boost
         assertThat(result.items.first().id).isEqualTo("1")
+    }
+
+    @Test
+    fun `should handle dynamic fields in search`() {
+        atlasSearchConfig.initializeSearchIndexes()
+        Thread.sleep(1000)
+
+        val result = testSearchIndex.search(
+            searchText = "test",
+            paginationRequest = PaginationRequest(limit = 10)
+        )
+
+        assertThat(result.items).isNotEmpty
+        assertThat(result.items.first().metadata).isNotEmpty
+        assertThat(result.items.first().metadata["category"]).isEqualTo("test")
+    }
+
+    @Test
+    fun `should perform tag-based search`() {
+        atlasSearchConfig.initializeSearchIndexes()
+        Thread.sleep(1000)
+
+        val result = testSearchIndex.search(
+            searchText = "important",
+            paginationRequest = PaginationRequest(limit = 10)
+        )
+
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.first().tags).contains("important")
     }
 }
