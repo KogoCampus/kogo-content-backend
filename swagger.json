@@ -11,321 +11,6 @@
     }
   ],
   "paths": {
-    "/media/topics/{id}": {
-      "get": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "return a topic info",
-        "operationId": "getTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "update topic attributes",
-        "operationId": "updateTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/TopicUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "example": {
-                    "reason": "USER_IS_NOT_OWNER"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "delete a topic",
-        "operationId": "deleteTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "example": {
-                    "reason": "USER_IS_NOT_OWNER"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/topics/{id}/unfollow": {
-      "put": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "unfollow a topic",
-        "operationId": "unfollowTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/topics/{id}/follow": {
-      "put": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "follow a topic",
-        "operationId": "followTopic",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/replies/{replyId}": {
-      "put": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Update a comment",
-        "operationId": "updateReply",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommentUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated comment",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Delete a comment",
-        "operationId": "deleteReply",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "The comment is deleted.",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/replies/{replyId}/likes": {
-      "put": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Like a reply",
-        "operationId": "addLikeToReply",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Delete a like under the comment",
-        "operationId": "deleteLikeFromReply",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Like"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/posts/{postId}": {
       "get": {
         "tags": [
@@ -401,7 +86,7 @@
           "post-controller"
         ],
         "summary": "create a like under the given post",
-        "operationId": "addLike",
+        "operationId": "addLikeToPost",
         "parameters": [
           {
             "name": "postId",
@@ -416,9 +101,9 @@
           "200": {
             "description": "ok",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Like"
+                  "$ref": "#/components/schemas/PostResponse"
                 }
               }
             }
@@ -430,7 +115,7 @@
           "post-controller"
         ],
         "summary": "delete a like under the given post",
-        "operationId": "deleteLike",
+        "operationId": "deleteLikeFromPost",
         "parameters": [
           {
             "name": "postId",
@@ -445,9 +130,9 @@
           "200": {
             "description": "ok",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Like"
+                  "$ref": "#/components/schemas/ReplyResponse"
                 }
               }
             }
@@ -455,43 +140,22 @@
         }
       }
     },
-    "/media/comments/{commentId}": {
-      "get": {
+    "/media/posts/{postId}/comments/{commentId}": {
+      "put": {
         "tags": [
-          "comment-controller"
+          "post-controller"
         ],
-        "summary": "Get a comment from the post or comment",
-        "operationId": "getComment",
+        "summary": "Update a comment",
+        "operationId": "updateComment",
         "parameters": [
           {
-            "name": "commentId",
+            "name": "postId",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok - Comment",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "comment-controller"
-        ],
-        "summary": "Update a comment",
-        "operationId": "updateComment",
-        "parameters": [
+          },
           {
             "name": "commentId",
             "in": "path",
@@ -503,7 +167,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/CommentUpdate"
               }
@@ -525,11 +189,19 @@
       },
       "delete": {
         "tags": [
-          "comment-controller"
+          "post-controller"
         ],
         "summary": "Delete a comment",
         "operationId": "deleteComment",
         "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "commentId",
             "in": "path",
@@ -553,14 +225,215 @@
         }
       }
     },
-    "/media/comments/{commentId}/likes": {
+    "/media/posts/{postId}/comments/{commentId}/replies/{replyId}": {
       "put": {
         "tags": [
-          "comment-controller"
+          "post-controller"
+        ],
+        "summary": "Update a reply",
+        "operationId": "updateReply",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Delete a reply",
+        "operationId": "deleteReply",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The reply is deleted.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/posts/{postId}/comments/{commentId}/replies/{replyId}/likes": {
+      "put": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Like a reply",
+        "operationId": "addLikeToReply",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Delete a like under the reply",
+        "operationId": "deleteLikeFromReply",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/posts/{postId}/comments/{commentId}/likes": {
+      "put": {
+        "tags": [
+          "post-controller"
         ],
         "summary": "Like a comment",
         "operationId": "addLikeToComment",
         "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "commentId",
             "in": "path",
@@ -574,9 +447,9 @@
           "200": {
             "description": "ok",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Like"
+                  "$ref": "#/components/schemas/CommentResponse"
                 }
               }
             }
@@ -585,11 +458,19 @@
       },
       "delete": {
         "tags": [
-          "comment-controller"
+          "post-controller"
         ],
         "summary": "Delete a like under the comment",
         "operationId": "deleteLikeFromComment",
         "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "commentId",
             "in": "path",
@@ -605,7 +486,193 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Like"
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/groups/{id}": {
+      "get": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "return a group info",
+        "operationId": "getGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "update group attributes",
+        "operationId": "updateGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": {
+                    "reason": "USER_IS_NOT_OWNER"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "delete a group",
+        "operationId": "deleteGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": {
+                    "reason": "USER_IS_NOT_OWNER"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/groups/{id}/unfollow": {
+      "put": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "unfollow a group",
+        "operationId": "unfollowGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/groups/{id}/follow": {
+      "put": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "follow a group",
+        "operationId": "followGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -694,13 +761,167 @@
         }
       }
     },
-    "/media/topics": {
+    "/media/posts/{postId}/comments": {
       "get": {
         "tags": [
-          "topic-controller"
+          "post-controller"
         ],
-        "summary": "return a list of topics",
-        "operationId": "listTopics",
+        "summary": "Get all comments from the post",
+        "operationId": "getCommentsOfPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok - All comments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Create a new comment",
+        "operationId": "createCommentToPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created a new comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/posts/{postId}/comments/{commentId}/replies": {
+      "get": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Get all replies from the comment",
+        "operationId": "getRepliesOfComment",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok - All replies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "Create a new reply under the comment",
+        "operationId": "createReplyToComment",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created a new reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/groups": {
+      "get": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "return a list of groups",
+        "operationId": "listGroups",
         "parameters": [
           {
             "name": "page_token",
@@ -750,7 +971,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TopicResponse"
+                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -760,15 +981,15 @@
       },
       "post": {
         "tags": [
-          "topic-controller"
+          "group-controller"
         ],
-        "summary": "create a new topic",
-        "operationId": "createTopic",
+        "summary": "create a new group",
+        "operationId": "createGroup",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/TopicDto"
+                "$ref": "#/components/schemas/GroupDto"
               }
             }
           }
@@ -779,7 +1000,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -787,13 +1008,13 @@
         }
       }
     },
-    "/media/topics/{topicId}/posts": {
+    "/media/groups/{groupId}/posts": {
       "get": {
         "tags": [
           "post-controller"
         ],
         "summary": "return a list of posts in the given topic",
-        "operationId": "listPostsInTopic",
+        "operationId": "listPostsInGroup",
         "parameters": [
           {
             "name": "page_token",
@@ -813,7 +1034,7 @@
             }
           },
           {
-            "name": "topicId",
+            "name": "groupId",
             "in": "path",
             "required": true,
             "schema": {
@@ -864,10 +1085,10 @@
           "post-controller"
         ],
         "summary": "create a post under the given topic",
-        "operationId": "createPostToTopic",
+        "operationId": "createPostInGroup",
         "parameters": [
           {
-            "name": "topicId",
+            "name": "groupId",
             "in": "path",
             "required": true,
             "schema": {
@@ -898,254 +1119,16 @@
         }
       }
     },
-    "/media/posts/{postId}/comments": {
-      "get": {
-        "tags": [
-          "comment-controller"
-        ],
-        "summary": "Get all comments from the post",
-        "operationId": "getCommentsOfPost",
-        "parameters": [
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok - All comments",
-            "headers": {
-              "X-Page-Token": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "X-Page-Size": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CommentResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "comment-controller"
-        ],
-        "summary": "Create a new comment",
-        "operationId": "createCommentToPost",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/CommentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created a new comment",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/comments/{commentId}/replies": {
-      "get": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Get all replies of the comment",
-        "operationId": "getRepliesOfComment",
-        "parameters": [
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "sort fields (format: field1:asc,field2:desc)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "filter",
-            "in": "query",
-            "description": "filter fields (format: field1:value1,field2:value2)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok - Replies",
-            "headers": {
-              "X-Page-Token": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "X-Page-Size": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CommentResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "reply-controller"
-        ],
-        "summary": "Create a new reply under the comment",
-        "operationId": "createReplyToComment",
-        "parameters": [
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/CommentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created a new comment",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/me/ownership/topics/{topicId}/transfer": {
+    "/me/ownership/groups/{groupId}/transfer": {
       "post": {
         "tags": [
           "me-controller"
         ],
-        "summary": "transfer the topic ownership",
+        "summary": "transfer the group ownership",
         "operationId": "transferOwner",
         "parameters": [
           {
-            "name": "topicId",
+            "name": "groupId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1167,80 +1150,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/topics/{id}/users": {
-      "get": {
-        "tags": [
-          "topic-controller"
-        ],
-        "summary": "get users following a given topic",
-        "operationId": "listUsersFollowingTopic",
-        "parameters": [
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "headers": {
-              "X-Page-Token": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "X-Page-Size": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Notification"
-                  }
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -1313,7 +1223,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TopicResponse"
+                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -1455,12 +1365,12 @@
         }
       }
     },
-    "/media/feeds/latest": {
+    "/media/feeds/latestInFollowing": {
       "get": {
         "tags": [
           "feed-controller"
         ],
-        "summary": "return a list of latest posts",
+        "summary": "return a list of latest posts in following groups",
         "operationId": "listLatestPosts",
         "parameters": [
           {
@@ -1514,30 +1424,6 @@
         }
       }
     },
-    "/me/ownership/topics": {
-      "get": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "get my topics",
-        "operationId": "getTopicsOwnedByUser",
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TopicResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/me/ownership/posts": {
       "get": {
         "tags": [
@@ -1554,6 +1440,30 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/ownership/groups": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "get my groups",
+        "operationId": "getGroupOwnedByUser",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -1632,7 +1542,7 @@
         "tags": [
           "me-controller"
         ],
-        "summary": "get my following topics",
+        "summary": "get my following groups",
         "operationId": "getMeFollowing",
         "responses": {
           "200": {
@@ -1640,7 +1550,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopicResponse"
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -1648,16 +1558,16 @@
         }
       }
     },
-    "/media/topics/{topicId}/posts/{postId}": {
+    "/media/groups/{groupId}/posts/{postId}": {
       "delete": {
         "tags": [
           "post-controller"
         ],
         "summary": "delete a post",
-        "operationId": "deletePostInTopic",
+        "operationId": "deletePostInGroup",
         "parameters": [
           {
-            "name": "topicId",
+            "name": "groupId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1693,16 +1603,20 @@
       "AttachmentResponse": {
         "required": [
           "contentType",
+          "id",
           "name",
           "size",
           "url"
         ],
         "type": "object",
         "properties": {
-          "attachmentId": {
+          "id": {
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "url": {
             "type": "string"
           },
           "size": {
@@ -1711,9 +1625,124 @@
           },
           "contentType": {
             "type": "string"
-          },
-          "url": {
+          }
+        }
+      },
+      "CommentResponse": {
+        "required": [
+          "author",
+          "content",
+          "createdAt",
+          "id",
+          "likeCount",
+          "likedByCurrentUser",
+          "replies",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "content": {
+            "type": "string"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplyResponse"
+            }
+          },
+          "likeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "likedByCurrentUser": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PostResponse": {
+        "required": [
+          "attachments",
+          "author",
+          "comments",
+          "content",
+          "createdAt",
+          "groupId",
+          "groupName",
+          "id",
+          "likeCount",
+          "likedByCurrentUser",
+          "title",
+          "updatedAt",
+          "viewCount",
+          "viewedByCurrentUser"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "groupId": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentResponse"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentResponse"
+            }
+          },
+          "likeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "likedByCurrentUser": {
+            "type": "boolean"
+          },
+          "viewCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "viewedByCurrentUser": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -1743,86 +1772,7 @@
           }
         }
       },
-      "TopicResponse": {
-        "required": [
-          "createdAt",
-          "description",
-          "followedByCurrentUser",
-          "followerCount",
-          "id",
-          "owner",
-          "postCount",
-          "tags",
-          "topicName",
-          "updatedAt"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "topicName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/AttachmentResponse"
-          },
-          "followerCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "postCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/Public"
-          },
-          "followedByCurrentUser": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "TopicUpdate": {
-        "type": "object",
-        "properties": {
-          "topicName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
-            }
-          },
-          "profileImage": {
-            "type": "string",
-            "format": "binary"
-          }
-        }
-      },
-      "CommentResponse": {
+      "ReplyResponse": {
         "required": [
           "author",
           "content",
@@ -1830,8 +1780,6 @@
           "id",
           "likeCount",
           "likedByCurrentUser",
-          "postId",
-          "replyCount",
           "updatedAt"
         ],
         "type": "object",
@@ -1842,9 +1790,6 @@
           "author": {
             "$ref": "#/components/schemas/Public"
           },
-          "postId": {
-            "type": "string"
-          },
           "content": {
             "type": "string"
           },
@@ -1852,9 +1797,8 @@
             "type": "integer",
             "format": "int32"
           },
-          "replyCount": {
-            "type": "integer",
-            "format": "int32"
+          "likedByCurrentUser": {
+            "type": "boolean"
           },
           "createdAt": {
             "type": "string",
@@ -1863,129 +1807,6 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "likedByCurrentUser": {
-            "type": "boolean"
-          }
-        }
-      },
-      "CommentUpdate": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string"
-          }
-        }
-      },
-      "Like": {
-        "required": [
-          "createdAt",
-          "likableId",
-          "userId"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "likableId": {
-            "$ref": "#/components/schemas/ObjectId"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ObjectId": {
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "date": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "PostResponse": {
-        "required": [
-          "attachments",
-          "author",
-          "comments",
-          "content",
-          "createdAt",
-          "id",
-          "likeCount",
-          "likedByCurrentUser",
-          "title",
-          "updatedAt",
-          "viewCount",
-          "viewedByCurrentUser"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "author": {
-            "$ref": "#/components/schemas/Public"
-          },
-          "topicId": {
-            "type": "string"
-          },
-          "topicName": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AttachmentResponse"
-            }
-          },
-          "comments": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "viewCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "likeCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "popularityScore": {
-            "type": "number",
-            "format": "double"
-          },
-          "likedByCurrentUser": {
-            "type": "boolean"
-          },
-          "viewedByCurrentUser": {
-            "type": "boolean"
           }
         }
       },
@@ -1998,7 +1819,7 @@
           "content": {
             "type": "string"
           },
-          "attachmentDelete": {
+          "attachmentDeleteIds": {
             "type": "array",
             "items": {
               "type": "string",
@@ -2023,21 +1844,101 @@
           }
         }
       },
-      "IncludeCredentials": {
+      "CommentUpdate": {
         "required": [
-          "email",
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupResponse": {
+        "required": [
+          "createdAt",
+          "description",
+          "followedByCurrentUser",
+          "followerCount",
+          "groupName",
           "id",
-          "pushToken",
-          "schoolName",
-          "schoolShortenedName",
-          "username"
+          "owner",
+          "tags",
+          "updatedAt"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "pushToken": {
+          "groupName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/AttachmentResponse"
+          },
+          "followerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "followedByCurrentUser": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GroupUpdate": {
+        "type": "object",
+        "properties": {
+          "groupName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
+            }
+          },
+          "profileImage": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "IncludeCredentials": {
+        "required": [
+          "email",
+          "id",
+          "schoolInfo",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
           },
           "username": {
@@ -2048,6 +1949,25 @@
           },
           "profileImage": {
             "$ref": "#/components/schemas/AttachmentResponse"
+          },
+          "schoolInfo": {
+            "$ref": "#/components/schemas/SchoolInfo"
+          },
+          "pushNotificationToken": {
+            "type": "string"
+          }
+        }
+      },
+      "SchoolInfo": {
+        "required": [
+          "schoolKey",
+          "schoolName",
+          "schoolShortenedName"
+        ],
+        "type": "object",
+        "properties": {
+          "schoolKey": {
+            "type": "string"
           },
           "schoolName": {
             "type": "string"
@@ -2072,14 +1992,26 @@
       "UserData": {
         "type": "object"
       },
-      "TopicDto": {
+      "CommentDto": {
         "required": [
-          "description",
-          "topicName"
+          "content"
         ],
         "type": "object",
         "properties": {
-          "topicName": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupDto": {
+        "required": [
+          "description",
+          "groupName",
+          "tags"
+        ],
+        "type": "object",
+        "properties": {
+          "groupName": {
             "type": "string"
           },
           "description": {
@@ -2089,7 +2021,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "description": "list of tags to attach to the topic. Valid tag must not contain any special characters."
+              "description": "list of tags to attach to the group. Valid tag must not contain any special characters."
             }
           },
           "profileImage": {
@@ -2126,17 +2058,6 @@
               "description": "list of video files to add to the post",
               "format": "binary"
             }
-          }
-        }
-      },
-      "CommentDto": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string"
           }
         }
       },
@@ -2188,7 +2109,7 @@
       "PageToken": {
         "required": [
           "cursors",
-          "filters",
+          "filterFields",
           "sortFields"
         ],
         "type": "object",
@@ -2205,7 +2126,7 @@
               "$ref": "#/components/schemas/SortField"
             }
           },
-          "filters": {
+          "filterFields": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FilterField"
