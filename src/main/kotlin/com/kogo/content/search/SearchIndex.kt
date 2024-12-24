@@ -5,7 +5,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import org.springframework.beans.factory.annotation.Autowired
 import kotlin.reflect.KClass
 
-abstract class SearchIndex<TModel : Any>(protected val entity: KClass<TModel>) {
+abstract class SearchIndex<TModel : Any>(val entity: KClass<TModel>) {
 
     @Autowired
     lateinit var atlasSearchQueryBuilder: AtlasSearchQueryBuilder

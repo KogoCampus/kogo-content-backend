@@ -29,29 +29,25 @@ class AtlasSearchConfig @Autowired constructor(
         val searchIndexBeans = applicationContext.getBeansOfType(SearchIndex::class.java)
 
         searchIndexBeans.values.forEach { searchIndex ->
-            val indexName = searchIndex.indexName()
-            val definition = searchIndex.searchIndexDefinition()
-            val collectionName = searchIndex.mongoEntityCollectionName()
-            val currentVersion = calculateDefinitionVersion(definition)
+            val currentVersion = calculateDefinitionVersion(searchIndex.searchIndexDefinition())
 
             when {
-                !isIndexExists(indexName, collectionName) -> {
-                    createSearchIndex(indexName, collectionName, definition)
-                    saveIndexVersion(indexName, currentVersion)
+                !isIndexExists(searchIndex) -> {
+                    createSearchIndex(searchIndex)
+                    saveIndexVersion(searchIndex.indexName(), currentVersion)
                 }
-                !isVersionMatch(indexName, currentVersion) -> {
-                    updateSearchIndex(indexName, collectionName, definition)
-                    saveIndexVersion(indexName, currentVersion)
+                !isVersionMatch(searchIndex.indexName(), currentVersion) -> {
+                    updateSearchIndex(searchIndex)
+                    saveIndexVersion(searchIndex.indexName(), currentVersion)
                 }
                 else -> {
-                    log.info { "Search index '$indexName' exists and is up to date." }
+                    log.info { "Search index '${searchIndex.indexName()}' exists and is up to date." }
                 }
             }
         }
     }
 
     private fun calculateDefinitionVersion(definition: SearchIndexDefinition): String {
-        // Convert definition to Document and sort all fields recursively to ensure consistent ordering
         val sortedDoc = sortDocumentFields(definition.toDocument())
         return sortedDoc.toString().hashCode().toString()
     }
@@ -77,14 +73,14 @@ class AtlasSearchConfig @Autowired constructor(
         return storedVersion == currentVersion
     }
 
-    private fun isIndexExists(indexName: String, collectionName: String): Boolean {
+    private fun isIndexExists(searchIndex: SearchIndex<*>): Boolean {
         return try {
             val pipeline = listOf(
-                Document("\$listSearchIndexes", Document("name", indexName))
+                Document("\$listSearchIndexes", Document("name", searchIndex.indexName()))
             )
 
             val result = mongoTemplate.db
-                .getCollection(collectionName)
+                .getCollection(searchIndex.mongoEntityCollectionName())
                 .aggregate(pipeline)
                 .first()
 
@@ -96,48 +92,48 @@ class AtlasSearchConfig @Autowired constructor(
         }
     }
 
-    private fun createSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
-        if (mongoTemplate.collectionExists(collectionName)) {
-            val command = Document().apply {
-                put("createSearchIndexes", collectionName)
-                put("indexes", listOf(Document().apply {
-                    put("name", indexName)
-                    put("definition", mapping.toDocument())
-                }))
-            }
+    private fun createSearchIndex(searchIndex: SearchIndex<*>) {
+        if (!mongoTemplate.collectionExists(searchIndex.mongoEntityCollectionName())) {
+            log.info { "Collection '${searchIndex.mongoEntityCollectionName()}' does not exist. Creating collection..." }
+            mongoTemplate.createCollection(searchIndex.entity.java)
+        }
 
-            try {
-                mongoTemplate.db.runCommand(command)
-                log.info { "Search index '$indexName' created successfully." }
+        val command = Document().apply {
+            put("createSearchIndexes", searchIndex.mongoEntityCollectionName())
+            put("indexes", listOf(Document().apply {
+                put("name", searchIndex.indexName())
+                put("definition", searchIndex.searchIndexDefinition().toDocument())
+            }))
+        }
 
-            } catch (e: MongoCommandException) {
-                if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
-                    log.info { "Search index '$indexName' already exists, skipping creation." }
-                } else {
-                    throw e
-                }
-            } catch (e: Exception) {
-                log.error { "Failed to create search index '$indexName': ${e.message}" }
+        try {
+            mongoTemplate.db.runCommand(command)
+            log.info { "Search index '${searchIndex.indexName()}' created successfully." }
+
+        } catch (e: MongoCommandException) {
+            if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
+                log.info { "Search index '${searchIndex.indexName()}' already exists, skipping creation." }
+            } else {
                 throw e
             }
-        }
-        else {
-            log.info { "Collection does not exist. Search index $indexName will not be created." }
+        } catch (e: Exception) {
+            log.error { "Failed to create search index '${searchIndex.indexName()}': ${e.message}" }
+            throw e
         }
     }
 
-    private fun updateSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
+    private fun updateSearchIndex(searchIndex: SearchIndex<*>) {
         try {
             val command = Document().apply {
-                put("updateSearchIndex", collectionName)
-                put("name", indexName)
-                put("definition", mapping.toDocument())
+                put("updateSearchIndex", searchIndex.mongoEntityCollectionName())
+                put("name", searchIndex.indexName())
+                put("definition", searchIndex.searchIndexDefinition().toDocument())
             }
 
             mongoTemplate.db.runCommand(command)
-            log.info { "Updated search index '$indexName' successfully." }
+            log.info { "Updated search index '${searchIndex.indexName()}' successfully." }
         } catch (e: Exception) {
-            log.error { "Failed to update search index '$indexName': ${e.message}" }
+            log.error { "Failed to update search index '${searchIndex.indexName()}': ${e.message}" }
             throw e
         }
     }
