@@ -24,6 +24,8 @@ data class Group (
     @DocumentReference
     var owner: User,
 
+    var isSchoolGroup: Boolean = false,
+
     var followerIds: MutableList<String> = mutableListOf(),
 
     var createdAt: Instant = Instant.now(),

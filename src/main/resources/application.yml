@@ -3,6 +3,7 @@ server:
 
 kogo-api:
     authenticate: "https://api.staging.kogocampus.com/student/authenticate"
+    getSchools: "https://api.staging.kogocampus.com/student/schools"
 
 springdoc:
     api-docs:
