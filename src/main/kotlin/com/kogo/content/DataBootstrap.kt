@@ -6,6 +6,7 @@ import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.logging.Logger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestTemplate
 import java.time.Instant
 
 @Service
+@Profile("!test")
 class DataBootstrap(private val mongoTemplate: MongoTemplate) {
 
     @Value("\${kogo-api.getSchools}")
