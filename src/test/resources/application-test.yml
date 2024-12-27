@@ -1,6 +1,4 @@
 ---
-compileVersionKey: "1.0.0"
-
 server:
     port: 8081
 
@@ -12,6 +10,3 @@ spring:
             username: testuser
             password: testpass
             auto-index-creation: true
-
-filehandler:
-    prefix: tmp/files

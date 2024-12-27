@@ -119,6 +119,7 @@ tasks.named<BootJar>("bootJar") {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("spring.profiles.active", "test")
 }
 
 tasks.named<BootBuildImage>("bootBuildImage") {

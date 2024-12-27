@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate
 import java.time.Instant
 
 @Service
-@Profile("!test")
+@Profile("local || stg || prd")
 class DataBootstrap(private val mongoTemplate: MongoTemplate) {
 
     @Value("\${kogo-api.getSchools}")
