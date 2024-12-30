@@ -97,7 +97,8 @@ class AuthenticationApiClient(
         log.info { "Attempting to join school group for user: ${user.email}" }
 
         val schoolGroup = mongoTemplate.findOne(
-            Query.query(Criteria.where("id").`is`(schoolKey)),
+            Query.query(Criteria.where("groupName").`is`(user.schoolInfo.schoolName)
+                .and("isSchoolGroup").`is`(true)),
             Group::class.java
         )
 
@@ -118,7 +119,7 @@ class AuthenticationApiClient(
                 log.error(e) { "Failed to join school group for user: ${user.email}" }
             }
         } else {
-            log.warn { "School group not found for key: $schoolKey" }
+            log.warn { "School group not found for school: ${user.schoolInfo.schoolName}" }
         }
     }
 
