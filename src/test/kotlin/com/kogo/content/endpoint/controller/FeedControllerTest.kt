@@ -3,6 +3,7 @@ package com.kogo.content.endpoint.controller
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.content.service.GroupService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService
 import com.kogo.content.storage.model.entity.Group
@@ -27,6 +28,7 @@ class FeedControllerTest @Autowired constructor(
 ) {
     @MockkBean private lateinit var postService: PostService
     @MockkBean private lateinit var userService: UserService
+    @MockkBean private lateinit var groupService: GroupService
 
     private lateinit var currentUser: User
     private lateinit var group: Group
@@ -54,7 +56,7 @@ class FeedControllerTest @Autowired constructor(
 
         every { postService.findAllTrending(capture(paginationRequestSlot)) } returns paginationSlice
 
-        mockMvc.get("/media/feeds/trending") {
+        mockMvc.get("/media/feeds/trendingPosts") {
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
             status { isOk() }
@@ -76,7 +78,7 @@ class FeedControllerTest @Autowired constructor(
 
         every { postService.findAllInFollowing(capture(paginationRequestSlot), currentUser) } returns paginationSlice
 
-        mockMvc.get("/media/feeds/latestInFollowing") {
+        mockMvc.get("/media/feeds/latestPosts") {
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
             status { isOk() }
@@ -95,13 +97,50 @@ class FeedControllerTest @Autowired constructor(
         val paginationRequestSlot = slot<PaginationRequest>()
         every { postService.findAllTrending(capture(paginationRequestSlot)) } returns PaginationSlice(items = emptyList())
 
-        mockMvc.get("/media/feeds/trending?limit=5") {
+        mockMvc.get("/media/feeds/trendingPosts?limit=5") {
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
             status { isOk() }
         }
 
         verify { postService.findAllTrending(match { it.limit == 5 }) }
+    }
+
+    @Test
+    fun `should get trending groups successfully`() {
+        val groups = listOf(group)
+        val paginationSlice = PaginationSlice(items = groups)
+        val paginationRequestSlot = slot<PaginationRequest>()
+
+        every { groupService.findAllTrending(capture(paginationRequestSlot)) } returns paginationSlice
+
+        mockMvc.get("/media/feeds/trendingGroups") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].id") { value(group.id) }
+            jsonPath("$.data[0].groupName") { value(group.groupName) }
+            jsonPath("$.data[0].description") { value(group.description) }
+            jsonPath("$.data[0].owner.id") { value(currentUser.id) }
+            jsonPath("$.data[0].followerCount") { value(group.followerIds.size) }
+            jsonPath("$.data[0].followedByCurrentUser") { value(group.followerIds.contains(currentUser.id)) }
+        }
+
+        verify { groupService.findAllTrending(any()) }
+    }
+
+    @Test
+    fun `should handle pagination parameters for trending groups`() {
+        val paginationRequestSlot = slot<PaginationRequest>()
+        every { groupService.findAllTrending(capture(paginationRequestSlot)) } returns PaginationSlice(items = emptyList())
+
+        mockMvc.get("/media/feeds/trendingGroups?limit=5") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+        }
+
+        verify { groupService.findAllTrending(match { it.limit == 5 }) }
     }
 }
 
