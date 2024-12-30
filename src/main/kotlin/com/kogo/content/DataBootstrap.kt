@@ -97,9 +97,12 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
     }
 
     private fun getOrCreateSystemUser(): User {
+        val systemUserEmail = "system@kogocampus.com"
+        val systemUsername = "system"
+
         log.info { "Checking for system user..." }
         val systemUser = mongoTemplate.findOne(
-            Query.query(Criteria.where("id").`is`("system")),
+            Query.query(Criteria.where("email").`is`(systemUserEmail)),
             User::class.java
         )
 
@@ -111,8 +114,8 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
             try {
                 mongoTemplate.save(
                     User(
-                        username = "system",
-                        email = "system@kogocampus.com",
+                        username = systemUsername,
+                        email = systemUserEmail,
                         schoolInfo = SchoolInfo(
                             schoolKey = "system",
                             schoolName = "System",
