@@ -14,7 +14,7 @@ abstract class SearchIndex<TModel : Any>(val entity: KClass<TModel>) {
 
     open fun searchIndexDefinition(): SearchIndexDefinition = SearchIndexDefinition.builder().dynamic(true).build()
 
-    open fun mongoEntityCollectionName(): String = entity.simpleName!!
+    open fun mongoEntityCollectionName(): String = entity.simpleName!!.lowercase()
 
     protected open fun defaultSearchConfiguration(): SearchConfiguration? = null
 

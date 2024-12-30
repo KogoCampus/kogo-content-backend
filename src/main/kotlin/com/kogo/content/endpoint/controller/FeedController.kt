@@ -88,7 +88,7 @@ class FeedController @Autowired constructor(
         val paginationResponse = postService.findAllInFollowing(paginationRequest, user)
 
         HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { it -> PostResponse.from(it, user) },
+            data = paginationResponse.items.map { PostResponse.from(it, user) },
             headers = paginationResponse.toHttpHeaders()
         )
     }

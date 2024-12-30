@@ -80,8 +80,8 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
                         createdAt = Instant.now(),
                         updatedAt = Instant.now()
                     )
-                    mongoTemplate.save(schoolGroup)
-                    systemUser.followingGroupIds.add(school.key)
+                    val savedSchoolGroup = mongoTemplate.save(schoolGroup)
+                    systemUser.followingGroupIds.add(savedSchoolGroup.id!!)
                     mongoTemplate.save(systemUser)
                     createdCount++
 
