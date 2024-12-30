@@ -4,6 +4,7 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.logging.Logger
+import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Profile
@@ -70,7 +71,7 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
             if (existingGroup == null) {
                 try {
                     val schoolGroup = Group(
-                        id = ObjectId(school.key),
+                        id = ObjectId(school.key).toString(),
                         groupName = school.name,
                         description = "Official group for ${school.name}",
                         tags = mutableListOf(school.shortenedName),
@@ -111,7 +112,7 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
             try {
                 mongoTemplate.save(
                     User(
-                        id = ObjectId("system"),
+                        id = ObjectId("system").toString(),
                         username = "system",
                         email = "system@kogocampus.com",
                         schoolInfo = SchoolInfo(
