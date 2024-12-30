@@ -1306,7 +1306,7 @@
         }
       }
     },
-    "/media/feeds/trending": {
+    "/media/feeds/trendingPosts": {
       "get": {
         "tags": [
           "feed-controller"
@@ -1365,7 +1365,66 @@
         }
       }
     },
-    "/media/feeds/latestInFollowing": {
+    "/media/feeds/trendingGroups": {
+      "get": {
+        "tags": [
+          "feed-controller"
+        ],
+        "summary": "return a list of trending groups",
+        "operationId": "listTrendingGroups",
+        "parameters": [
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "next_page": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/feeds/latestPosts": {
       "get": {
         "tags": [
           "feed-controller"
