@@ -26,6 +26,9 @@ class GroupService(
 
     fun findAllByFollowerId(userId: String): List<Group> = groupRepository.findAllByFollowerId(userId)
 
+    // TODO: trending groups, temporarily set to find all
+    fun findAllTrending(paginationRequest: PaginationRequest) = findAll(paginationRequest)
+
     fun search(
         searchKeyword: String,
         paginationRequest: PaginationRequest
