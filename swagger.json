@@ -1732,6 +1732,58 @@
           }
         }
       },
+      "GroupResponse": {
+        "required": [
+          "createdAt",
+          "description",
+          "followedByCurrentUser",
+          "followerCount",
+          "groupName",
+          "id",
+          "owner",
+          "tags",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/AttachmentResponse"
+          },
+          "followerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "followedByCurrentUser": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PostResponse": {
         "required": [
           "attachments",
@@ -1739,8 +1791,7 @@
           "comments",
           "content",
           "createdAt",
-          "groupId",
-          "groupName",
+          "group",
           "id",
           "likeCount",
           "likedByCurrentUser",
@@ -1757,11 +1808,8 @@
           "author": {
             "$ref": "#/components/schemas/Public"
           },
-          "groupId": {
-            "type": "string"
-          },
-          "groupName": {
-            "type": "string"
+          "group": {
+            "$ref": "#/components/schemas/GroupResponse"
           },
           "title": {
             "type": "string"
@@ -1911,58 +1959,6 @@
         "properties": {
           "content": {
             "type": "string"
-          }
-        }
-      },
-      "GroupResponse": {
-        "required": [
-          "createdAt",
-          "description",
-          "followedByCurrentUser",
-          "followerCount",
-          "groupName",
-          "id",
-          "owner",
-          "tags",
-          "updatedAt"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "groupName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/Public"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "profileImage": {
-            "$ref": "#/components/schemas/AttachmentResponse"
-          },
-          "followerCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "followedByCurrentUser": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
