@@ -73,8 +73,7 @@ class PostControllerTest @Autowired constructor(
             jsonPath("$.data.viewCount") { value(post.viewerIds.size) }
             jsonPath("$.data.likedByCurrentUser") { value(true) }
             jsonPath("$.data.viewedByCurrentUser") { value(true) }
-            jsonPath("$.data.groupId") { value(group.id) }
-            jsonPath("$.data.groupName") { value(group.groupName) }
+            jsonPath("$.data.group.id") { value(group.id) }
             jsonPath("$.data.author.id") { value(currentUser.id) }
         }
 
@@ -97,8 +96,7 @@ class PostControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data.title") { value(newPost.title) }
             jsonPath("$.data.content") { value(newPost.content) }
-            jsonPath("$.data.groupId") { value(group.id) }
-            jsonPath("$.data.groupName") { value(group.groupName) }
+            jsonPath("$.data.group.id") { value(group.id) }
             jsonPath("$.data.author.id") { value(currentUser.id) }
         }
     }
@@ -109,7 +107,7 @@ class PostControllerTest @Autowired constructor(
         val unfollowedGroup = Fixture.createGroupFixture(owner = currentUser).apply {
             followerIds = mutableListOf() // Clear all followers
         }
-        
+
         every { groupService.findOrThrow(unfollowedGroup.id!!) } returns unfollowedGroup
 
         mockMvc.multipart("/media/groups/${unfollowedGroup.id}/posts") {
@@ -141,8 +139,7 @@ class PostControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data.title") { value(updatedTitle) }
             jsonPath("$.data.content") { value(updatedContent) }
-            jsonPath("$.data.groupId") { value(group.id) }
-            jsonPath("$.data.groupName") { value(group.groupName) }
+            jsonPath("$.data.group.id") { value(group.id) }
             jsonPath("$.data.author.id") { value(currentUser.id) }
         }
     }
@@ -150,7 +147,7 @@ class PostControllerTest @Autowired constructor(
     @Test
     fun `should handle like operations successfully`() {
         val notificationSlot = slot<NotificationMessage>()
-        
+
         every { postService.findOrThrow(post.id!!) } returns post
         every { postService.addLikeToPost(post, currentUser) } returns true
         every { notificationService.createPushNotification(

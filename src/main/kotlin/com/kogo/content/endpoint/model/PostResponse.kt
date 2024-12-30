@@ -9,8 +9,7 @@ import java.time.Instant
 data class PostResponse(
     var id: String,
     var author: UserData.Public,
-    var groupId: String,
-    var groupName: String,
+    var group: GroupResponse,
     var title: String,
     var content: String,
     var attachments: List<AttachmentResponse>,
@@ -27,8 +26,7 @@ data class PostResponse(
             return PostResponse(
                 id = post.id!!,
                 author = UserData.Public.from(post.author),
-                groupId = post.group.id!!,
-                groupName = post.group.groupName,
+                group = GroupResponse.from(post.group, currentUser),
                 title = post.title,
                 content = post.content,
                 attachments = post.attachments.map { AttachmentResponse.from(it) },

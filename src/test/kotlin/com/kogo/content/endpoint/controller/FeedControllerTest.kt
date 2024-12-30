@@ -62,7 +62,6 @@ class FeedControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data[0].id") { value(post.id) }
             jsonPath("$.data[0].author.id") { value(currentUser.id) }
-            jsonPath("$.data[0].groupId") { value(group.id) }
             jsonPath("$.data[0].likeCount") { value(post.activeLikes.size) }
             jsonPath("$.data[0].viewCount") { value(post.viewerIds.size) }
         }
@@ -84,7 +83,6 @@ class FeedControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data[0].id") { value(post.id) }
             jsonPath("$.data[0].author.id") { value(currentUser.id) }
-            jsonPath("$.data[0].groupId") { value(group.id) }
             jsonPath("$.data[0].likeCount") { value(post.activeLikes.size) }
             jsonPath("$.data[0].viewCount") { value(post.viewerIds.size) }
         }
