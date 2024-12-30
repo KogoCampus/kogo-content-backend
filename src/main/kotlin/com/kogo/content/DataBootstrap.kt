@@ -70,7 +70,7 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
             if (existingGroup == null) {
                 try {
                     val schoolGroup = Group(
-                        id = school.key,
+                        id = ObjectId(school.key),
                         groupName = school.name,
                         description = "Official group for ${school.name}",
                         tags = mutableListOf(school.shortenedName),
@@ -111,7 +111,7 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
             try {
                 mongoTemplate.save(
                     User(
-                        id = "system",
+                        id = ObjectId("system"),
                         username = "system",
                         email = "system@kogocampus.com",
                         schoolInfo = SchoolInfo(
