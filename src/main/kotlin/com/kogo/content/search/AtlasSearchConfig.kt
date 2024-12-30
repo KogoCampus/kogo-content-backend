@@ -97,32 +97,31 @@ class AtlasSearchConfig @Autowired constructor(
     }
 
     private fun createSearchIndex(indexName: String, collectionName: String, mapping: SearchIndexDefinition) {
-        if (mongoTemplate.collectionExists(collectionName)) {
-            val command = Document().apply {
-                put("createSearchIndexes", collectionName)
-                put("indexes", listOf(Document().apply {
-                    put("name", indexName)
-                    put("definition", mapping.toDocument())
-                }))
-            }
+        if (!mongoTemplate.collectionExists(collectionName)) {
+            log.info { "Collection $collectionName does not exist. Creating collection..." }
+            mongoTemplate.createCollection(collectionName)
+        }
 
-            try {
-                mongoTemplate.db.runCommand(command)
-                log.info { "Search index '$indexName' created successfully." }
+        val command = Document().apply {
+            put("createSearchIndexes", collectionName)
+            put("indexes", listOf(Document().apply {
+                put("name", indexName)
+                put("definition", mapping.toDocument())
+            }))
+        }
 
-            } catch (e: MongoCommandException) {
-                if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
-                    log.info { "Search index '$indexName' already exists, skipping creation." }
-                } else {
-                    throw e
-                }
-            } catch (e: Exception) {
-                log.error { "Failed to create search index '$indexName': ${e.message}" }
+        try {
+            mongoTemplate.db.runCommand(command)
+            log.info { "Search index '$indexName' created successfully." }
+        } catch (e: MongoCommandException) {
+            if (e.errorCode == 68 && e.errorMessage.contains("Duplicate Index")) {
+                log.info { "Search index '$indexName' already exists, skipping creation." }
+            } else {
                 throw e
             }
-        }
-        else {
-            log.info { "Collection does not exist. Search index $indexName will not be created." }
+        } catch (e: Exception) {
+            log.error { "Failed to create search index '$indexName': ${e.message}" }
+            throw e
         }
     }
 
