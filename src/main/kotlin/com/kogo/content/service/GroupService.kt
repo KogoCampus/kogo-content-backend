@@ -8,6 +8,8 @@ import com.kogo.content.search.index.GroupSearchIndex
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.model.entity.User
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant

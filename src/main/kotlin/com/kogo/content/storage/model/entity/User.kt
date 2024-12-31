@@ -27,6 +27,8 @@ data class User (
 data class SchoolInfo (
     var schoolKey: String,
 
+    var schoolGroupId: String? = null,
+
     var schoolName: String,
 
     var schoolShortenedName: String,

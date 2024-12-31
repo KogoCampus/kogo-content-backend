@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.repository.findByIdOrNull
 import kotlin.reflect.KClass
@@ -13,6 +14,9 @@ abstract class BaseEntityService<TModel : Any, TID>(
     protected val entity: KClass<TModel>,
     protected val repository: MongoRepository<TModel, TID>
 ) {
+    @Autowired
+    lateinit var mongoTemplate: MongoTemplate
+
     @Autowired
     lateinit var mongoPaginationQueryBuilder: MongoPaginationQueryBuilder
 

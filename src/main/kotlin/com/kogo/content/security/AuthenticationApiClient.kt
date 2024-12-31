@@ -111,6 +111,7 @@ class AuthenticationApiClient(
                 }
                 if (!user.followingGroupIds.contains(schoolGroup.id)) {
                     user.followingGroupIds.add(schoolGroup.id!!)
+                    user.schoolInfo.schoolGroupId = schoolGroup.id
                     mongoTemplate.save(user)
                 }
 

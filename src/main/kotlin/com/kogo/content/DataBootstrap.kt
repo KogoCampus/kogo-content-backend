@@ -63,15 +63,20 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
         var existingCount = 0
 
         schoolsResponse?.schools?.forEach { school ->
+            val schoolName = school.name
             val existingGroup = mongoTemplate.findOne(
-                Query.query(Criteria.where("id").`is`(school.key)),
+                Query.query(
+                    Criteria.where("groupName").`is`(schoolName)
+                        .and("owner").`is`(systemUser)
+                        .and("isSchoolGroup").`is`(true)
+                ),
                 Group::class.java
             )
 
             if (existingGroup == null) {
                 try {
                     val schoolGroup = Group(
-                        groupName = school.name,
+                        groupName = schoolName,
                         description = "Official group for ${school.name}",
                         tags = mutableListOf(school.shortenedName),
                         owner = systemUser,
