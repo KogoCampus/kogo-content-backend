@@ -2024,6 +2024,9 @@
           "schoolKey": {
             "type": "string"
           },
+          "schoolGroupId": {
+            "type": "string"
+          },
           "schoolName": {
             "type": "string"
           },
