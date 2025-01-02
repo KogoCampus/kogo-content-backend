@@ -132,8 +132,8 @@ class GroupController @Autowired constructor(
             if(group.owner.id != user.id)
                 return HttpJsonResponse.errorResponse(ErrorCode.USER_ACTION_DENIED, "group is not owned by user ${user.id}")
 
-            if (groupUpdate.groupName != null
-                    && groupUpdate.groupName != group.groupName
+            if (groupUpdate.groupName != null 
+                    && groupUpdate.groupName != group.name 
                     && groupService.findByGroupName(groupUpdate.groupName!!) != null) {
                 return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "group name must be unique: ${groupUpdate.groupName}")
             }
