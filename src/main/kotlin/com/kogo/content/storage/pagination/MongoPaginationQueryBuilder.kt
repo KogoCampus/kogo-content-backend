@@ -2,6 +2,7 @@ package com.kogo.content.storage.pagination
 
 import com.kogo.content.exception.InvalidFieldException
 import com.kogo.content.endpoint.common.*
+import com.kogo.content.logging.Logger
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -26,26 +27,42 @@ class MongoPaginationQueryBuilder(
         operations.addAll(preAggregationOperations)
         operations.addAll(buildPaginationOperations(paginationRequest))
 
-        val results = mongoTemplate.aggregate(
+        val rawResults = mongoTemplate.aggregate(
             Aggregation.newAggregation(operations),
             entityClass.java,
-            entityClass.java
+            org.bson.Document::class.java
         ).mappedResults
 
-        return if (results.size > paginationRequest.limit) {
-            val lastItem = results[paginationRequest.limit - 1]
-            val nextPageToken = buildNextPageToken(
-                lastItem,
-                paginationRequest.pageToken.sortFields,
-                paginationRequest.pageToken.filterFields
-            )
-            PaginationSlice(
-                items = results.take(paginationRequest.limit),
-                nextPageToken = nextPageToken
-            )
-        } else {
-            PaginationSlice(items = results)
+        // we need to use raw results of Document because of the dynamic field
+        val nextPageToken = buildNextPageToken(rawResults, paginationRequest)
+
+        val mappedResults = rawResults.take(paginationRequest.limit).map { doc ->
+            val result = mongoTemplate.converter.read(entityClass.java, doc)
+            result
         }
+
+        return PaginationSlice(
+            items = mappedResults,
+            nextPageToken = nextPageToken
+        )
+    }
+
+    private fun buildNextPageToken(
+        rawResults: List<org.bson.Document>,
+        paginationRequest: PaginationRequest
+    ): PageToken? {
+        return if (rawResults.size > paginationRequest.limit) {
+            val lastDocument = rawResults[paginationRequest.limit - 1]
+            PageToken(
+                cursors = paginationRequest.pageToken.sortFields.associate { sortField ->
+                    val value = lastDocument[sortField.field]
+                        ?: throw IllegalArgumentException("Field not found: ${sortField.field}")
+                    sortField.field to CursorValue.from(value)
+                },
+                sortFields = paginationRequest.pageToken.sortFields,
+                filterFields = paginationRequest.pageToken.filterFields
+            )
+        } else null
     }
 
     private fun buildPaginationOperations(
@@ -136,21 +153,6 @@ class MongoPaginationQueryBuilder(
         else Criteria().orOperator(*conditions.toTypedArray())
     }
 
-    private fun <T : Any> buildNextPageToken(
-        lastItem: T,
-        sortFields: List<SortField>,
-        filterFields: List<FilterField>,
-    ): PageToken {
-        val cursors = sortFields.associate { sortField ->
-            val field = sortField.field
-            val document = mongoTemplate.converter.convertToMongoType(lastItem) as org.bson.Document
-            val value = getFieldValueInDocument(document, field)
-            sortField.field to CursorValue.from(value)
-        }
-        return PageToken(cursors = cursors, sortFields = sortFields, filterFields = filterFields)
-    }
-
-    // Check if field exists in the entity class
     private fun validateFields(
         request: PaginationRequest,
         entityClass: KClass<*>,
@@ -179,7 +181,6 @@ class MongoPaginationQueryBuilder(
         }
     }
 
-    // Check if field exists in the entity class
     private fun <T : Any> isFieldValid(
         field: String,
         entityClass: KClass<T>
@@ -190,16 +191,6 @@ class MongoPaginationQueryBuilder(
         } catch (e: NoSuchFieldException) {
             false
         }
-    }
-
-    private fun getFieldValueInDocument(document: org.bson.Document, field: String): Any {
-        val fields = field.split(".")
-        var value: Any = document
-        for (f in fields) {
-            value = (value as? org.bson.Document)?.get(f)
-                ?: throw IllegalArgumentException("Field not found: $field")
-        }
-        return value
     }
 }
 

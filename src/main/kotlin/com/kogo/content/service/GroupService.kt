@@ -52,7 +52,6 @@ class GroupService(
         )
     )
 
-
     @Transactional
     fun update(group: Group, groupUpdate: GroupUpdate): Group {
         with(groupUpdate) {

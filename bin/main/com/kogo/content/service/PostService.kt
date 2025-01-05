@@ -42,7 +42,7 @@ class PostService(
     fun findPostsByGroup(group: Group, paginationRequest: PaginationRequest)
         = mongoPaginationQueryBuilder.getPage(
             entityClass = Post::class,
-            paginationRequest = paginationRequest
+            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC)
         )
 
     fun findAllByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)

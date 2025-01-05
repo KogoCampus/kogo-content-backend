@@ -366,5 +366,53 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         assertThat(pageCount).isEqualTo(4)
         assertThat(allScores).containsExactly(1000, 900, 800, 700, 600, 500, 400, 300, 200, 100)
     }
+
+    @Test
+    fun `should maintain consistent pagination with concurrent updates`() {
+        // First page request (2 items per page, sorted by score DESC)
+        val firstPageRequest = PaginationRequest(limit = 2)
+            .withSort("score", SortDirection.DESC)
+
+        val firstPage = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            firstPageRequest
+        )
+
+        // Verify first page
+        assertThat(firstPage.items).hasSize(2)
+        assertThat(firstPage.items.map { it.score }).containsExactly(300, 250)
+        assertThat(firstPage.nextPageToken).isNotNull
+
+        // Add a new entity with score between the pages
+        val newEntity = TestEntity(
+            id = "new-entity",
+            name = "NewEntity",
+            score = 275,
+            createdAt = Instant.now()
+        )
+        mongoTemplate.save(newEntity)
+
+        // Get second page using the token from first page
+        val secondPageRequest = PaginationRequest(
+            limit = 2,
+            pageToken = firstPage.nextPageToken!!
+        )
+
+        val secondPage = mongoPaginationQueryBuilder.getPage(
+            TestEntity::class,
+            secondPageRequest
+        )
+
+        // Verify second page
+        assertThat(secondPage.items).hasSize(2)
+        assertThat(secondPage.items.map { it.score }).containsExactly(200, 150)
+
+        // Verify no duplicates between pages
+        val allReceivedScores = firstPage.items.map { it.score } + secondPage.items.map { it.score }
+        assertThat(allReceivedScores).doesNotHaveDuplicates()
+
+        // The new entity (score 275) should not appear in either page
+        assertThat(allReceivedScores).doesNotContain(275)
+    }
 }
 

@@ -2,6 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +28,6 @@ abstract class BaseEntityService<TModel : Any, TID>(
     fun findAll(paginationRequest: PaginationRequest): PaginationSlice<TModel> =
         mongoPaginationQueryBuilder.getPage(
             entityClass = entity,
-            paginationRequest = paginationRequest
+            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC)
         )
 }
