@@ -18,8 +18,8 @@ data class Comment (
     // full likes history, regardless currently active or inactive
     var likes: MutableList<Like> = mutableListOf(),
 
-    var createdAt: Instant = Instant.now(),
-    var updatedAt: Instant = Instant.now(),
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis(),
 ) {
     val activeLikes: List<Like>
         get() = likes.filter { it.isActive }

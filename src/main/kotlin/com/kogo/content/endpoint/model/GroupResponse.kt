@@ -2,7 +2,6 @@ package com.kogo.content.endpoint.model
 
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User
-import java.time.Instant
 
 data class GroupResponse(
     var id: String,
@@ -13,8 +12,8 @@ data class GroupResponse(
     var profileImage: AttachmentResponse? = null,
     var followerCount: Int,
     var followedByCurrentUser: Boolean,
-    var createdAt: Instant,
-    var updatedAt: Instant,
+    var createdAt: Long,
+    var updatedAt: Long,
 ) {
     companion object {
         fun from(group: Group, currentUser: User) = GroupResponse(
@@ -24,8 +23,8 @@ data class GroupResponse(
             description = group.description,
             tags = group.tags,
             profileImage = group.profileImage?.let { AttachmentResponse.from(it) },
-            followedByCurrentUser = group.followerIds.contains(currentUser.id),
-            followerCount = group.followerIds.size,
+            followedByCurrentUser = group.followers.any { it.follower.id == currentUser.id },
+            followerCount = group.followers.size,
             createdAt = group.createdAt,
             updatedAt = group.updatedAt,
         )

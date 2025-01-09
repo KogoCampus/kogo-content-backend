@@ -35,8 +35,8 @@ data class Post (
 
     var viewerIds: MutableList<String> = mutableListOf(),
 
-    var createdAt: Instant = Instant.now(),
-    var updatedAt: Instant = Instant.now(),
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis(),
 ) {
     val activeLikes: List<Like>
         get() = likes.filter { it.isActive }
@@ -49,10 +49,9 @@ data class Post (
         )
 
         fun addPopularityAggregationOperations(): List<AggregationOperation> {
-            val currentDate = Instant.now()
             val recencyPipeline = recencyScorer.toAggregationPipeline(
                 timestampField = "createdAt",
-                currentTime = currentDate
+                currentTime = System.currentTimeMillis(),
             )
 
             return listOf(

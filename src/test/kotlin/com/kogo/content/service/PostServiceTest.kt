@@ -9,10 +9,7 @@ import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
 import com.kogo.content.storage.model.Reply
-import com.kogo.content.storage.model.entity.Group
-import com.kogo.content.storage.model.entity.Post
-import com.kogo.content.storage.model.entity.SchoolInfo
-import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.model.entity.*
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.repository.PostRepository
 import io.mockk.*
@@ -58,9 +55,7 @@ class PostServiceTest {
             description = "Test Description",
             owner = user,
             tags = mutableListOf("test", "group"),
-            followerIds = mutableListOf(user.id!!),
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
+            followers = mutableListOf(Follower(user)),
         )
 
         post = Post(
@@ -73,8 +68,6 @@ class PostServiceTest {
             comments = mutableListOf(),
             likes = mutableListOf(),
             viewerIds = mutableListOf(),
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
         )
     }
 
@@ -112,7 +105,7 @@ class PostServiceTest {
 
         assertThat(result.title).isEqualTo(postUpdate.title)
         assertThat(result.content).isEqualTo(postUpdate.content)
-        assertThat(result.updatedAt).isAfterOrEqualTo(post.updatedAt)
+        assertThat(result.updatedAt).isGreaterThanOrEqualTo(post.updatedAt)
         verify { postRepository.save(any()) }
     }
 
@@ -192,7 +185,7 @@ class PostServiceTest {
 
     @Test
     fun `should not add duplicate active like to post`() {
-        post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+        post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = System.currentTimeMillis()))
 
         val result = postService.addLikeToPost(post, user)
 
@@ -203,7 +196,7 @@ class PostServiceTest {
 
     @Test
     fun `should reactivate inactive like on post`() {
-        post.likes.add(Like(userId = user.id!!, isActive = false, updatedAt = Instant.now()))
+        post.likes.add(Like(userId = user.id!!, isActive = false, updatedAt = System.currentTimeMillis()))
 
         every { postRepository.save(any()) } answers { firstArg() }
 

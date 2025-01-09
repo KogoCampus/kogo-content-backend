@@ -3,10 +3,7 @@ package com.kogo.content.endpoint.`test-util`
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
-import com.kogo.content.storage.model.entity.Group
-import com.kogo.content.storage.model.entity.Post
-import com.kogo.content.storage.model.entity.SchoolInfo
-import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.model.entity.*
 import org.bson.types.ObjectId
 
 class Fixture {
@@ -39,7 +36,7 @@ class Fixture {
             groupName = name,
             description = description,
             owner = owner,
-            followerIds = followerIds.apply { add(owner.id!!) }
+            followers = mutableListOf(Follower(owner)),
         )
 
         fun createPostFixture(

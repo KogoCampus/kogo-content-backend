@@ -18,8 +18,8 @@ data class PostResponse(
     val likedByCurrentUser: Boolean = false,
     val viewCount: Int,
     val viewedByCurrentUser: Boolean = false,
-    var createdAt: Instant,
-    var updatedAt: Instant,
+    var createdAt: Long,
+    var updatedAt: Long,
 ) {
     companion object {
         fun from(post: Post, currentUser: User): PostResponse {
@@ -49,8 +49,8 @@ data class CommentResponse (
     var replies: List<ReplyResponse>,
     val likeCount: Int,
     val likedByCurrentUser: Boolean = false,
-    var createdAt: Instant,
-    var updatedAt: Instant,
+    var createdAt: Long,
+    var updatedAt: Long,
 ) {
     companion object {
         fun from(comment: Comment, currentUser: User): CommentResponse {
@@ -74,8 +74,8 @@ data class ReplyResponse (
     var content: String,
     val likeCount: Int,
     val likedByCurrentUser: Boolean = false,
-    var createdAt: Instant,
-    var updatedAt: Instant,
+    var createdAt: Long,
+    var updatedAt: Long,
 ) {
     companion object {
         fun from(reply: Reply, currentUser: User): ReplyResponse {

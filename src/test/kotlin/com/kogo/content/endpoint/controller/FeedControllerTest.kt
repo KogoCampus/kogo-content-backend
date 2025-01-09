@@ -120,8 +120,7 @@ class FeedControllerTest @Autowired constructor(
             jsonPath("$.data[0].groupName") { value(group.groupName) }
             jsonPath("$.data[0].description") { value(group.description) }
             jsonPath("$.data[0].owner.id") { value(currentUser.id) }
-            jsonPath("$.data[0].followerCount") { value(group.followerIds.size) }
-            jsonPath("$.data[0].followedByCurrentUser") { value(group.followerIds.contains(currentUser.id)) }
+            jsonPath("$.data[0].followerCount") { value(group.followers.size) }
         }
 
         verify { groupService.findAllTrending(any()) }

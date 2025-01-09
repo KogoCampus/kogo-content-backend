@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.search.index.GroupSearchIndex
+import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
@@ -49,9 +50,7 @@ class GroupServiceTest {
             description = "Test Description",
             owner = user,
             tags = mutableListOf("test", "group"),
-            followerIds = mutableListOf(user.id!!),
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
+            followers = mutableListOf(Follower(user)),
         )
     }
 
@@ -139,7 +138,7 @@ class GroupServiceTest {
             tags = listOf("new-tag"),
             profileImage = null
         )
-        val now = Instant.now()
+        val now = System.currentTimeMillis()
 
         every { groupRepository.save(any()) } answers { firstArg() }
 
@@ -148,7 +147,7 @@ class GroupServiceTest {
         assertThat(result.groupName).isEqualTo(update.groupName)
         assertThat(result.description).isEqualTo(update.description)
         assertThat(result.tags).isEqualTo(update.tags)
-        assertThat(result.updatedAt).isAfterOrEqualTo(now)
+        assertThat(result.updatedAt).isGreaterThanOrEqualTo(now)
         verify { groupRepository.save(any()) }
     }
 
@@ -180,7 +179,7 @@ class GroupServiceTest {
         val result = groupService.follow(group, newUser)
 
         assertThat(result).isTrue()
-        assertThat(group.followerIds).contains(newUser.id)
+        assertThat(group.followers.any { it.follower.id == newUser.id}).isEqualTo(true)
         assertThat(newUser.followingGroupIds).contains(group.id)
         verify {
             groupRepository.save(group)
@@ -200,7 +199,7 @@ class GroupServiceTest {
                 schoolShortenedName = "TS"
             )
         )
-        group.followerIds.add(existingFollower.id!!)
+        group.followers.add(Follower(existingFollower))
 
         val result = groupService.follow(group, existingFollower)
 
@@ -223,7 +222,7 @@ class GroupServiceTest {
                 schoolShortenedName = "TS"
             )
         )
-        group.followerIds.add(follower.id!!)
+        group.followers.add(Follower(follower))
         follower.followingGroupIds.add(group.id!!)
 
         every { groupRepository.save(any()) } answers { firstArg() }
@@ -232,7 +231,7 @@ class GroupServiceTest {
         val result = groupService.unfollow(group, follower)
 
         assertThat(result).isTrue()
-        assertThat(group.followerIds).doesNotContain(follower.id)
+        assertThat(group.followers.any { it.follower.id == follower.id }).isEqualTo(false)
         assertThat(follower.followingGroupIds).doesNotContain(group.id)
         verify {
             groupRepository.save(group)

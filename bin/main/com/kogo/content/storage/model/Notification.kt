@@ -17,7 +17,7 @@ data class Notification (
     val message: NotificationMessage,
 
     val isPushNotification: Boolean,
-    var createdAt: Instant = Instant.now(),
+    var createdAt: Long = System.currentTimeMillis(),
 )
 
 data class NotificationMessage(
@@ -43,7 +43,6 @@ enum class EventType{
     LIKE_TO_POST,
     LIKE_TO_COMMENT,
     LIKE_TO_REPLY,
-    CREATE_POST_TO_TOPIC,
     CREATE_COMMENT_TO_POST,
     CREATE_REPLY_TO_COMMENT
 }

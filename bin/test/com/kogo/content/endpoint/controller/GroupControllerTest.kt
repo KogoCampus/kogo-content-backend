@@ -50,8 +50,8 @@ class GroupControllerTest @Autowired constructor(
             jsonPath("$.data.groupName") { value(group.groupName) }
             jsonPath("$.data.description") { value(group.description) }
             jsonPath("$.data.owner.id") { value(currentUser.id) }
-            jsonPath("$.data.followerCount") { value(group.followerIds.size) }
-            jsonPath("$.data.followedByCurrentUser") { value(group.followerIds.contains(currentUser.id)) }
+            jsonPath("$.data.followerCount") { value(group.followers.size) }
+            jsonPath("$.data.followedByCurrentUser") { value(group.isFollowing(currentUser)) }
         }
     }
 
@@ -118,7 +118,7 @@ class GroupControllerTest @Autowired constructor(
     fun `should handle follow operations successfully`() {
         val followerUser = Fixture.createUserFixture()
         val groupToFollow = group.copy().apply {
-            followerIds = mutableListOf() // ensure the group has no followers initially
+            followers = mutableListOf() // ensure the group has no followers initially
         }
 
         every { groupService.find(group.id!!) } returns groupToFollow
@@ -130,7 +130,7 @@ class GroupControllerTest @Autowired constructor(
             contentType = MediaType.APPLICATION_JSON
         }.andExpect {
             status { isOk() }
-            jsonPath("$.data.followerCount") { value(groupToFollow.followerIds.size) }
+            jsonPath("$.data.followerCount") { value(groupToFollow.followers.size) }
             jsonPath("$.data.followedByCurrentUser") { value(false) } // initially false since we just called follow
         }
 

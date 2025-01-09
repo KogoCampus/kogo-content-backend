@@ -174,7 +174,6 @@ class MeControllerTest @Autowired constructor(
                     data = post
                 ),
                 isPushNotification = true,
-                createdAt = Instant.now()
             )
         )
         val paginationSlice = PaginationSlice(items = notifications)

@@ -4,9 +4,9 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.sentry.Sentry
 
-abstract class Logger {
+abstract class Logger(loggerName: String? = null) {
     // Create a logger instance for the class extending this
-    private val kotlinLogger = KotlinLogging.logger { }
+    private val kotlinLogger = if (loggerName == null) KotlinLogging.logger { } else KotlinLogging.logger(loggerName)
 
     val log = LoggerInstance(kotlinLogger)
 

@@ -8,6 +8,7 @@ import com.kogo.content.storage.model.DataType
 import com.kogo.content.storage.model.EventType
 import com.kogo.content.storage.model.Like
 import com.kogo.content.storage.model.NotificationMessage
+import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
@@ -82,7 +83,7 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should create post successfully when user follows group`() {
-        group.followerIds.add(currentUser.id!!)
+        group.followers.add(Follower(currentUser))
         val newPost = Fixture.createPostFixture(group = group, author = currentUser)
 
         every { postService.create(group, currentUser, any()) } returns newPost
@@ -105,7 +106,7 @@ class PostControllerTest @Autowired constructor(
     fun `should fail to create post when user does not follow group`() {
         // Create a new group where current user is not a follower
         val unfollowedGroup = Fixture.createGroupFixture(owner = currentUser).apply {
-            followerIds = mutableListOf() // Clear all followers
+            followers = mutableListOf() // Clear all followers
         }
 
         every { groupService.findOrThrow(unfollowedGroup.id!!) } returns unfollowedGroup

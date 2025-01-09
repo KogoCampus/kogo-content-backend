@@ -28,9 +28,18 @@ data class Group (
 
     var isSchoolGroup: Boolean = false,
 
-    var followerIds: MutableList<String> = mutableListOf(),
+    var followers: MutableList<Follower> = mutableListOf(),
 
-    var createdAt: Instant = Instant.now(),
-    var updatedAt: Instant = Instant.now(),
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis()
+) {
+    fun isFollowing(user: User) = followers.any { it.follower.id == user.id }
+}
+
+data class Follower(
+    @DocumentReference
+    var follower: User,
+
+    var createdAt: Long = System.currentTimeMillis()
 )
 

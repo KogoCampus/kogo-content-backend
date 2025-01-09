@@ -180,7 +180,7 @@ class GroupController @Autowired constructor(
         val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
         val user = userService.findCurrentUser()
 
-        if (group.followerIds.contains(user.id))
+        if (group.isFollowing(user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the group")
 
         groupService.follow(group, user)
@@ -205,7 +205,7 @@ class GroupController @Autowired constructor(
         if(group.owner.id != user.id)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The owner cannot unfollow the group")
 
-        if (!group.followerIds.contains(user.id))
+        if (!group.isFollowing(user))
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the group")
 
         groupService.unfollow(group, user)

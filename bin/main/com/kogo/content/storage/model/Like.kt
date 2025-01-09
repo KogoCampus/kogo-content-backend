@@ -5,6 +5,6 @@ import java.time.Instant
 data class Like(
     var userId: String,
     var isActive: Boolean,
-    var updatedAt: Instant = Instant.now(),
-    var createdAt: Instant = Instant.now()
+    var updatedAt: Long = System.currentTimeMillis(),
+    var createdAt: Long = System.currentTimeMillis()
 )

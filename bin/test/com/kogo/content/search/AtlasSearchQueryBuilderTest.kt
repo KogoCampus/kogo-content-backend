@@ -12,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
-import java.time.Instant
 import java.util.Date
 
 @SpringBootTest
@@ -31,7 +30,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
         val tags: List<String>,
         val score: Double,
         val viewCount: Int,
-        val createdAt: Instant,
+        val createdAt: Long,
         val popularityScore: Double,
         val location: Document? = null
     )
@@ -39,6 +38,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
     companion object {
         private const val COLLECTION_NAME = "search_test_entities"
         private const val INDEX_NAME = "test_search_index"
+        private val baseTime = System.currentTimeMillis()
 
         @JvmStatic
         @BeforeAll
@@ -56,7 +56,6 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
         }
 
         private fun createTestData(mongoTemplate: MongoTemplate) {
-            val now = Instant.now()
             val testData = listOf(
                 TestSearchEntity(
                     id = "1",
@@ -65,7 +64,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
                     tags = listOf("kotlin", "programming", "beginner"),
                     score = 0.8,
                     viewCount = 1000,
-                    createdAt = now.minusSeconds(3600),
+                    createdAt = baseTime - 3600000, // 1 hour ago
                     popularityScore = 80.0,
                     location = Document().apply {
                         put("type", "Point")
@@ -79,7 +78,7 @@ class AtlasSearchQueryBuilderTest @Autowired constructor(
                     tags = listOf("kotlin", "coroutines", "advanced"),
                     score = 0.9,
                     viewCount = 2000,
-                    createdAt = now.minusSeconds(7200),
+                    createdAt = baseTime - 7200000, // 2 hours ago
                     popularityScore = 90.0,
                     location = Document().apply {
                         put("type", "Point")

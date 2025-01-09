@@ -66,14 +66,14 @@ class RecencyScorer(
      */
     fun toAggregationPipeline(
         timestampField: String = "createdAt",
-        currentTime: Instant = Instant.now()
+        currentTime: Long = System.currentTimeMillis()
     ): List<Document> {
         return listOf(
             // Calculate age in seconds
             Document("\$addFields", Document("ageInSeconds",
                 Document("\$divide", listOf(
                     Document("\$subtract", listOf(
-                        currentTime.toEpochMilli(),
+                        currentTime,
                         Document("\$toLong", "\$$timestampField")
                     )),
                     1000 // Convert milliseconds to seconds

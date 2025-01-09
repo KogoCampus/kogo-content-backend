@@ -42,7 +42,9 @@ class PostService(
     fun findPostsByGroup(group: Group, paginationRequest: PaginationRequest)
         = mongoPaginationQueryBuilder.getPage(
             entityClass = Post::class,
-            paginationRequest = paginationRequest.withSort("createdAt", SortDirection.DESC)
+            paginationRequest = paginationRequest
+                .withFilter("group.groupName", group.groupName)
+                .withSort("createdAt", SortDirection.DESC)
         )
 
     fun findAllByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)
@@ -87,8 +89,6 @@ class PostService(
                 group = group,
                 author = author,
                 attachments = mutableListOf(), // TODO
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
             )
         )
         return savedPost
@@ -98,7 +98,7 @@ class PostService(
     fun update(post: Post, postUpdate: PostUpdate): Post {
         postUpdate.title?.let { post.title = it }
         postUpdate.content?.let { post.content = it }
-        post.updatedAt = Instant.now()
+        post.updatedAt = System.currentTimeMillis()
 
         val attachmentsToKeep = post.attachments.filter { it.id.toString() !in postUpdate.attachmentDeleteIds!! }
         // TODO
@@ -126,8 +126,6 @@ class PostService(
         val newComment = Comment(
             content = content,
             author = author,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
         )
         post.comments.add(newComment)
         postRepository.save(post)
@@ -151,8 +149,6 @@ class PostService(
         val newReply = Reply(
             content = content,
             author = author,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
         )
         comment.replies.add(newReply)
         postRepository.save(post)
@@ -173,7 +169,7 @@ class PostService(
     fun updateComment(post: Post, commentId: String, commentUpdate: CommentUpdate): Comment {
         val comment = post.comments.find { it.id.toString() == commentId }!!
         comment.content = commentUpdate.content
-        comment.updatedAt = Instant.now()
+        comment.updatedAt = System.currentTimeMillis()
 
         postRepository.save(post)
         return comment
@@ -185,7 +181,7 @@ class PostService(
         val reply = comment.replies.find { it.id.toString() == replyId }!!
 
         reply.content = replyUpdate.content
-        reply.updatedAt = Instant.now()
+        reply.updatedAt = System.currentTimeMillis()
 
         postRepository.save(post)
         return reply
@@ -197,13 +193,13 @@ class PostService(
         if (like != null) {
             if (!like.isActive) {
                 like.isActive = true
-                like.updatedAt = Instant.now()
+                like.updatedAt = System.currentTimeMillis()
                 postRepository.save(post)
                 return true
             }
             return false
         } else {
-            post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+            post.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = System.currentTimeMillis()))
             postRepository.save(post)
             return true
         }
@@ -214,7 +210,7 @@ class PostService(
         val like = post.likes.find { it.userId == user.id && it.isActive }
         if (like != null) {
             like.isActive = false
-            like.updatedAt = Instant.now()
+            like.updatedAt = System.currentTimeMillis()
             postRepository.save(post)
             return true
         }
@@ -229,13 +225,13 @@ class PostService(
             if (like != null) {
                 if (!like.isActive) {
                     like.isActive = true
-                    like.updatedAt = Instant.now()
+                    like.updatedAt = System.currentTimeMillis()
                     postRepository.save(post)
                     return true
                 }
                 return false
             } else {
-                comment.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+                comment.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = System.currentTimeMillis()))
                 postRepository.save(post)
                 return true
             }
@@ -250,7 +246,7 @@ class PostService(
             val like = comment.likes.find { it.userId == user.id && it.isActive }
             if (like != null) {
                 like.isActive = false
-                like.updatedAt = Instant.now()
+                like.updatedAt = System.currentTimeMillis()
                 postRepository.save(post)
                 return true
             }
@@ -267,13 +263,13 @@ class PostService(
             if (like != null) {
                 if (!like.isActive) {
                     like.isActive = true
-                    like.updatedAt = Instant.now()
+                    like.updatedAt = System.currentTimeMillis()
                     postRepository.save(post)
                     return true
                 }
                 return false
             } else {
-                reply.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = Instant.now()))
+                reply.likes.add(Like(userId = user.id!!, isActive = true, updatedAt = System.currentTimeMillis()))
                 postRepository.save(post)
                 return true
             }
@@ -289,7 +285,7 @@ class PostService(
             val like = reply.likes.find { it.userId == user.id && it.isActive }
             if (like != null) {
                 like.isActive = false
-                like.updatedAt = Instant.now()
+                like.updatedAt = System.currentTimeMillis()
                 postRepository.save(post)
                 return true
             }

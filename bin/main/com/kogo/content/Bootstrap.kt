@@ -4,28 +4,38 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.logging.Logger
-import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.annotation.Profile
-import org.springframework.context.event.EventListener
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.context.annotation.Profile
+import org.springframework.context.event.EventListener
+import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
-import java.time.Instant
 
 @Service
-@Profile("local || stg || prd")
-class DataBootstrap(private val mongoTemplate: MongoTemplate) {
+@Profile("!test")
+class Bootstrap(private val mongoTemplate: MongoTemplate) {
+
+    companion object : Logger() {
+        private fun generateDocumentId(key: String): String {
+            // Create a deterministic hex string based on the school key
+            val baseString = "school_group_$key"
+            val md5Bytes = java.security.MessageDigest.getInstance("MD5")
+                .digest(baseString.toByteArray())
+
+            val hexString = md5Bytes.take(12)
+                .joinToString("") { "%02x".format(it) }
+
+            return "60000000$hexString".take(24)
+        }
+    }
 
     @Value("\${kogo-api.getSchools}")
     lateinit var schoolsUrl: String
 
     private val restTemplate: RestTemplate = RestTemplate()
-
-    companion object : Logger()
 
     data class SchoolsResponse(val schools: List<School>)
     data class School(
@@ -59,68 +69,49 @@ class DataBootstrap(private val mongoTemplate: MongoTemplate) {
 
         log.info { "Retrieved ${schoolsResponse?.schools?.size} schools, starting group creation..." }
 
-        var createdCount = 0
-        var existingCount = 0
-
         schoolsResponse?.schools?.forEach { school ->
-            val schoolName = school.name
+            val schoolGroupId = generateDocumentId(school.key)
             val existingGroup = mongoTemplate.findOne(
-                Query.query(
-                    Criteria.where("groupName").`is`(schoolName)
-                        .and("owner").`is`(systemUser)
-                        .and("isSchoolGroup").`is`(true)
-                ),
+                Query.query(Criteria.where("_id").`is`(schoolGroupId)),
                 Group::class.java
             )
 
             if (existingGroup == null) {
                 try {
                     val schoolGroup = Group(
-                        groupName = schoolName,
+                        id = schoolGroupId,
+                        groupName = school.name,
                         description = "Official group for ${school.name}",
                         tags = mutableListOf(school.shortenedName),
                         owner = systemUser,
                         isSchoolGroup = true,
-                        followerIds = mutableListOf(systemUser.id!!),
-                        createdAt = Instant.now(),
-                        updatedAt = Instant.now()
                     )
-                    val savedSchoolGroup = mongoTemplate.save(schoolGroup)
-                    systemUser.followingGroupIds.add(savedSchoolGroup.id!!)
-                    mongoTemplate.save(systemUser)
-                    createdCount++
+                    mongoTemplate.save(schoolGroup)
 
-                    log.debug { "Created school group for: ${school.name} and added system user as follower" }
+                    log.debug { "Created school group for: ${school.name} with ID: $schoolGroupId" }
                 } catch (e: Exception) {
                     log.error(e) { "Failed to create school group for: ${school.name}" }
                 }
-            } else {
-                existingCount++
-                log.debug { "School group already exists for: ${school.name}" }
             }
         }
     }
 
     private fun getOrCreateSystemUser(): User {
-        val systemUserEmail = "system@kogocampus.com"
-        val systemUsername = "system"
+        val systemUserId = generateDocumentId("system_user")
 
-        log.info { "Checking for system user..." }
         val systemUser = mongoTemplate.findOne(
-            Query.query(Criteria.where("email").`is`(systemUserEmail)),
+            Query.query(Criteria.where("_id").`is`(systemUserId)),
             User::class.java
         )
 
-        return if (systemUser != null) {
-            log.info { "System user already exists" }
-            systemUser
-        } else {
+        return if (systemUser != null) systemUser else {
             log.info { "Creating system user..." }
             try {
                 mongoTemplate.save(
                     User(
-                        username = systemUsername,
-                        email = systemUserEmail,
+                        id = systemUserId,
+                        username = "system_user",
+                        email = "system@kogocampus.com",
                         schoolInfo = SchoolInfo(
                             schoolKey = "system",
                             schoolName = "System",

@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.search.index.GroupSearchIndex
+import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.model.entity.User
@@ -61,7 +62,7 @@ class GroupService(
             // TODO
             // profileImage?.let { group.profileImage = attachmentRepository.saveFile(it) }
         }
-        group.updatedAt = Instant.now()
+        group.updatedAt = System.currentTimeMillis()
         return groupRepository.save(group)
     }
 
@@ -74,9 +75,9 @@ class GroupService(
 
     @Transactional
     fun follow(group: Group, user: User): Boolean {
-        if (group.followerIds.contains(user.id))
+        if (group.followers.any { it.follower.id == user.id })
             return false
-        group.followerIds.add(user.id!!)
+        group.followers.add(Follower(user))
         user.followingGroupIds.add(group.id!!)
         groupRepository.save(group)
         userRepository.save(user)
@@ -85,8 +86,8 @@ class GroupService(
 
     @Transactional
     fun unfollow(group: Group, user: User): Boolean {
-        if (group.followerIds.contains(user.id)) {
-            group.followerIds.remove(user.id!!)
+        if (group.followers.any { it.follower.id == user.id }) {
+            group.followers.removeIf { it.follower.id == user.id }
             user.followingGroupIds.remove(group.id!!)
             groupRepository.save(group)
             userRepository.save(user)

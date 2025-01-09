@@ -79,7 +79,7 @@ class SearchController(
         )
     }
 
-    @GetMapping("topics")
+    @GetMapping("groups")
     @Operation(
         summary = "Search topics by keyword",
         parameters = [

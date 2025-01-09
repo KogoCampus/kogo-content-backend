@@ -2,6 +2,7 @@ package com.kogo.content.security
 
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.UserService
+import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.model.entity.Group
@@ -15,6 +16,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpServerErrorException
 import org.springframework.web.client.RestTemplate
 
@@ -46,6 +48,7 @@ class AuthenticationApiClient(
 
     companion object : Logger()
 
+    @Transactional
     fun authenticateAndCreateUser(accessToken: String): User {
         val authResponse = authenticateWithExternalApi(accessToken)
         return createOrGetUser(authResponse.userdata)
@@ -86,41 +89,26 @@ class AuthenticationApiClient(
             email = userData.email,
             schoolInfo = schoolInfo
         )
-
-        // Join school group if it exists
-        joinSchoolGroup(newUser, userData.schoolKey)
+        joinSchoolGroup(newUser)
 
         return newUser
     }
 
-    private fun joinSchoolGroup(user: User, schoolKey: String) {
-        log.info { "Attempting to join school group for user: ${user.email}" }
-
+    private fun joinSchoolGroup(user: User) {
         val schoolGroup = mongoTemplate.findOne(
             Query.query(Criteria.where("groupName").`is`(user.schoolInfo.schoolName)
                 .and("isSchoolGroup").`is`(true)),
             Group::class.java
-        )
+        ) ?: throw RuntimeException("School group not found for school: ${user.schoolInfo.schoolName}")
 
-        if (schoolGroup != null) {
-            try {
-                // Add user to group followers
-                if (!schoolGroup.followerIds.contains(user.id)) {
-                    schoolGroup.followerIds.add(user.id!!)
-                    mongoTemplate.save(schoolGroup)
-                }
-                if (!user.followingGroupIds.contains(schoolGroup.id)) {
-                    user.followingGroupIds.add(schoolGroup.id!!)
-                    user.schoolInfo.schoolGroupId = schoolGroup.id
-                    mongoTemplate.save(user)
-                }
-
-                log.info { "Successfully joined school group ${schoolGroup.groupName} for user: ${user.email}" }
-            } catch (e: Exception) {
-                log.error(e) { "Failed to join school group for user: ${user.email}" }
-            }
-        } else {
-            log.warn { "School group not found for school: ${user.schoolInfo.schoolName}" }
+        if (!schoolGroup.isFollowing(user)) {
+            schoolGroup.followers.add(Follower(user))
+            mongoTemplate.save(schoolGroup)
+        }
+        if (!user.followingGroupIds.contains(schoolGroup.id)) {
+            user.followingGroupIds.add(schoolGroup.id!!)
+            user.schoolInfo.schoolGroupId = schoolGroup.id
+            mongoTemplate.save(user)
         }
     }
 

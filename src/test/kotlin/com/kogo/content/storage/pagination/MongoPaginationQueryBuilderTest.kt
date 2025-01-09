@@ -16,7 +16,6 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.DocumentReference
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.test.context.ActiveProfiles
-import java.time.Instant
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -31,13 +30,14 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
         val name: String,
         val score: Int,
         @Field("created_at")
-        val createdAt: Instant,
+        val createdAt: Long,
         @DocumentReference
         val author: User? = null,
         val dynamicField: String? = null
     )
 
     private lateinit var testUser: User
+    private val baseTime = System.currentTimeMillis()
 
     @BeforeEach
     fun setup() {
@@ -60,11 +60,11 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         // Create test data
         val testData = listOf(
-            TestEntity("1", "Alpha", 100, Instant.now().minusSeconds(5)),
-            TestEntity("2", "Beta", 200, Instant.now().minusSeconds(4)),
-            TestEntity("3", "Charlie", 150, Instant.now().minusSeconds(3)),
-            TestEntity("4", "Delta", 300, Instant.now().minusSeconds(2)),
-            TestEntity("5", "Echo", 250, Instant.now().minusSeconds(1))
+            TestEntity("1", "Alpha", 100, baseTime - 5000),
+            TestEntity("2", "Beta", 200, baseTime - 4000),
+            TestEntity("3", "Charlie", 150, baseTime - 3000),
+            TestEntity("4", "Delta", 300, baseTime - 2000),
+            TestEntity("5", "Echo", 250, baseTime - 1000)
         )
         mongoTemplate.insertAll(testData)
     }
@@ -200,7 +200,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
             id = "6",
             name = "Foxtrot",
             score = 400,
-            createdAt = Instant.now(),
+            createdAt = System.currentTimeMillis(),
             author = testUser
         )
         mongoTemplate.save(entityWithRef)
@@ -267,9 +267,8 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
     @Test
     fun `should handle date comparison operators`() {
-        val now = Instant.now()
-        val threeSecondsAgo = now.minusSeconds(3)
-        val oneSecondAgo = now.minusSeconds(1)
+        val threeSecondsAgo = baseTime - 3000
+        val oneSecondAgo = baseTime - 1000
 
         val request = PaginationRequest(limit = 10)
             .withFilter("createdAt", threeSecondsAgo, FilterOperator.GREATER_THAN)
@@ -283,7 +282,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
 
         assertThat(result.items).isNotEmpty
         assertThat(result.items.all {
-            it.createdAt.isAfter(threeSecondsAgo) && it.createdAt.isBefore(oneSecondAgo)
+            it.createdAt > threeSecondsAgo && it.createdAt < oneSecondAgo
         }).isTrue()
     }
 
@@ -320,7 +319,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
                 id = (i + 5).toString(),
                 name = "Entity$i",
                 score = (11 - i) * 100,
-                createdAt = Instant.now().minusSeconds(i.toLong())
+                createdAt = baseTime - (i * 1000L)
             )
         }
         mongoTemplate.insertAll(testData)
@@ -388,7 +387,7 @@ class MongoPaginationQueryBuilderTest @Autowired constructor(
             id = "new-entity",
             name = "NewEntity",
             score = 275,
-            createdAt = Instant.now()
+            createdAt = System.currentTimeMillis()
         )
         mongoTemplate.save(newEntity)
 
