@@ -8,9 +8,10 @@ on:
             - main
         paths:
             - 'src/**'
+    workflow_dispatch:
     release:
         types: [created]
-
+    
 jobs:
     build-and-test:
         runs-on: ubuntu-latest
