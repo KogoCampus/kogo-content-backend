@@ -8,6 +8,6 @@ interface GroupRepository : MongoRepository<Group, String> {
     fun findByGroupName(topicName: String): Group?
     fun findAllByOwnerId(ownerId: String): List<Group>
 
-    @Query("{ 'followers.follower.\$id': ?0 }", sort = "{ 'followers.$[elem].createdAt': -1 }")
+    @Query("{ 'followers.follower.\$ref': 'user', 'followers.follower.\$id': ObjectId(?0) }", sort = "{ 'followers.createdAt': -1 }")
     fun findAllByFollowerId(followerId: String): List<Group>
 }
