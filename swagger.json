@@ -1158,80 +1158,6 @@
         }
       }
     },
-    "/media/search/topics": {
-      "get": {
-        "tags": [
-          "search-controller"
-        ],
-        "summary": "Search topics by keyword",
-        "operationId": "searchTopics",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "description": "Search keyword",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "headers": {
-              "X-Page-Token": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "X-Page-Size": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GroupResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/search/posts": {
       "get": {
         "tags": [
@@ -1298,6 +1224,80 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/search/groups": {
+      "get": {
+        "tags": [
+          "search-controller"
+        ],
+        "summary": "Search topics by keyword",
+        "operationId": "searchTopics",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search keyword",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -1723,12 +1723,12 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1775,12 +1775,12 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1844,12 +1844,12 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1908,12 +1908,12 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -2253,7 +2253,6 @@
               "LIKE_TO_POST",
               "LIKE_TO_COMMENT",
               "LIKE_TO_REPLY",
-              "CREATE_POST_TO_TOPIC",
               "CREATE_COMMENT_TO_POST",
               "CREATE_REPLY_TO_COMMENT"
             ]
@@ -2265,8 +2264,8 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
