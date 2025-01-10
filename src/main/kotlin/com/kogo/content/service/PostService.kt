@@ -19,7 +19,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 @Service
 class PostService(
@@ -49,9 +48,11 @@ class PostService(
 
     fun findAllByAuthor(user: User) = postRepository.findAllByAuthorId(user.id!!)
 
-    fun findAllInFollowing(paginationRequest: PaginationRequest, user: User) = run {
+    fun findAllLatestInFollowing(paginationRequest: PaginationRequest, user: User) = run {
+        val eightDaysAgo = System.currentTimeMillis() - java.time.Duration.ofDays(8).toMillis()
         val matchOperation = Aggregation.match(
             Criteria.where("group").`in`(user.followingGroupIds.map { ObjectId(it) })
+                .and("createdAt").gte(eightDaysAgo)
         )
 
         mongoPaginationQueryBuilder.getPage(

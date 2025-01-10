@@ -75,7 +75,7 @@ class FeedControllerTest @Autowired constructor(
         val paginationSlice = PaginationSlice(items = posts)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { postService.findAllInFollowing(capture(paginationRequestSlot), currentUser) } returns paginationSlice
+        every { postService.findAllLatestInFollowing(capture(paginationRequestSlot), currentUser) } returns paginationSlice
 
         mockMvc.get("/media/feeds/latestPosts") {
             contentType = MediaType.APPLICATION_JSON
@@ -87,7 +87,7 @@ class FeedControllerTest @Autowired constructor(
             jsonPath("$.data[0].viewCount") { value(post.viewerIds.size) }
         }
 
-        verify { postService.findAllInFollowing(any(), currentUser) }
+        verify { postService.findAllLatestInFollowing(any(), currentUser) }
     }
 
     @Test

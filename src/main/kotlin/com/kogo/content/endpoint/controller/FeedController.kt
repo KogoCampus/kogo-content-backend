@@ -4,7 +4,6 @@ import com.kogo.content.endpoint.common.HttpJsonResponse
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.model.GroupResponse
 import com.kogo.content.endpoint.model.PostResponse
-import com.kogo.content.logging.Logger
 import com.kogo.content.service.GroupService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService
@@ -89,7 +88,7 @@ class FeedController @Autowired constructor(
     )
     fun listLatestPosts(paginationRequest: PaginationRequest) = run {
         val user = userService.findCurrentUser()
-        val paginationResponse = postService.findAllInFollowing(paginationRequest, user)
+        val paginationResponse = postService.findAllLatestInFollowing(paginationRequest, user)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it, user) },
