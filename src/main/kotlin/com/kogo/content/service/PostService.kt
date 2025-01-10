@@ -42,7 +42,7 @@ class PostService(
         = mongoPaginationQueryBuilder.getPage(
             entityClass = Post::class,
             paginationRequest = paginationRequest
-                .withFilter("group.groupName", group.groupName)
+                .withFilter("group", group.id!!)
                 .withSort("createdAt", SortDirection.DESC)
         )
 
