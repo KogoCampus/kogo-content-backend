@@ -4,6 +4,7 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.logging.Logger
+import com.kogo.content.storage.model.entity.Follower
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -86,7 +87,9 @@ class Bootstrap(private val mongoTemplate: MongoTemplate) {
                         owner = systemUser,
                         isSchoolGroup = true,
                     )
-                    mongoTemplate.save(schoolGroup)
+                    schoolGroup.followers.add(Follower(systemUser))
+                    val savedGroup = mongoTemplate.save(schoolGroup)
+                    systemUser.followingGroupIds.add(savedGroup.id!!)
 
                     log.debug { "Created school group for: ${school.name} with ID: $schoolGroupId" }
                 } catch (e: Exception) {
@@ -111,7 +114,7 @@ class Bootstrap(private val mongoTemplate: MongoTemplate) {
                     User(
                         id = systemUserId,
                         username = "system_user",
-                        email = "system@kogocampus.com",
+                        email = "op@stdout.app",
                         schoolInfo = SchoolInfo(
                             schoolKey = "system",
                             schoolName = "System",
