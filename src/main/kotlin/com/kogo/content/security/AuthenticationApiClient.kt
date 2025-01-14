@@ -121,7 +121,7 @@ class AuthenticationApiClient(
                 .shuffled()
                 .take(6)
                 .joinToString("")
-            username = "#KogoUser$randomString"
+            username = "#Std_$randomString"
         } while (userService.findUserByUsername(username) != null)
 
         return username
