@@ -4,7 +4,6 @@ import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.User
-import java.time.Instant
 
 data class PostResponse(
     var id: String,
@@ -14,16 +13,17 @@ data class PostResponse(
     var content: String,
     var attachments: List<AttachmentResponse>,
     var comments: List<CommentResponse>,
-    val likeCount: Int,
-    val likedByCurrentUser: Boolean = false,
-    val viewCount: Int,
-    val viewedByCurrentUser: Boolean = false,
+    var likeCount: Int,
+    var likedByCurrentUser: Boolean = false,
+    var viewCount: Int,
+    var viewedByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
+    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(post: Post, currentUser: User): PostResponse {
-            return PostResponse(
+            val response = PostResponse(
                 id = post.id!!,
                 author = UserData.Public.from(post.author),
                 group = GroupResponse.from(post.group, currentUser),
@@ -38,6 +38,12 @@ data class PostResponse(
                 createdAt = post.createdAt,
                 updatedAt = post.updatedAt
             )
+            if (currentUser.blacklistedUserIds.contains(post.author.id)) {
+                response.title = ""
+                response.content = ""
+                response.isAuthorBlacklistedByCurrentUser = true
+            }
+            return response
         }
     }
 }
@@ -47,15 +53,16 @@ data class CommentResponse (
     var author: UserData.Public,
     var content: String,
     var replies: List<ReplyResponse>,
-    val likeCount: Int,
-    val likedByCurrentUser: Boolean = false,
+    var likeCount: Int,
+    var likedByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
+    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(comment: Comment, currentUser: User): CommentResponse {
-            return CommentResponse(
-                id = comment.id.toString(),
+            val response = CommentResponse(
+                id = comment.id,
                 author = UserData.Public.from(comment.author),
                 content = comment.content,
                 replies = comment.replies.map { ReplyResponse.from(it, currentUser) },
@@ -64,6 +71,11 @@ data class CommentResponse (
                 createdAt = comment.createdAt,
                 updatedAt = comment.updatedAt
             )
+            if (currentUser.blacklistedUserIds.contains(comment.author.id)) {
+                response.content = ""
+                response.isAuthorBlacklistedByCurrentUser = true
+            }
+            return response
         }
     }
 }
@@ -72,15 +84,16 @@ data class ReplyResponse (
     var id: String,
     var author: UserData.Public,
     var content: String,
-    val likeCount: Int,
-    val likedByCurrentUser: Boolean = false,
+    var likeCount: Int,
+    var likedByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
+    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(reply: Reply, currentUser: User): ReplyResponse {
-            return ReplyResponse(
-                id = reply.id.toString(),
+            val response = ReplyResponse(
+                id = reply.id,
                 author = UserData.Public.from(reply.author),
                 content = reply.content,
                 likeCount = reply.activeLikes.size,
@@ -88,6 +101,11 @@ data class ReplyResponse (
                 createdAt = reply.createdAt,
                 updatedAt = reply.updatedAt
             )
+            if (currentUser.blacklistedUserIds.contains(reply.author.id)) {
+                response.content = ""
+                response.isAuthorBlacklistedByCurrentUser = true
+            }
+            return response
         }
     }
 }

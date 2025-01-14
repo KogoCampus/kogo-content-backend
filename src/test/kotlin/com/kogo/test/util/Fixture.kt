@@ -1,8 +1,9 @@
-package com.kogo.content.endpoint.`test-util`
+package com.kogo.test.util
 
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.*
 import org.bson.types.ObjectId
 
@@ -13,7 +14,8 @@ class Fixture {
         fun createUserFixture(
             id: String = generateObjectIdString(),
             username: String = "user-$id",
-            email: String = "user-$id@example.com"
+            email: String = "user-$id@example.com",
+            blacklistedUserIds: List<String> = emptyList(),
         ) = User(
             id = id,
             username = username,
@@ -22,7 +24,8 @@ class Fixture {
                 schoolName = "Test School",
                 schoolKey = "TEST",
                 schoolShortenedName = "TS"
-            )
+            ),
+            blacklistedUserIds = blacklistedUserIds.toMutableList(),
         )
 
         fun createGroupFixture(
@@ -59,6 +62,32 @@ class Fixture {
             likes = likes,
             viewerIds = viewerIds,
             comments = comments,
+        )
+
+        fun createCommentFixture(
+            id: String = generateObjectIdString(),
+            author: User = createUserFixture(),
+            content: String = "comment-$id",
+            likes: MutableList<Like> = mutableListOf(),
+            replies: MutableList<Reply> = mutableListOf()
+        ) = Comment(
+            id = id,
+            author = author,
+            content = content,
+            likes = likes,
+            replies = replies
+        )
+
+        fun createReplyFixture(
+            id: String = generateObjectIdString(),
+            author: User = createUserFixture(),
+            content: String = "reply-$id",
+            likes: MutableList<Like> = mutableListOf()
+        ) = Reply(
+            id = id,
+            author = author,
+            content = content,
+            likes = likes
         )
     }
 }

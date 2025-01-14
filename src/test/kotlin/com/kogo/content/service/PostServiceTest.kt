@@ -135,7 +135,7 @@ class PostServiceTest {
     @Test
     fun `should remove comment from post`() {
         val comment = Comment(
-            id = ObjectId(),
+            id = ObjectId().toString(),
             content = "Test Comment",
             author = user
         )
@@ -153,7 +153,7 @@ class PostServiceTest {
     @Test
     fun `should add reply to comment`() {
         val comment = Comment(
-            id = ObjectId(),
+            id = ObjectId().toString(),
             content = "Test Comment",
             author = user
         )

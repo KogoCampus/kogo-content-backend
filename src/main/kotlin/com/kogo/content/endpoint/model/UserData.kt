@@ -11,6 +11,7 @@ class UserData {
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
         var pushNotificationToken: String?,
+        var blacklistedUserIds: List<String>,
     ) {
         companion object {
             fun from(user: User) = IncludeCredentials(
@@ -19,7 +20,8 @@ class UserData {
                 email = user.email,
                 profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
                 schoolInfo = user.schoolInfo,
-                pushNotificationToken = user.pushNotificationToken
+                pushNotificationToken = user.pushNotificationToken,
+                blacklistedUserIds = user.blacklistedUserIds
             )
         }
     }

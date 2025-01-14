@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference
 import java.time.Instant
 
 data class Reply(
-    var id: ObjectId = ObjectId(),
+    var id: String = ObjectId().toString(),
 
     var content: String,
 

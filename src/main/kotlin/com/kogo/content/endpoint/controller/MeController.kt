@@ -210,5 +210,42 @@ class MeController @Autowired constructor(
             headers = paginationResponse.toHttpHeaders()
         )
     }
+
+    @PostMapping("me/blacklist/{userId}")
+    @Operation(
+        summary = "add a user to my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun addToBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val targetUser = userService.findOrThrow(userId)
+
+        if (me.id == targetUser.id) {
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "Cannot blacklist yourself")
+        }
+        userService.addUserToBlacklist(targetUser)
+
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
+    }
+
+    @DeleteMapping("me/blacklist/{userId}")
+    @Operation(
+        summary = "remove a user from my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun removeFromBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val targetUser = userService.findOrThrow(userId)
+
+        userService.removeUserFromBlacklist(targetUser)
+
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
+    }
 }
 

@@ -21,6 +21,8 @@ data class User (
 
     var profileImage: Attachment? = null,
 
+    var blacklistedUserIds: MutableList<String> = mutableListOf(),
+
     val followingGroupIds: MutableList<String> = mutableListOf(),
 )
 

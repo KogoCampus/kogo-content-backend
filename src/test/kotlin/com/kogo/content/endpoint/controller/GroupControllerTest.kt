@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.*
-import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.test.util.Fixture
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User

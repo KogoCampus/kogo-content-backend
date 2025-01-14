@@ -1,10 +1,9 @@
 package com.kogo.content.endpoint.controller
 
-import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.*
-import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.test.util.Fixture
 import com.kogo.content.storage.model.*
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
@@ -12,7 +11,6 @@ import com.kogo.content.storage.model.entity.User
 import com.kogo.content.endpoint.model.UserData
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -20,10 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.mock.web.MockMultipartFile
 import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.*
-import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -189,5 +185,54 @@ class MeControllerTest @Autowired constructor(
             jsonPath("$.data[0].message.title") { value("New Like") }
             jsonPath("$.data[0].message.dataType") { value(DataType.POST.name) }
         }
+    }
+
+    @Test
+    fun `should add user to blacklist successfully`() {
+        val targetUser = Fixture.createUserFixture()
+
+        every { userService.findOrThrow(targetUser.id!!) } returns targetUser
+        every { userService.addUserToBlacklist(targetUser) } returns currentUser
+
+        mockMvc.post("/me/blacklist/${targetUser.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.id") { value(currentUser.id) }
+        }
+
+        verify { userService.addUserToBlacklist(targetUser) }
+    }
+
+    @Test
+    fun `should fail to add self to blacklist`() {
+        every { userService.findOrThrow(currentUser.id!!) } returns currentUser
+
+        mockMvc.post("/me/blacklist/${currentUser.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+            jsonPath("$.details") { value("Cannot blacklist yourself") }
+        }
+
+        verify(exactly = 0) { userService.addUserToBlacklist(any()) }
+    }
+
+    @Test
+    fun `should remove user from blacklist successfully`() {
+        val targetUser = Fixture.createUserFixture()
+
+        every { userService.findOrThrow(targetUser.id!!) } returns targetUser
+        every { userService.removeUserFromBlacklist(targetUser) } returns currentUser
+
+        mockMvc.delete("/me/blacklist/${targetUser.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.id") { value(currentUser.id) }
+        }
+
+        verify { userService.removeUserFromBlacklist(targetUser) }
     }
 }

@@ -2,12 +2,9 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.*
-import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.test.util.Fixture
 import com.kogo.content.exception.ResourceNotFoundException
-import com.kogo.content.storage.model.DataType
-import com.kogo.content.storage.model.EventType
-import com.kogo.content.storage.model.Like
-import com.kogo.content.storage.model.NotificationMessage
+import com.kogo.content.storage.model.*
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
@@ -18,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -194,6 +192,98 @@ class PostControllerTest @Autowired constructor(
         }.andExpect {
             status { isForbidden() }
             jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
+        }
+    }
+
+    @Test
+    fun `should hide post content when author is blacklisted`() {
+        val blacklistedUser = Fixture.createUserFixture()
+        val postByBlacklistedUser = Fixture.createPostFixture(
+            group = group,
+            author = blacklistedUser,
+            title = "Original Title",
+            content = "Original Content"
+        )
+
+        currentUser.blacklistedUserIds.add(blacklistedUser.id!!)
+        every { postService.findOrThrow(postByBlacklistedUser.id!!) } returns postByBlacklistedUser
+        every { postService.addViewer(postByBlacklistedUser, currentUser) } returns true
+
+        mockMvc.get("/media/posts/${postByBlacklistedUser.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.id") { value(postByBlacklistedUser.id) }
+            jsonPath("$.data.title") { value("") }
+            jsonPath("$.data.content") { value("") }
+            jsonPath("$.data.isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.author.id") { value(blacklistedUser.id) }
+        }
+    }
+
+    @Test
+    fun `should hide comment content when author is blacklisted`() {
+        val blacklistedUser = Fixture.createUserFixture()
+        currentUser.blacklistedUserIds.add(blacklistedUser.id!!)
+
+        val blacklistedComment = Fixture.createCommentFixture(
+            author = blacklistedUser,
+            content = "Original Comment Content"
+        )
+
+        val postWithBlacklistedComment = Fixture.createPostFixture(
+            group = group,
+            author = currentUser,
+            comments = mutableListOf(blacklistedComment)
+        )
+
+        every { postService.findOrThrow(postWithBlacklistedComment.id!!) } returns postWithBlacklistedComment
+        every { postService.addViewer(postWithBlacklistedComment, currentUser) } returns true
+
+        mockMvc.get("/media/posts/${postWithBlacklistedComment.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.comments[0].id") { value(blacklistedComment.id) }
+            jsonPath("$.data.comments[0].content") { value("") }
+            jsonPath("$.data.comments[0].isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.comments[0].author.id") { value(blacklistedUser.id) }
+        }
+    }
+
+    @Test
+    fun `should hide reply content when author is blacklisted`() {
+        val blacklistedUser = Fixture.createUserFixture()
+        currentUser.blacklistedUserIds.add(blacklistedUser.id!!)
+
+        val blacklistedReply = Fixture.createReplyFixture(
+            author = blacklistedUser,
+            content = "Original Reply Content"
+        )
+
+        val comment = Fixture.createCommentFixture(
+            author = currentUser,
+            content = "Original Comment",
+            replies = mutableListOf(blacklistedReply)
+        )
+
+        val postWithBlacklistedReply = Fixture.createPostFixture(
+            group = group,
+            author = currentUser,
+            comments = mutableListOf(comment)
+        )
+
+        every { postService.findOrThrow(postWithBlacklistedReply.id!!) } returns postWithBlacklistedReply
+        every { postService.addViewer(postWithBlacklistedReply, currentUser) } returns true
+
+        mockMvc.get("/media/posts/${postWithBlacklistedReply.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.comments[0].replies[0].id") { value(blacklistedReply.id) }
+            jsonPath("$.data.comments[0].replies[0].content") { value("") }
+            jsonPath("$.data.comments[0].replies[0].isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.comments[0].replies[0].author.id") { value(blacklistedUser.id) }
         }
     }
 }

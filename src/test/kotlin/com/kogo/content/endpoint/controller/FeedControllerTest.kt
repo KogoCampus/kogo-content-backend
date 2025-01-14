@@ -2,7 +2,7 @@ package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
-import com.kogo.content.endpoint.`test-util`.Fixture
+import com.kogo.test.util.Fixture
 import com.kogo.content.service.GroupService
 import com.kogo.content.service.PostService
 import com.kogo.content.service.UserService

@@ -44,4 +44,20 @@ class UserService @Autowired constructor(
         }
         return userRepository.save(user)
     }
+
+    fun addUserToBlacklist(targetUser: User) = addUserToBlacklist(findCurrentUser(), targetUser)
+    fun addUserToBlacklist(currentUser: User, targetUser: User): User {
+        if (!currentUser.blacklistedUserIds.contains(targetUser.id)) {
+            currentUser.blacklistedUserIds.add(targetUser.id!!)
+        }
+        return userRepository.save(currentUser)
+    }
+
+    fun removeUserFromBlacklist(targetUser: User) = removeUserFromBlacklist(findCurrentUser(), targetUser)
+    fun removeUserFromBlacklist(currentUser: User, targetUser: User): User {
+        if (currentUser.blacklistedUserIds.contains(targetUser.id)) {
+            currentUser.blacklistedUserIds.remove(targetUser.id!!)
+        }
+        return userRepository.save(currentUser)
+    }
 }
