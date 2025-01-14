@@ -121,7 +121,7 @@ class AuthenticationApiClient(
                 .shuffled()
                 .take(6)
                 .joinToString("")
-            username = "#Std_$randomString"
+            username = "student#$randomString"
         } while (userService.findUserByUsername(username) != null)
 
         return username
