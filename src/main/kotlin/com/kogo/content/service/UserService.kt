@@ -2,6 +2,7 @@ package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
+import com.kogo.content.storage.model.entity.BlacklistItem
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
@@ -45,19 +46,15 @@ class UserService @Autowired constructor(
         return userRepository.save(user)
     }
 
-    fun addUserToBlacklist(targetUser: User) = addUserToBlacklist(findCurrentUser(), targetUser)
-    fun addUserToBlacklist(currentUser: User, targetUser: User): User {
-        if (!currentUser.blacklistedUserIds.contains(targetUser.id)) {
-            currentUser.blacklistedUserIds.add(targetUser.id!!)
-        }
+    fun addToBlacklist(itemType: BlacklistItem, itemId: String) = addToBlacklist(findCurrentUser(), itemType, itemId)
+    fun addToBlacklist(currentUser: User, itemType: BlacklistItem, itemId: String): User {
+        currentUser.blacklist.add(Pair(itemType, itemId))
         return userRepository.save(currentUser)
     }
 
-    fun removeUserFromBlacklist(targetUser: User) = removeUserFromBlacklist(findCurrentUser(), targetUser)
-    fun removeUserFromBlacklist(currentUser: User, targetUser: User): User {
-        if (currentUser.blacklistedUserIds.contains(targetUser.id)) {
-            currentUser.blacklistedUserIds.remove(targetUser.id!!)
-        }
+    fun removeFromBlacklist(itemType: BlacklistItem, itemId: String) = removeFromBlacklist(findCurrentUser(), itemType, itemId)
+    fun removeFromBlacklist(currentUser: User, itemType: BlacklistItem, itemId: String): User {
+        currentUser.blacklist.remove(Pair(itemType, itemId))
         return userRepository.save(currentUser)
     }
 }

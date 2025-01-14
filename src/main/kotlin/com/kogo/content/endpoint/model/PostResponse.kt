@@ -4,6 +4,7 @@ import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.model.entity.BlacklistItem
 
 data class PostResponse(
     var id: String,
@@ -38,7 +39,9 @@ data class PostResponse(
                 createdAt = post.createdAt,
                 updatedAt = post.updatedAt
             )
-            if (currentUser.blacklistedUserIds.contains(post.author.id)) {
+
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, post.author.id)) ||
+                currentUser.blacklist.contains(Pair(BlacklistItem.Post, post.id!!))) {
                 response.title = ""
                 response.content = ""
                 response.isAuthorBlacklistedByCurrentUser = true
@@ -71,7 +74,9 @@ data class CommentResponse (
                 createdAt = comment.createdAt,
                 updatedAt = comment.updatedAt
             )
-            if (currentUser.blacklistedUserIds.contains(comment.author.id)) {
+
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, comment.author.id)) ||
+                currentUser.blacklist.contains(Pair(BlacklistItem.Comment, comment.id))) {
                 response.content = ""
                 response.isAuthorBlacklistedByCurrentUser = true
             }
@@ -101,7 +106,9 @@ data class ReplyResponse (
                 createdAt = reply.createdAt,
                 updatedAt = reply.updatedAt
             )
-            if (currentUser.blacklistedUserIds.contains(reply.author.id)) {
+
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, reply.author.id)) ||
+                currentUser.blacklist.contains(Pair(BlacklistItem.Comment, reply.id))) {
                 response.content = ""
                 response.isAuthorBlacklistedByCurrentUser = true
             }

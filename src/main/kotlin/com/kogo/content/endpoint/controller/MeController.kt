@@ -11,6 +11,7 @@ import com.kogo.content.service.PostService
 import com.kogo.content.service.GroupService
 import com.kogo.content.service.UserService
 import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.entity.BlacklistItem
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -211,7 +212,7 @@ class MeController @Autowired constructor(
         )
     }
 
-    @PostMapping("me/blacklist/{userId}")
+    @PostMapping("me/blacklist/users/{userId}")
     @Operation(
         summary = "add a user to my blacklist",
         responses = [ApiResponse(
@@ -219,19 +220,19 @@ class MeController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )])
-    fun addToBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
+    fun addUserToBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
         val me = userService.findCurrentUser()
         val targetUser = userService.findOrThrow(userId)
 
         if (me.id == targetUser.id) {
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "Cannot blacklist yourself")
         }
-        userService.addUserToBlacklist(targetUser)
 
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
+        val updatedUser = userService.addToBlacklist(me, BlacklistItem.User, targetUser.id!!)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
-    @DeleteMapping("me/blacklist/{userId}")
+    @DeleteMapping("me/blacklist/users/{userId}")
     @Operation(
         summary = "remove a user from my blacklist",
         responses = [ApiResponse(
@@ -239,13 +240,102 @@ class MeController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )])
-    fun removeFromBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
+    fun removeUserFromBlacklist(@PathVariable userId: String): ResponseEntity<*> = run {
         val me = userService.findCurrentUser()
         val targetUser = userService.findOrThrow(userId)
 
-        userService.removeUserFromBlacklist(targetUser)
+        val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.User, targetUser.id!!)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
 
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
+    @PostMapping("me/blacklist/posts/{postId}")
+    @Operation(
+        summary = "add a post to my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun addPostToBlacklist(@PathVariable postId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val post = postService.findOrThrow(postId)
+
+        if (post.author.id == me.id) {
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "Cannot blacklist your own post")
+        }
+
+        val updatedUser = userService.addToBlacklist(me, BlacklistItem.Post, postId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @DeleteMapping("me/blacklist/posts/{postId}")
+    @Operation(
+        summary = "remove a post from my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun removePostFromBlacklist(@PathVariable postId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.Post, postId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @PostMapping("me/blacklist/comments/{commentId}")
+    @Operation(
+        summary = "add a comment to my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun addCommentToBlacklist(@PathVariable commentId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.addToBlacklist(me, BlacklistItem.Comment, commentId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @DeleteMapping("me/blacklist/comments/{commentId}")
+    @Operation(
+        summary = "remove a comment from my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun removeCommentFromBlacklist(@PathVariable commentId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.Comment, commentId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @PostMapping("me/blacklist/replies/{replyId}")
+    @Operation(
+        summary = "add a reply to my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun addReplyToBlacklist(@PathVariable replyId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.addToBlacklist(me, BlacklistItem.Comment, replyId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @DeleteMapping("me/blacklist/replies/{replyId}")
+    @Operation(
+        summary = "remove a reply from my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )])
+    fun removeReplyFromBlacklist(@PathVariable replyId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.Comment, replyId)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 }
 

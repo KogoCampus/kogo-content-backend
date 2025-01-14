@@ -11,7 +11,7 @@ class UserData {
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
         var pushNotificationToken: String?,
-        var blacklistedUserIds: List<String>,
+        var blacklistedItems: Map<String, List<String>>,
     ) {
         companion object {
             fun from(user: User) = IncludeCredentials(
@@ -21,7 +21,7 @@ class UserData {
                 profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
                 schoolInfo = user.schoolInfo,
                 pushNotificationToken = user.pushNotificationToken,
-                blacklistedUserIds = user.blacklistedUserIds
+                blacklistedItems = user.blacklist.groupBy({ it.first.name }, { it.second })
             )
         }
     }
