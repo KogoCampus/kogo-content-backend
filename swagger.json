@@ -1158,6 +1158,66 @@
         }
       }
     },
+    "/me/blacklist/{userId}": {
+      "post": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "add a user to my blacklist",
+        "operationId": "addToBlacklist",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "remove a user from my blacklist",
+        "operationId": "removeFromBlacklist",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/search/posts": {
       "get": {
         "tags": [
@@ -1693,6 +1753,7 @@
           "content",
           "createdAt",
           "id",
+          "isAuthorBlacklistedByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "replies",
@@ -1729,6 +1790,13 @@
           "updatedAt": {
             "type": "integer",
             "format": "int64"
+          },
+          "isAuthorBlacklistedByCurrentUser": {
+            "type": "boolean"
+          },
+          "authorBlacklistedByCurrentUser": {
+            "type": "boolean",
+            "writeOnly": true
           }
         }
       },
@@ -1793,6 +1861,7 @@
           "createdAt",
           "group",
           "id",
+          "isAuthorBlacklistedByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "title",
@@ -1850,6 +1919,13 @@
           "updatedAt": {
             "type": "integer",
             "format": "int64"
+          },
+          "isAuthorBlacklistedByCurrentUser": {
+            "type": "boolean"
+          },
+          "authorBlacklistedByCurrentUser": {
+            "type": "boolean",
+            "writeOnly": true
           }
         }
       },
@@ -1885,6 +1961,7 @@
           "content",
           "createdAt",
           "id",
+          "isAuthorBlacklistedByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "updatedAt"
@@ -1914,6 +1991,13 @@
           "updatedAt": {
             "type": "integer",
             "format": "int64"
+          },
+          "isAuthorBlacklistedByCurrentUser": {
+            "type": "boolean"
+          },
+          "authorBlacklistedByCurrentUser": {
+            "type": "boolean",
+            "writeOnly": true
           }
         }
       },
@@ -1986,6 +2070,7 @@
       },
       "IncludeCredentials": {
         "required": [
+          "blacklistedUserIds",
           "email",
           "id",
           "schoolInfo",
@@ -2010,6 +2095,12 @@
           },
           "pushNotificationToken": {
             "type": "string"
+          },
+          "blacklistedUserIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
