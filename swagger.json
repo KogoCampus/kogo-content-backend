@@ -1873,7 +1873,7 @@
           "content",
           "createdAt",
           "id",
-          "isAuthorBlacklistedByCurrentUser",
+          "isHiddenByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "replies",
@@ -1903,6 +1903,9 @@
           "likedByCurrentUser": {
             "type": "boolean"
           },
+          "isHiddenByCurrentUser": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "integer",
             "format": "int64"
@@ -1911,10 +1914,7 @@
             "type": "integer",
             "format": "int64"
           },
-          "isAuthorBlacklistedByCurrentUser": {
-            "type": "boolean"
-          },
-          "authorBlacklistedByCurrentUser": {
+          "hiddenByCurrentUser": {
             "type": "boolean",
             "writeOnly": true
           }
@@ -1981,7 +1981,7 @@
           "createdAt",
           "group",
           "id",
-          "isAuthorBlacklistedByCurrentUser",
+          "isHiddenByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "title",
@@ -2032,6 +2032,9 @@
           "viewedByCurrentUser": {
             "type": "boolean"
           },
+          "isHiddenByCurrentUser": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "integer",
             "format": "int64"
@@ -2040,10 +2043,7 @@
             "type": "integer",
             "format": "int64"
           },
-          "isAuthorBlacklistedByCurrentUser": {
-            "type": "boolean"
-          },
-          "authorBlacklistedByCurrentUser": {
+          "hiddenByCurrentUser": {
             "type": "boolean",
             "writeOnly": true
           }
@@ -2081,7 +2081,7 @@
           "content",
           "createdAt",
           "id",
-          "isAuthorBlacklistedByCurrentUser",
+          "isHiddenByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "updatedAt"
@@ -2104,6 +2104,9 @@
           "likedByCurrentUser": {
             "type": "boolean"
           },
+          "isHiddenByCurrentUser": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "integer",
             "format": "int64"
@@ -2112,10 +2115,7 @@
             "type": "integer",
             "format": "int64"
           },
-          "isAuthorBlacklistedByCurrentUser": {
-            "type": "boolean"
-          },
-          "authorBlacklistedByCurrentUser": {
+          "hiddenByCurrentUser": {
             "type": "boolean",
             "writeOnly": true
           }
