@@ -44,7 +44,6 @@ data class PostResponse(
                 currentUser.blacklist.contains(Pair(BlacklistItem.Post, post.id!!))) {
                 response.title = ""
                 response.content = ""
-                response.comments = emptyList()
                 response.isAuthorBlacklistedByCurrentUser = true
             }
             return response
