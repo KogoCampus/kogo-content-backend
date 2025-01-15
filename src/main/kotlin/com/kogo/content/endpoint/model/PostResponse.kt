@@ -18,9 +18,9 @@ data class PostResponse(
     var likedByCurrentUser: Boolean = false,
     var viewCount: Int,
     var viewedByCurrentUser: Boolean = false,
+    var isHiddenByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
-    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(post: Post, currentUser: User): PostResponse {
@@ -40,11 +40,10 @@ data class PostResponse(
                 updatedAt = post.updatedAt
             )
 
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, post.author.id)) ||
-                currentUser.blacklist.contains(Pair(BlacklistItem.Post, post.id!!))) {
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.Post, post.id!!))) {
                 response.title = ""
                 response.content = ""
-                response.isAuthorBlacklistedByCurrentUser = true
+                response.isHiddenByCurrentUser = true
             }
             return response
         }
@@ -58,9 +57,9 @@ data class CommentResponse (
     var replies: List<ReplyResponse>,
     var likeCount: Int,
     var likedByCurrentUser: Boolean = false,
+    var isHiddenByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
-    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(comment: Comment, currentUser: User): CommentResponse {
@@ -75,10 +74,9 @@ data class CommentResponse (
                 updatedAt = comment.updatedAt
             )
 
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, comment.author.id)) ||
-                currentUser.blacklist.contains(Pair(BlacklistItem.Comment, comment.id))) {
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.Comment, comment.id))) {
                 response.content = ""
-                response.isAuthorBlacklistedByCurrentUser = true
+                response.isHiddenByCurrentUser = true
             }
             return response
         }
@@ -91,9 +89,9 @@ data class ReplyResponse (
     var content: String,
     var likeCount: Int,
     var likedByCurrentUser: Boolean = false,
+    var isHiddenByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
-    var isAuthorBlacklistedByCurrentUser: Boolean = false,
 ) {
     companion object {
         fun from(reply: Reply, currentUser: User): ReplyResponse {
@@ -107,10 +105,9 @@ data class ReplyResponse (
                 updatedAt = reply.updatedAt
             )
 
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.User, reply.author.id)) ||
-                currentUser.blacklist.contains(Pair(BlacklistItem.Comment, reply.id))) {
+            if (currentUser.blacklist.contains(Pair(BlacklistItem.Comment, reply.id))) {
                 response.content = ""
-                response.isAuthorBlacklistedByCurrentUser = true
+                response.isHiddenByCurrentUser = true
             }
             return response
         }

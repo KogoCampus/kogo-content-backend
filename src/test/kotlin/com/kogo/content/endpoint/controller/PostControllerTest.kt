@@ -193,32 +193,6 @@ class PostControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should hide post content when author is blacklisted`() {
-        val blacklistedUser = Fixture.createUserFixture()
-        val postByBlacklistedUser = Fixture.createPostFixture(
-            group = group,
-            author = blacklistedUser,
-            title = "Original Title",
-            content = "Original Content"
-        )
-
-        currentUser.blacklist.add(Pair(BlacklistItem.User, blacklistedUser.id!!))
-        every { postService.findOrThrow(postByBlacklistedUser.id!!) } returns postByBlacklistedUser
-        every { postService.addViewer(postByBlacklistedUser, currentUser) } returns true
-
-        mockMvc.get("/media/posts/${postByBlacklistedUser.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(postByBlacklistedUser.id) }
-            jsonPath("$.data.title") { value("") }
-            jsonPath("$.data.content") { value("") }
-            jsonPath("$.data.isAuthorBlacklistedByCurrentUser") { value(true) }
-            jsonPath("$.data.author.id") { value(blacklistedUser.id) }
-        }
-    }
-
-    @Test
     fun `should hide post content when post is blacklisted`() {
         val blacklistedUser = Fixture.createUserFixture()
         val postByBlacklistedUser = Fixture.createPostFixture(
@@ -239,7 +213,7 @@ class PostControllerTest @Autowired constructor(
             jsonPath("$.data.id") { value(postByBlacklistedUser.id) }
             jsonPath("$.data.title") { value("") }
             jsonPath("$.data.content") { value("") }
-            jsonPath("$.data.isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.isHiddenByCurrentUser") { value(true) }
             jsonPath("$.data.author.id") { value(blacklistedUser.id) }
         }
     }
@@ -269,7 +243,7 @@ class PostControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data.comments[0].id") { value(blacklistedComment.id) }
             jsonPath("$.data.comments[0].content") { value("") }
-            jsonPath("$.data.comments[0].isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.comments[0].isHiddenByCurrentUser") { value(true) }
             jsonPath("$.data.comments[0].author.id") { value(blacklistedUser.id) }
         }
     }
@@ -305,7 +279,7 @@ class PostControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data.comments[0].replies[0].id") { value(blacklistedReply.id) }
             jsonPath("$.data.comments[0].replies[0].content") { value("") }
-            jsonPath("$.data.comments[0].replies[0].isAuthorBlacklistedByCurrentUser") { value(true) }
+            jsonPath("$.data.comments[0].replies[0].isHiddenByCurrentUser") { value(true) }
             jsonPath("$.data.comments[0].replies[0].author.id") { value(blacklistedUser.id) }
         }
     }
