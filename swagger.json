@@ -1218,66 +1218,6 @@
         }
       }
     },
-    "/me/blacklist/replies/{replyId}": {
-      "post": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "add a reply to my blacklist",
-        "operationId": "addReplyToBlacklist",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "remove a reply from my blacklist",
-        "operationId": "removeReplyFromBlacklist",
-        "parameters": [
-          {
-            "name": "replyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/me/blacklist/posts/{postId}": {
       "post": {
         "tags": [
