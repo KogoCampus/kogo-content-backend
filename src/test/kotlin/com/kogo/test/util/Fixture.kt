@@ -15,7 +15,6 @@ class Fixture {
             id: String = generateObjectIdString(),
             username: String = "user-$id",
             email: String = "user-$id@example.com",
-            blacklist: MutableSet<Pair<BlacklistItem, String>> = mutableSetOf()
         ) = User(
             id = id,
             username = username,
@@ -25,7 +24,6 @@ class Fixture {
                 schoolKey = "TEST",
                 schoolShortenedName = "TS"
             ),
-            blacklist = blacklist
         )
 
         fun createGroupFixture(

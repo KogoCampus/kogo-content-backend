@@ -1,7 +1,6 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.PaginationSlice
-import com.kogo.content.endpoint.common.ErrorCode
 import com.kogo.content.service.*
 import com.kogo.test.util.Fixture
 import com.kogo.content.storage.model.*
@@ -9,10 +8,8 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.endpoint.model.UserData
-import com.kogo.content.storage.model.entity.BlacklistItem
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -186,134 +183,5 @@ class MeControllerTest @Autowired constructor(
             jsonPath("$.data[0].message.title") { value("New Like") }
             jsonPath("$.data[0].message.dataType") { value(DataType.POST.name) }
         }
-    }
-
-    @Test
-    fun `should add user to blacklist successfully`() {
-        val targetUser = Fixture.createUserFixture()
-
-        every { userService.findOrThrow(targetUser.id!!) } returns targetUser
-        every { userService.addToBlacklist(currentUser, BlacklistItem.User, targetUser.id!!) } returns currentUser
-
-        mockMvc.post("/me/blacklist/users/${targetUser.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.addToBlacklist(currentUser, BlacklistItem.User, targetUser.id!!) }
-    }
-
-    @Test
-    fun `should fail to add self to blacklist`() {
-        every { userService.findOrThrow(currentUser.id!!) } returns currentUser
-
-        mockMvc.post("/me/blacklist/users/${currentUser.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isBadRequest() }
-            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
-            jsonPath("$.details") { value("Cannot blacklist yourself") }
-        }
-
-        verify(exactly = 0) { userService.addToBlacklist(any(), any(), any()) }
-    }
-
-    @Test
-    fun `should remove user from blacklist successfully`() {
-        val targetUser = Fixture.createUserFixture()
-
-        every { userService.findOrThrow(targetUser.id!!) } returns targetUser
-        every { userService.removeFromBlacklist(currentUser, BlacklistItem.User, targetUser.id!!) } returns currentUser
-
-        mockMvc.delete("/me/blacklist/users/${targetUser.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.removeFromBlacklist(currentUser, BlacklistItem.User, targetUser.id!!) }
-    }
-
-    @Test
-    fun `should add post to blacklist successfully`() {
-        val targetPost = Fixture.createPostFixture(group = group, author = Fixture.createUserFixture())
-
-        every { postService.findOrThrow(targetPost.id!!) } returns targetPost
-        every { userService.addToBlacklist(currentUser, BlacklistItem.Post, targetPost.id!!) } returns currentUser
-
-        mockMvc.post("/me/blacklist/posts/${targetPost.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.addToBlacklist(currentUser, BlacklistItem.Post, targetPost.id!!) }
-    }
-
-    @Test
-    fun `should fail to blacklist own post`() {
-        val ownPost = Fixture.createPostFixture(group = group, author = currentUser)
-
-        every { postService.findOrThrow(ownPost.id!!) } returns ownPost
-
-        mockMvc.post("/me/blacklist/posts/${ownPost.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isBadRequest() }
-            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
-            jsonPath("$.details") { value("Cannot blacklist your own post") }
-        }
-
-        verify(exactly = 0) { userService.addToBlacklist(any(), any(), any()) }
-    }
-
-    @Test
-    fun `should remove post from blacklist successfully`() {
-        val targetPost = Fixture.createPostFixture(group = group, author = Fixture.createUserFixture())
-
-        every { userService.removeFromBlacklist(currentUser, BlacklistItem.Post, targetPost.id!!) } returns currentUser
-
-        mockMvc.delete("/me/blacklist/posts/${targetPost.id}") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.removeFromBlacklist(currentUser, BlacklistItem.Post, targetPost.id!!) }
-    }
-
-    @Test
-    fun `should add comment to blacklist successfully`() {
-        val commentId = "test-comment-id"
-        every { userService.addToBlacklist(currentUser, BlacklistItem.Comment, commentId) } returns currentUser
-
-        mockMvc.post("/me/blacklist/comments/$commentId") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.addToBlacklist(currentUser, BlacklistItem.Comment, commentId) }
-    }
-
-    @Test
-    fun `should remove comment from blacklist successfully`() {
-        val commentId = "test-comment-id"
-        every { userService.removeFromBlacklist(currentUser, BlacklistItem.Comment, commentId) } returns currentUser
-
-        mockMvc.delete("/me/blacklist/comments/$commentId") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.removeFromBlacklist(currentUser, BlacklistItem.Comment, commentId) }
     }
 }

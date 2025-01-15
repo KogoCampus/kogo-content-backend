@@ -18,13 +18,12 @@ data class PostResponse(
     var likedByCurrentUser: Boolean = false,
     var viewCount: Int,
     var viewedByCurrentUser: Boolean = false,
-    var isHiddenByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
 ) {
     companion object {
         fun from(post: Post, currentUser: User): PostResponse {
-            val response = PostResponse(
+            return PostResponse(
                 id = post.id!!,
                 author = UserData.Public.from(post.author),
                 group = GroupResponse.from(post.group, currentUser),
@@ -39,13 +38,6 @@ data class PostResponse(
                 createdAt = post.createdAt,
                 updatedAt = post.updatedAt
             )
-
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.Post, post.id!!))) {
-                response.title = ""
-                response.content = ""
-                response.isHiddenByCurrentUser = true
-            }
-            return response
         }
     }
 }
@@ -63,7 +55,7 @@ data class CommentResponse (
 ) {
     companion object {
         fun from(comment: Comment, currentUser: User): CommentResponse {
-            val response = CommentResponse(
+            return CommentResponse(
                 id = comment.id,
                 author = UserData.Public.from(comment.author),
                 content = comment.content,
@@ -73,12 +65,6 @@ data class CommentResponse (
                 createdAt = comment.createdAt,
                 updatedAt = comment.updatedAt
             )
-
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.Comment, comment.id))) {
-                response.content = ""
-                response.isHiddenByCurrentUser = true
-            }
-            return response
         }
     }
 }
@@ -89,13 +75,12 @@ data class ReplyResponse (
     var content: String,
     var likeCount: Int,
     var likedByCurrentUser: Boolean = false,
-    var isHiddenByCurrentUser: Boolean = false,
     var createdAt: Long,
     var updatedAt: Long,
 ) {
     companion object {
         fun from(reply: Reply, currentUser: User): ReplyResponse {
-            val response = ReplyResponse(
+            return ReplyResponse(
                 id = reply.id,
                 author = UserData.Public.from(reply.author),
                 content = reply.content,
@@ -104,12 +89,6 @@ data class ReplyResponse (
                 createdAt = reply.createdAt,
                 updatedAt = reply.updatedAt
             )
-
-            if (currentUser.blacklist.contains(Pair(BlacklistItem.Comment, reply.id))) {
-                response.content = ""
-                response.isHiddenByCurrentUser = true
-            }
-            return response
         }
     }
 }

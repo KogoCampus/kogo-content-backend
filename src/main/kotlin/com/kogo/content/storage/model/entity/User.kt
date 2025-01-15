@@ -21,12 +21,8 @@ data class User (
 
     var profileImage: Attachment? = null,
 
-    var blacklist: MutableSet<Pair<BlacklistItem, String>> = mutableSetOf(),
-
     val followingGroupIds: MutableList<String> = mutableListOf(),
-) {
-    fun blacklistedItemIds(itemType: BlacklistItem) = blacklist.filter { it.first == itemType }.map { it.second }
-}
+)
 
 data class SchoolInfo (
     var schoolKey: String,
@@ -37,10 +33,3 @@ data class SchoolInfo (
 
     var schoolShortenedName: String,
 )
-
-enum class BlacklistItem {
-    Group,
-    Post,
-    Comment,
-    User
-}
