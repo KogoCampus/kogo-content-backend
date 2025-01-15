@@ -309,33 +309,5 @@ class MeController @Autowired constructor(
         val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.Comment, commentId)
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
-
-    @PostMapping("me/blacklist/replies/{replyId}")
-    @Operation(
-        summary = "add a reply to my blacklist",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
-        )])
-    fun addReplyToBlacklist(@PathVariable replyId: String): ResponseEntity<*> = run {
-        val me = userService.findCurrentUser()
-        val updatedUser = userService.addToBlacklist(me, BlacklistItem.Comment, replyId)
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
-    }
-
-    @DeleteMapping("me/blacklist/replies/{replyId}")
-    @Operation(
-        summary = "remove a reply from my blacklist",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
-        )])
-    fun removeReplyFromBlacklist(@PathVariable replyId: String): ResponseEntity<*> = run {
-        val me = userService.findCurrentUser()
-        val updatedUser = userService.removeFromBlacklist(me, BlacklistItem.Comment, replyId)
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
-    }
 }
 

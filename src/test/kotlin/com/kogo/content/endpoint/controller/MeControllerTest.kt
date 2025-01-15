@@ -316,34 +316,4 @@ class MeControllerTest @Autowired constructor(
 
         verify { userService.removeFromBlacklist(currentUser, BlacklistItem.Comment, commentId) }
     }
-
-    @Test
-    fun `should add reply to blacklist successfully`() {
-        val replyId = "test-reply-id"
-        every { userService.addToBlacklist(currentUser, BlacklistItem.Comment, replyId) } returns currentUser
-
-        mockMvc.post("/me/blacklist/replies/$replyId") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.addToBlacklist(currentUser, BlacklistItem.Comment, replyId) }
-    }
-
-    @Test
-    fun `should remove reply from blacklist successfully`() {
-        val replyId = "test-reply-id"
-        every { userService.removeFromBlacklist(currentUser, BlacklistItem.Comment, replyId) } returns currentUser
-
-        mockMvc.delete("/me/blacklist/replies/$replyId") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.id") { value(currentUser.id) }
-        }
-
-        verify { userService.removeFromBlacklist(currentUser, BlacklistItem.Comment, replyId) }
-    }
 }
