@@ -4,7 +4,6 @@ import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.User
-import com.kogo.content.storage.model.entity.BlacklistItem
 
 data class PostResponse(
     var id: String,

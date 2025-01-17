@@ -3,7 +3,7 @@ package com.kogo.content.storage.model
 import org.bson.types.ObjectId
 
 data class Attachment(
-    var id: ObjectId = ObjectId(),
+    var id: String,
 
     var filename: String,
 

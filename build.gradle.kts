@@ -62,6 +62,8 @@ dependencies {
     implementation("io.sentry:sentry-spring-boot-starter-jakarta:7.15.0")
     // Meilisearch
     implementation ("com.meilisearch.sdk:meilisearch-java:0.14.0")
+    // Reactor for MultipartBodyBuilder
+    implementation("io.projectreactor:reactor-core:3.5.0")
     // Testing
     implementation("com.google.code.gson:gson")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
