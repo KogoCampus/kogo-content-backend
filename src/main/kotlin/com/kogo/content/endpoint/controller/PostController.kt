@@ -144,7 +144,7 @@ class PostController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["posts/{postId}"],
+        path = ["groups/{groupId}/posts/{postId}"],
         method = [RequestMethod.PUT],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
@@ -156,7 +156,11 @@ class PostController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = PostResponse::class))],
         )])
-    fun updatePost(@PathVariable("postId") postId: String, @Valid postUpdate: PostUpdate): ResponseEntity<*> {
+    fun updatePost(
+        @PathVariable("groupId") groupId: String,
+        @PathVariable("postId") postId: String,
+        @Valid postUpdate: PostUpdate): ResponseEntity<*> {
+        groupService.findOrThrow(groupId)
         val post = postService.find(postId) ?: postService.findOrThrow(postId)
         val user = userService.findCurrentUser()
 

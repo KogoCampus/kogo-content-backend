@@ -5,7 +5,9 @@ import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.logging.Logger
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
@@ -23,8 +25,10 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PostService(
     private val postRepository: PostRepository,
-    private val postSearchIndex: SearchIndex<Post>
+    private val postSearchIndex: SearchIndex<Post>,
+    private val fileService: FileUploaderService
 ) : BaseEntityService<Post, String>(Post::class, postRepository) {
+    companion object : Logger()
 
     fun findCommentOrThrow(postId: String, commentId: String): Comment {
         val post = findOrThrow(postId)
@@ -83,13 +87,16 @@ class PostService(
 
     @Transactional
     fun create(group: Group, author: User, dto: PostDto): Post {
+        val attachments = dto.images?.map{
+            fileService.uploadImage(it)
+        } ?: emptyList()
         val savedPost = postRepository.save(
             Post(
                 title = dto.title,
                 content = dto.content,
                 group = group,
                 author = author,
-                attachments = mutableListOf(), // TODO
+                images = attachments.toMutableList(),
             )
         )
         return savedPost
@@ -101,24 +108,26 @@ class PostService(
         postUpdate.content?.let { post.content = it }
         post.updatedAt = System.currentTimeMillis()
 
-        val attachmentsToKeep = post.attachments.filter { it.id.toString() !in postUpdate.attachmentDeleteIds!! }
-        // TODO
-        //val newAttachments = attachmentRepository.saveFiles(postUpdate.images!! + postUpdate.videos!!)
-
-        //post.attachments.filter { it.id in postUpdate.attachmentDeleteIds!! }
-        //    .forEach { attachmentRepository.delete(it) }
-        // post.attachments = attachmentsToKeep + newAttachments
-
-        post.attachments = attachmentsToKeep.toMutableList()
+        val imagesToKeep = post.images.filter { it.id !in postUpdate.attachmentDeleteIds!! }
+        val imagesToDelete = post.images.filter{ it.id in postUpdate.attachmentDeleteIds!! }
+        val newAttachments = postUpdate.images?.map{
+            fileService.uploadImage(it)
+        } ?: emptyList()
+        post.images = (imagesToKeep + newAttachments).toMutableList()
         val updatedPost = postRepository.save(post)
+        try{
+            imagesToDelete.forEach{fileService.deleteImage(it.id)}
+        } catch(ex: FileOperationFailureException) {
+            log.error{ex}
+        }
         return updatedPost
     }
 
     @Transactional
     fun delete(post: Post) {
-        // TODO
-        // 이건 async로 처리하는게 좋을 수 있음
-        // post.attachments.forEach { attachmentRepository.delete(it) }
+        post.images.map{
+            fileService.deleteImage(it.id)
+        }
         postRepository.deleteById(post.id!!)
     }
 

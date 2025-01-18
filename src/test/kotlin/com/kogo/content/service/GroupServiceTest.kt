@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.search.index.GroupSearchIndex
+import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
@@ -15,21 +16,25 @@ import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.mock.web.MockMultipartFile
 import java.time.Instant
 
 class GroupServiceTest {
     private val groupRepository: GroupRepository = mockk()
     private val userRepository: UserRepository = mockk()
     private val groupSearchIndex: GroupSearchIndex = mockk()
+    private val fileService: FileUploaderService = mockk()
 
     private val groupService = GroupService(
         groupRepository = groupRepository,
         userRepository = userRepository,
-        groupSearchIndex = groupSearchIndex
+        groupSearchIndex = groupSearchIndex,
+        fileService = fileService
     )
 
     private lateinit var user: User
     private lateinit var group: Group
+    private lateinit var profileImage: Attachment
 
     @BeforeEach
     fun setup() {
@@ -51,6 +56,14 @@ class GroupServiceTest {
             owner = user,
             tags = mutableListOf("test", "group"),
             followers = mutableListOf(Follower(user)),
+        )
+
+        profileImage = Attachment(
+            id = "test-image-id",
+            filename = "test-image.jpg",
+            contentType = "image/jpeg",
+            url = "test-url/test-image.jpg",
+            size = 8000
         )
     }
 
@@ -111,7 +124,7 @@ class GroupServiceTest {
     }
 
     @Test
-    fun `should create group`() {
+    fun `should create group without profileImage`() {
         val dto = GroupDto(
             groupName = "test-group",
             description = "test description",
@@ -127,6 +140,37 @@ class GroupServiceTest {
         assertThat(result.description).isEqualTo(dto.description)
         assertThat(result.tags).isEqualTo(dto.tags)
         assertThat(result.owner).isEqualTo(user)
+        verify { groupRepository.save(any()) }
+    }
+
+    @Test
+    fun `should create group with profileImage`() {
+        val multipartFile = MockMultipartFile(
+            "profileImage",
+            "test-image.jpg",
+            "image/jpeg",
+            ByteArray(1024)
+        )
+
+        val dto = GroupDto(
+            groupName = "test-group",
+            description = "test description",
+            tags = listOf("tag1", "tag2"),
+            profileImage = multipartFile
+        )
+
+        every { fileService.uploadImage(multipartFile) } returns profileImage
+        every { groupRepository.save(any()) } answers { firstArg() }
+
+        val result = groupService.create(dto, user)
+
+        assertThat(result.groupName).isEqualTo(dto.groupName)
+        assertThat(result.description).isEqualTo(dto.description)
+        assertThat(result.tags).isEqualTo(dto.tags)
+        assertThat(result.owner).isEqualTo(user)
+        assertThat(result.profileImage).isEqualTo(profileImage)
+
+        verify { fileService.uploadImage(multipartFile) }
         verify { groupRepository.save(any()) }
     }
 

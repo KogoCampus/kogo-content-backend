@@ -56,7 +56,7 @@ class Fixture {
             author = author,
             title = title,
             content = content,
-            attachments = attachments,
+            images = attachments,
             likes = likes,
             viewerIds = viewerIds,
             comments = comments,

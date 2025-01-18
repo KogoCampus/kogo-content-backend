@@ -127,7 +127,7 @@ class PostControllerTest @Autowired constructor(
         every { postService.find(post.id!!) } returns post
         every { postService.update(post, any()) } returns updatedPost
 
-        mockMvc.multipart("/media/posts/${post.id}") {
+        mockMvc.multipart("/media/groups/${group.id}/posts/${post.id}") {
             part(MockPart("title", updatedTitle.toByteArray()))
             part(MockPart("content", updatedContent.toByteArray()))
             with { it.method = "PUT"; it }
@@ -183,7 +183,7 @@ class PostControllerTest @Autowired constructor(
         every { userService.findCurrentUser() } returns differentUser
         every { postService.find(post.id!!) } returns post
 
-        mockMvc.multipart("/media/posts/${post.id}") {
+        mockMvc.multipart("/media/groups/${group.id}/posts/${post.id}") {
             part(MockPart("title", "new title".toByteArray()))
             with { it.method = "PUT"; it }
         }.andExpect {

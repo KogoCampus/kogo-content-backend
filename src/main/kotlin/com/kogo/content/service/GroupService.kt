@@ -26,12 +26,9 @@ import org.springframework.web.multipart.MultipartFile
 class GroupService(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val groupSearchIndex: GroupSearchIndex
+    private val groupSearchIndex: GroupSearchIndex,
+    private val fileService: FileUploaderService
 ) : BaseEntityService<Group, String>(Group::class, groupRepository) {
-
-    @Value("\${kogo-api.uploadFiles}")
-    lateinit var fileUploaderUrl: String
-    val restTemplate = RestTemplate()
 
     fun findByGroupName(groupName: String): Group? = groupRepository.findByGroupName(groupName)
 
@@ -54,7 +51,7 @@ class GroupService(
 
     @Transactional
     fun create(dto: GroupDto, owner: User): Group {
-        val profileImage = dto.profileImage?.let { uploadImage(it) }
+        val profileImage = dto.profileImage?.let { fileService.uploadImage(it) }
         return groupRepository.save(
             Group(
                 groupName = dto.groupName,
@@ -74,9 +71,9 @@ class GroupService(
             tags?.let { group.tags = it.toMutableList() }
             profileImage?.let {
                 group.profileImage?.let { profileImage ->
-                    deleteImage(profileImage.id!!)
+                    fileService.deleteImage(profileImage.id!!)
                 }
-                group.profileImage = uploadImage(it)
+                group.profileImage = fileService.uploadImage(it)
             }
         }
         group.updatedAt = System.currentTimeMillis()
@@ -86,7 +83,7 @@ class GroupService(
     @Transactional
     fun delete(group: Group) {
         group.profileImage?.let { profileImage ->
-            deleteImage(profileImage.id!!)
+            fileService.deleteImage(profileImage.id!!)
         }
         groupRepository.deleteById(group.id!!)
     }
@@ -118,72 +115,5 @@ class GroupService(
         group.owner = user
         groupRepository.save(group)
         return group
-    }
-
-    private fun uploadImage(profileImage: MultipartFile): Attachment? {
-        val headers = HttpHeaders().apply {
-            contentType = MediaType.MULTIPART_FORM_DATA
-        }
-        val bodyBuilder = MultipartBodyBuilder().apply {
-            part("file", profileImage.resource)
-        }
-        val requestEntity = HttpEntity(bodyBuilder.build(), headers)
-
-        return try {
-            val response = restTemplate.exchange(
-                "${fileUploaderUrl}/images", // URL for file upload
-                HttpMethod.POST,
-                requestEntity,
-                object : ParameterizedTypeReference<Map<String, Any>>() {}
-            )
-
-            // Check if the upload was successful
-            if (response.statusCode.is2xxSuccessful) {
-                log.info { "Profile image uploaded successfully" }
-
-                // Get the response body and create the Attachment object
-                val responseBody = response.body ?: throw IllegalStateException("Empty response body")
-
-                val imageId = responseBody["imageId"] as? String ?: throw IllegalStateException("Image ID is missing")
-                val filename = responseBody["filename"] as? String ?: throw IllegalStateException("Filename is missing")
-                val url = responseBody["url"] as? String ?: throw IllegalStateException("URL is missing")
-                val contentType = responseBody["content_type"] as? String ?: throw IllegalStateException("Content type is missing")
-                val size = (responseBody["size"] as? Number)?.toLong() ?: throw IllegalStateException("Size is missing")
-
-                // Return the Attachment object with extracted values
-                Attachment(
-                    id = imageId,
-                    filename = filename,
-                    url = url,
-                    contentType = contentType,
-                    size = size
-                )
-            } else {
-                log.error { "Failed to upload profile image, status code: ${response.statusCode}" }
-                null
-            }
-        } catch (ex: Exception) {
-            log.error(ex) { "Error while uploading profile image: ${ex.message}" }
-            null
-        }
-    }
-
-    private fun deleteImage(imageId: String){
-        try{
-            val response = restTemplate.exchange(
-                "$fileUploaderUrl/images/$imageId", // URL for file delete
-                HttpMethod.DELETE,
-                null, // No body or headers required
-                object : ParameterizedTypeReference<Map<String, Any>>() {}
-            )
-            if (response.statusCode.is2xxSuccessful) {
-                log.info { "Successfully deleted image with ID: $imageId" }
-            } else {
-                log.error { "Failed to delete image with ID: $imageId, status code: ${response.statusCode}" }
-            }
-        } catch (ex: Exception) {
-            log.error(ex) { "Error while deleting image with ID: $imageId: ${ex.message}" }
-            throw IllegalStateException("Failed to delete image: ${ex.message}", ex)
-        }
     }
 }

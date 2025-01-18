@@ -4,11 +4,9 @@ import com.kogo.content.endpoint.model.PostDto
 import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
-import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.search.SearchIndex
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
-import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.*
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.repository.PostRepository
@@ -17,17 +15,19 @@ import org.assertj.core.api.Assertions.assertThat
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class PostServiceTest {
     private val postRepository: PostRepository = mockk()
     private val postSearchIndex: SearchIndex<Post> = mockk()
+    private val fileService: FileUploaderService = mockk()
 
     private val mongoPaginationQueryBuilder: MongoPaginationQueryBuilder = mockk()
 
     private val postService = PostService(
         postRepository = postRepository,
-        postSearchIndex = postSearchIndex
+        postSearchIndex = postSearchIndex,
+        fileService = fileService
+
     ).apply {
         mongoPaginationQueryBuilder = this@PostServiceTest.mongoPaginationQueryBuilder
     }
@@ -64,7 +64,7 @@ class PostServiceTest {
             content = "Test Content",
             group = group,
             author = user,
-            attachments = mutableListOf(),
+            images = mutableListOf(),
             comments = mutableListOf(),
             likes = mutableListOf(),
             viewerIds = mutableListOf(),
