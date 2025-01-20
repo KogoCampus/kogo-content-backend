@@ -1,6 +1,6 @@
-FROM openjdk:21-jdk
+FROM eclipse-temurin:21-jdk-jammy
 
-# File Uploader
+# File Uploader ========================================
 # Install Python and required system dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
@@ -21,7 +21,7 @@ cd /opt/file-uploader && \
 uvicorn src.main:app --host 0.0.0.0 --port 3300 & \
 cd /opt && \
 java $JAVA_OPTS -Dspring.profiles.active=${ACTIVE_PROFILE} -jar /opt/jar/kogo-content-backend.jar' > /opt/start.sh && chmod +x /opt/start.sh
-# ===============================================
+# =======================================================
 
 ARG KCB_VERSION
 ARG ACTIVE_PROFILE
