@@ -11,75 +11,6 @@
     }
   ],
   "paths": {
-    "/media/posts/{postId}": {
-      "get": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "return a post",
-        "operationId": "getPost",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "update attributes of an existing post",
-        "operationId": "updatePost",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/PostUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/posts/{postId}/likes": {
       "put": {
         "tags": [
@@ -680,6 +611,91 @@
         }
       }
     },
+    "/media/groups/{groupId}/posts/{postId}": {
+      "put": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "update attributes of an existing post",
+        "operationId": "updatePost",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "delete a post",
+        "operationId": "deletePostInGroup",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me": {
       "get": {
         "tags": [
@@ -1158,186 +1174,6 @@
         }
       }
     },
-    "/me/blacklist/users/{userId}": {
-      "post": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "add a user to my blacklist",
-        "operationId": "addUserToBlacklist",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "remove a user from my blacklist",
-        "operationId": "removeUserFromBlacklist",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/me/blacklist/posts/{postId}": {
-      "post": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "add a post to my blacklist",
-        "operationId": "addPostToBlacklist",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "remove a post from my blacklist",
-        "operationId": "removePostFromBlacklist",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/me/blacklist/comments/{commentId}": {
-      "post": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "add a comment to my blacklist",
-        "operationId": "addCommentToBlacklist",
-        "parameters": [
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "remove a comment from my blacklist",
-        "operationId": "removeCommentFromBlacklist",
-        "parameters": [
-          {
-            "name": "commentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/search/posts": {
       "get": {
         "tags": [
@@ -1479,6 +1315,37 @@
                   "items": {
                     "$ref": "#/components/schemas/GroupResponse"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/posts/{postId}": {
+      "get": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "return a post",
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
                 }
               }
             }
@@ -1796,45 +1663,6 @@
           }
         }
       }
-    },
-    "/media/groups/{groupId}/posts/{postId}": {
-      "delete": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "delete a post",
-        "operationId": "deletePostInGroup",
-        "parameters": [
-          {
-            "name": "groupId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -1981,7 +1809,6 @@
           "createdAt",
           "group",
           "id",
-          "isHiddenByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "title",
@@ -2032,9 +1859,6 @@
           "viewedByCurrentUser": {
             "type": "boolean"
           },
-          "isHiddenByCurrentUser": {
-            "type": "boolean"
-          },
           "createdAt": {
             "type": "integer",
             "format": "int64"
@@ -2042,10 +1866,6 @@
           "updatedAt": {
             "type": "integer",
             "format": "int64"
-          },
-          "hiddenByCurrentUser": {
-            "type": "boolean",
-            "writeOnly": true
           }
         }
       },
@@ -2081,7 +1901,6 @@
           "content",
           "createdAt",
           "id",
-          "isHiddenByCurrentUser",
           "likeCount",
           "likedByCurrentUser",
           "updatedAt"
@@ -2104,9 +1923,6 @@
           "likedByCurrentUser": {
             "type": "boolean"
           },
-          "isHiddenByCurrentUser": {
-            "type": "boolean"
-          },
           "createdAt": {
             "type": "integer",
             "format": "int64"
@@ -2114,10 +1930,39 @@
           "updatedAt": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "CommentUpdate": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupUpdate": {
+        "type": "object",
+        "properties": {
+          "groupName": {
+            "type": "string"
           },
-          "hiddenByCurrentUser": {
-            "type": "boolean",
-            "writeOnly": true
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
+            }
+          },
+          "profileImage": {
+            "type": "string",
+            "format": "binary"
           }
         }
       },
@@ -2155,42 +2000,8 @@
           }
         }
       },
-      "CommentUpdate": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string"
-          }
-        }
-      },
-      "GroupUpdate": {
-        "type": "object",
-        "properties": {
-          "groupName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
-            }
-          },
-          "profileImage": {
-            "type": "string",
-            "format": "binary"
-          }
-        }
-      },
       "IncludeCredentials": {
         "required": [
-          "blacklistedItems",
           "email",
           "id",
           "schoolInfo",
@@ -2215,15 +2026,6 @@
           },
           "pushNotificationToken": {
             "type": "string"
-          },
-          "blacklistedItems": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         }
       },
