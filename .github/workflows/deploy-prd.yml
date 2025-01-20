@@ -61,6 +61,13 @@ jobs:
             - name: Build with Gradle (prd profile)
               run: ./gradlew clean build -x test
 
+            - name: Setup File Uploader
+              run: |
+                  git clone https://github.com/KogoCampus/file-uploader.git
+                  cd file-uploader
+                  sops --config .sops/sops.yaml -d -i .sops/prod.env > .env
+                  cd ..
+
             - name: Build Docker image
               run: |
                   COMMIT_HASH=${{ github.sha }}

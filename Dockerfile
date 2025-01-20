@@ -6,12 +6,11 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-dev \
-    git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone and setup file uploader
-RUN git clone https://github.com/KogoCampus/file-uploader.git /opt/file-uploader
+# Setup file uploader
+COPY file-uploader /opt/file-uploader
 WORKDIR /opt/file-uploader
 RUN pip3 install -r requirements.txt
 
