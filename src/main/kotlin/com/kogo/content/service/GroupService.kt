@@ -5,22 +5,29 @@ import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.search.index.GroupSearchIndex
+import com.kogo.content.service.NotificationService.Companion.log
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.model.entity.User
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.http.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
-import kotlin.reflect.KClass
+import org.springframework.web.client.RestTemplate
+import org.springframework.http.client.MultipartBodyBuilder
+import org.springframework.web.multipart.MultipartFile
 
 @Service
 class GroupService(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val groupSearchIndex: GroupSearchIndex
+    private val groupSearchIndex: GroupSearchIndex,
+    private val fileService: FileUploaderService
 ) : BaseEntityService<Group, String>(Group::class, groupRepository) {
 
     fun findByGroupName(groupName: String): Group? = groupRepository.findByGroupName(groupName)
@@ -43,15 +50,18 @@ class GroupService(
     }
 
     @Transactional
-    fun create(dto: GroupDto, owner: User): Group = groupRepository.save(
-        Group(
-            groupName = dto.groupName,
-            description = dto.description,
-            owner = owner,
-            profileImage = null,
-            tags = dto.tags.toMutableList()
+    fun create(dto: GroupDto, owner: User): Group {
+        val profileImage = dto.profileImage?.let { fileService.uploadImage(it) }
+        return groupRepository.save(
+            Group(
+                groupName = dto.groupName,
+                description = dto.description,
+                owner = owner,
+                profileImage = profileImage,
+                tags = dto.tags.toMutableList()
+            )
         )
-    )
+    }
 
     @Transactional
     fun update(group: Group, groupUpdate: GroupUpdate): Group {
@@ -59,8 +69,13 @@ class GroupService(
             groupName?.let { group.groupName = it }
             description?.let { group.description = it }
             tags?.let { group.tags = it.toMutableList() }
-            // TODO
-            // profileImage?.let { group.profileImage = attachmentRepository.saveFile(it) }
+            profileImage?.let {
+                group.profileImage?.let { profileImage ->
+                    runCatching { fileService.deleteImage(profileImage.id!!) }
+                        .onFailure { log.error(it) { "Failed to delete old profile image: ${profileImage.id}" } }
+                }
+                group.profileImage = fileService.uploadImage(it)
+            }
         }
         group.updatedAt = System.currentTimeMillis()
         return groupRepository.save(group)
@@ -68,8 +83,9 @@ class GroupService(
 
     @Transactional
     fun delete(group: Group) {
-        // TODO
-        // group.profileImage?.let { attachmentRepository.delete(it) }
+        group.profileImage?.let { profileImage ->
+            fileService.deleteImage(profileImage.id!!)
+        }
         groupRepository.deleteById(group.id!!)
     }
 

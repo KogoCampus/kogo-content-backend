@@ -4,7 +4,6 @@ import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.User
-import com.kogo.content.storage.model.entity.BlacklistItem
 
 data class PostResponse(
     var id: String,
@@ -29,7 +28,7 @@ data class PostResponse(
                 group = GroupResponse.from(post.group, currentUser),
                 title = post.title,
                 content = post.content,
-                attachments = post.attachments.map { AttachmentResponse.from(it) },
+                attachments = post.images.map { AttachmentResponse.from(it) },
                 comments = post.comments.map { CommentResponse.from(it, currentUser) },
                 likeCount = post.activeLikes.size,
                 likedByCurrentUser = post.activeLikes.any { it.userId == currentUser.id },

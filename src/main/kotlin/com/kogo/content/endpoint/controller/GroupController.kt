@@ -202,7 +202,7 @@ class GroupController @Autowired constructor(
         val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
         val user = userService.findCurrentUser()
 
-        if(group.owner.id != user.id)
+        if(group.owner.id == user.id)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The owner cannot unfollow the group")
 
         if (!group.isFollowing(user))

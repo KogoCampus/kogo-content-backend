@@ -138,6 +138,23 @@ class GroupControllerTest @Autowired constructor(
     }
 
     @Test
+    fun `should fail to unfollow if the owner`() {
+        val owner = group.owner
+        every { userService.findCurrentUser() } returns owner
+        every { groupService.find(group.id!!) } returns group
+
+        mockMvc.put("/media/groups/${group.id}/unfollow") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+            jsonPath("$.details") { value("The owner cannot unfollow the group") }
+        }
+
+        verify(exactly = 0) { groupService.unfollow(any(), any()) }
+    }
+
+    @Test
     fun `should handle error cases appropriately`() {
         // Non-existent group
         every { groupService.find("invalid-id") } returns null

@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.mapping.DocumentReference
 import com.kogo.content.storage.model.RecencyScorer
-import java.time.Instant
 
 @org.springframework.data.mongodb.core.mapping.Document
 data class Post (
@@ -28,7 +27,7 @@ data class Post (
 
     var comments: MutableList<Comment> = mutableListOf(),
 
-    var attachments: MutableList<Attachment> = mutableListOf(),
+    var images: MutableList<Attachment> = mutableListOf(),
 
     // full likes history, regardless currently active or inactive
     var likes: MutableList<Like> = mutableListOf(),
