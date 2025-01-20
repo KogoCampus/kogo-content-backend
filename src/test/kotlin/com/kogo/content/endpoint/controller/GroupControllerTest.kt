@@ -6,6 +6,7 @@ import com.kogo.test.util.Fixture
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.model.entity.Follower
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
@@ -175,5 +176,100 @@ class GroupControllerTest @Autowired constructor(
             status { isForbidden() }
             jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
         }
+    }
+
+    @Test
+    fun `should delete group successfully when user is owner`() {
+        every { groupService.delete(group) } returns Unit
+
+        mockMvc.delete("/media/groups/${group.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+        }
+
+        verify { groupService.delete(group) }
+    }
+
+    @Test
+    fun `should fail to delete group when user is not owner`() {
+        val differentUser = Fixture.createUserFixture()
+        val groupOwnedByOther = Fixture.createGroupFixture(owner = differentUser)
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { groupService.find(groupOwnedByOther.id!!) } returns groupOwnedByOther
+        every { groupService.findOrThrow(groupOwnedByOther.id!!) } returns groupOwnedByOther
+
+        mockMvc.delete("/media/groups/${groupOwnedByOther.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
+            jsonPath("$.details") { value("group is not owned by user ${currentUser.id}") }
+        }
+
+        verify(exactly = 0) { groupService.delete(any()) }
+    }
+
+    @Test
+    fun `should fail to follow group when already following`() {
+        val followerUser = Fixture.createUserFixture()
+        val groupToFollow = Fixture.createGroupFixture(owner = currentUser)
+        groupToFollow.followers.add(Follower(followerUser))
+
+        every { groupService.find(groupToFollow.id!!) } returns groupToFollow
+        every { groupService.findOrThrow(groupToFollow.id!!) } returns groupToFollow
+        every { userService.findCurrentUser() } returns followerUser
+
+        mockMvc.put("/media/groups/${groupToFollow.id}/follow") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+            jsonPath("$.details") { value("The user is already following the group") }
+        }
+
+        verify(exactly = 0) { groupService.follow(any(), any()) }
+    }
+
+    @Test
+    fun `should unfollow group successfully when user is follower`() {
+        val followerUser = Fixture.createUserFixture()
+        val groupToUnfollow = Fixture.createGroupFixture(owner = currentUser)
+        groupToUnfollow.followers.add(Follower(followerUser))
+
+        every { groupService.find(groupToUnfollow.id!!) } returns groupToUnfollow
+        every { groupService.findOrThrow(groupToUnfollow.id!!) } returns groupToUnfollow
+        every { userService.findCurrentUser() } returns followerUser
+        every { groupService.unfollow(groupToUnfollow, followerUser) } returns true
+
+        mockMvc.put("/media/groups/${groupToUnfollow.id}/unfollow") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.id") { value(groupToUnfollow.id) }
+        }
+
+        verify { groupService.unfollow(groupToUnfollow, followerUser) }
+    }
+
+    @Test
+    fun `should fail to unfollow group when not following`() {
+        val nonFollowerUser = Fixture.createUserFixture()
+        val groupToUnfollow = Fixture.createGroupFixture(owner = currentUser)
+
+        every { groupService.find(groupToUnfollow.id!!) } returns groupToUnfollow
+        every { groupService.findOrThrow(groupToUnfollow.id!!) } returns groupToUnfollow
+        every { userService.findCurrentUser() } returns nonFollowerUser
+
+        mockMvc.put("/media/groups/${groupToUnfollow.id}/unfollow") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+            jsonPath("$.details") { value("The user is not following the group") }
+        }
+
+        verify(exactly = 0) { groupService.unfollow(any(), any()) }
     }
 }
