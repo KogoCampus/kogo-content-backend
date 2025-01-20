@@ -24,6 +24,10 @@ spring:
             username: admin
             password: password
             auto-index-creation: true
+    servlet:
+        multipart:
+            max-file-size: 128MB
+            max-request-size: 128MB
 
 management:
     endpoints:
