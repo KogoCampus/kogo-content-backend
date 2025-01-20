@@ -71,7 +71,8 @@ class GroupService(
             tags?.let { group.tags = it.toMutableList() }
             profileImage?.let {
                 group.profileImage?.let { profileImage ->
-                    fileService.deleteImage(profileImage.id!!)
+                    runCatching { fileService.deleteImage(profileImage.id!!) }
+                        .onFailure { log.error(it) { "Failed to delete old profile image: ${profileImage.id}" } }
                 }
                 group.profileImage = fileService.uploadImage(it)
             }

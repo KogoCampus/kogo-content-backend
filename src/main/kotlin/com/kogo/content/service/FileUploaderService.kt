@@ -24,7 +24,7 @@ class FileUploaderService(){
 
     @Value("\${kogo-api.uploadFiles}")
     lateinit var fileUploaderUrl: String
-    val restTemplate = RestTemplate()
+    var restTemplate = RestTemplate()
 
     fun uploadImage(profileImage: MultipartFile): Attachment {
         val headers = HttpHeaders().apply {

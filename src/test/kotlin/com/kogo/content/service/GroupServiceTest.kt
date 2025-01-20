@@ -4,6 +4,8 @@ import com.kogo.content.endpoint.model.GroupDto
 import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.exception.FileOperationFailure
+import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.search.index.GroupSearchIndex
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.entity.Follower
@@ -16,8 +18,8 @@ import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import java.time.Instant
 
 class GroupServiceTest {
     private val groupRepository: GroupRepository = mockk()
@@ -34,7 +36,8 @@ class GroupServiceTest {
 
     private lateinit var user: User
     private lateinit var group: Group
-    private lateinit var profileImage: Attachment
+    private lateinit var testImage: MockMultipartFile
+    private lateinit var testAttachment: Attachment
 
     @BeforeEach
     fun setup() {
@@ -49,6 +52,21 @@ class GroupServiceTest {
             )
         )
 
+        testImage = MockMultipartFile(
+            "profileImage",
+            "test-image.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "test image content".toByteArray()
+        )
+
+        testAttachment = Attachment(
+            id = "test-image-id",
+            filename = "test-image.jpg",
+            contentType = MediaType.IMAGE_JPEG_VALUE,
+            url = "test-url/test-image.jpg",
+            size = 8000
+        )
+
         group = Group(
             id = "test-group-id",
             groupName = "Test Group",
@@ -56,14 +74,7 @@ class GroupServiceTest {
             owner = user,
             tags = mutableListOf("test", "group"),
             followers = mutableListOf(Follower(user)),
-        )
-
-        profileImage = Attachment(
-            id = "test-image-id",
-            filename = "test-image.jpg",
-            contentType = "image/jpeg",
-            url = "test-url/test-image.jpg",
-            size = 8000
+            profileImage = testAttachment
         )
     }
 
@@ -145,21 +156,14 @@ class GroupServiceTest {
 
     @Test
     fun `should create group with profileImage`() {
-        val multipartFile = MockMultipartFile(
-            "profileImage",
-            "test-image.jpg",
-            "image/jpeg",
-            ByteArray(1024)
-        )
-
         val dto = GroupDto(
             groupName = "test-group",
             description = "test description",
             tags = listOf("tag1", "tag2"),
-            profileImage = multipartFile
+            profileImage = testImage
         )
 
-        every { fileService.uploadImage(multipartFile) } returns profileImage
+        every { fileService.uploadImage(testImage) } returns testAttachment
         every { groupRepository.save(any()) } answers { firstArg() }
 
         val result = groupService.create(dto, user)
@@ -168,10 +172,12 @@ class GroupServiceTest {
         assertThat(result.description).isEqualTo(dto.description)
         assertThat(result.tags).isEqualTo(dto.tags)
         assertThat(result.owner).isEqualTo(user)
-        assertThat(result.profileImage).isEqualTo(profileImage)
+        assertThat(result.profileImage).isEqualTo(testAttachment)
 
-        verify { fileService.uploadImage(multipartFile) }
-        verify { groupRepository.save(any()) }
+        verify { 
+            fileService.uploadImage(testImage)
+            groupRepository.save(any()) 
+        }
     }
 
     @Test
@@ -196,12 +202,91 @@ class GroupServiceTest {
     }
 
     @Test
-    fun `should delete group`() {
+    fun `should update group with new profile image and delete old one`() {
+        val newImage = MockMultipartFile(
+            "profileImage",
+            "new-image.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "new image content".toByteArray()
+        )
+
+        val newAttachment = testAttachment.copy(id = "new-image-id")
+        val update = GroupUpdate(
+            groupName = "updated-name",
+            description = "updated description",
+            tags = listOf("new-tag"),
+            profileImage = newImage
+        )
+
+        every { fileService.deleteImage(testAttachment.id) } just Runs
+        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { groupRepository.save(any()) } answers { firstArg() }
+
+        val result = groupService.update(group, update)
+
+        assertThat(result.groupName).isEqualTo(update.groupName)
+        assertThat(result.description).isEqualTo(update.description)
+        assertThat(result.tags).isEqualTo(update.tags)
+        assertThat(result.profileImage).isEqualTo(newAttachment)
+        assertThat(result.updatedAt).isGreaterThanOrEqualTo(group.updatedAt)
+
+        verify { 
+            fileService.deleteImage(testAttachment.id)
+            fileService.uploadImage(newImage)
+            groupRepository.save(any()) 
+        }
+    }
+
+    @Test
+    fun `should handle file operation failure during update gracefully`() {
+        val newImage = MockMultipartFile(
+            "profileImage",
+            "new-image.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "new image content".toByteArray()
+        )
+
+        val newAttachment = testAttachment.copy(id = "new-image-id")
+        val update = GroupUpdate(
+            groupName = "updated-name",
+            description = "updated description",
+            tags = listOf("new-tag"),
+            profileImage = newImage
+        )
+
+        every { fileService.deleteImage(testAttachment.id) } throws FileOperationFailureException(
+            FileOperationFailure.DELETE,
+            null,
+            "Failed to delete"
+        )
+        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { groupRepository.save(any()) } answers { firstArg() }
+
+        val result = groupService.update(group, update)
+
+        assertThat(result.groupName).isEqualTo(update.groupName)
+        assertThat(result.description).isEqualTo(update.description)
+        assertThat(result.tags).isEqualTo(update.tags)
+        assertThat(result.profileImage).isEqualTo(newAttachment)
+
+        verify { 
+            fileService.deleteImage(testAttachment.id)
+            fileService.uploadImage(newImage)
+            groupRepository.save(any()) 
+        }
+    }
+
+    @Test
+    fun `should delete group and its profile image`() {
+        every { fileService.deleteImage(testAttachment.id) } just Runs
         every { groupRepository.deleteById(group.id!!) } just Runs
 
         groupService.delete(group)
 
-        verify { groupRepository.deleteById(group.id!!) }
+        verify { 
+            fileService.deleteImage(testAttachment.id)
+            groupRepository.deleteById(group.id!!) 
+        }
     }
 
     @Test

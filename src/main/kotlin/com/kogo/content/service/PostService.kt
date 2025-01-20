@@ -108,6 +108,7 @@ class PostService(
         postUpdate.content?.let { post.content = it }
         post.updatedAt = System.currentTimeMillis()
 
+        // Images
         val imagesToKeep = post.images.filter { it.id !in postUpdate.attachmentDeleteIds!! }
         val imagesToDelete = post.images.filter{ it.id in postUpdate.attachmentDeleteIds!! }
         val newAttachments = postUpdate.images?.map{
@@ -115,11 +116,8 @@ class PostService(
         } ?: emptyList()
         post.images = (imagesToKeep + newAttachments).toMutableList()
         val updatedPost = postRepository.save(post)
-        try{
-            imagesToDelete.forEach{fileService.deleteImage(it.id)}
-        } catch(ex: FileOperationFailureException) {
-            log.error{ex}
-        }
+        imagesToDelete.forEach { runCatching { fileService.deleteImage(it.id) }.onFailure { log.error(it) { it.message } } }
+
         return updatedPost
     }
 
