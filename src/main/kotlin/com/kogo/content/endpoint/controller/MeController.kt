@@ -173,7 +173,7 @@ class MeController @Autowired constructor(
                 schema = Schema(implementation = Notification::class)
             ))],
         )]
-    ) fun getNotification(
+    ) fun getNotifications(
         paginationRequest: PaginationRequest
     ): ResponseEntity<*> = run {
         val me = userService.findCurrentUser()

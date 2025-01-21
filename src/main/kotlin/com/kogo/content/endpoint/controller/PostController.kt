@@ -198,7 +198,7 @@ class PostController @Autowired constructor(
                 sender = user,
                 eventType = EventType.LIKE_TO_POST,
                 message = NotificationMessage(
-                    title = "New Like",
+                    title = post.content.take(50) + if (post.content.length > 50) "..." else "",
                     body = "${user.username} liked your post",
                     dataType = DataType.POST,
                     data = post
@@ -259,8 +259,8 @@ class PostController @Autowired constructor(
                 sender = user,
                 eventType = EventType.LIKE_TO_COMMENT,
                 message = NotificationMessage(
-                    title = "New Like",
-                    body = "${user.username} liked your comment: ${comment.content}",
+                    title = comment.content.take(50) + if (comment.content.length > 50) "..." else "",
+                    body = "${user.username} liked your comment",
                     dataType = DataType.COMMENT,
                     data = comment
                 )
@@ -324,8 +324,8 @@ class PostController @Autowired constructor(
                 sender = user,
                 eventType = EventType.LIKE_TO_REPLY,
                 message = NotificationMessage(
-                    title = "New Like",
-                    body = "${user.username} liked your reply: ${reply.content}",
+                    title = reply.content.take(50) + if (reply.content.length > 50) "..." else "",
+                    body = "${user.username} liked your reply",
                     dataType = DataType.REPLY,
                     data = reply
                 )
@@ -407,8 +407,8 @@ class PostController @Autowired constructor(
             eventType = EventType.CREATE_COMMENT_TO_POST,
             sender = author,
             message = NotificationMessage(
-                title = "New Comment",
-                body = "${author.username} commented: ${newComment.content}",
+                title = commentDto.content.take(50) + if (commentDto.content.length > 50) "..." else "",
+                body = "${author.username} commented on your post",
                 dataType = DataType.COMMENT,
                 data = newComment
             )
@@ -529,8 +529,8 @@ class PostController @Autowired constructor(
             sender = author,
             eventType = EventType.CREATE_REPLY_TO_COMMENT,
             message = NotificationMessage(
-                title = "New Reply",
-                body = "${author.username} replied: ${newReply.content}",
+                title = commentDto.content.take(50) + if (commentDto.content.length > 50) "..." else "",
+                body = "${author.username} replied to your comment",
                 dataType = DataType.REPLY,
                 data = newReply
             )

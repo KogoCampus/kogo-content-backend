@@ -2,6 +2,7 @@ package com.kogo.content.storage.repository
 
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.model.Notification
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,7 +22,9 @@ class NotificationRepositoryCustomImpl : NotificationRepositoryCustom {
     override fun findAllByRecipientId(recipientId:String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
         return mongoPaginationQueryBuilder.getPage(
             Notification::class,
-            paginationRequest = paginationRequest.withFilter("recipientId", recipientId)
+            paginationRequest = paginationRequest
+                .withFilter("recipientId", recipientId)
+                .withSort("createdAt", SortDirection.DESC)
         )
     }
 }
