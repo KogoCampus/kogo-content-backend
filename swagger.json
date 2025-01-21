@@ -1552,7 +1552,7 @@
           "me-controller"
         ],
         "summary": "get notifications whose recipient is me",
-        "operationId": "getNotification",
+        "operationId": "getNotifications",
         "parameters": [
           {
             "name": "page_token",
