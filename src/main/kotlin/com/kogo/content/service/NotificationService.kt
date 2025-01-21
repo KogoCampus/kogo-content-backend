@@ -25,12 +25,6 @@ class NotificationService(
 
     private val restTemplate = RestTemplate()
 
-    fun updatePushToken(recipientId: String, pushToken: String): User {
-        val updatingUser = userRepository.findUserById(recipientId)
-        updatingUser!!.pushNotificationToken = pushToken
-        return userRepository.save(updatingUser)
-    }
-
     fun createNotification(recipientId: String, sender: User, eventType: EventType, message: NotificationMessage): Notification {
         val notification = Notification(
             recipientId = recipientId,
@@ -51,12 +45,13 @@ class NotificationService(
             message = message,
             isPushNotification = true,
         )
-        val recipientPushToken = userRepository.findUserById(recipientId)?.pushNotificationToken ?: return notification
         val newNotification = notificationRepository.save(notification)
 
         // Send the push notification to the Expo server
+        val recipientPushToken = userRepository.findUserById(recipientId)?.pushNotificationToken ?: return newNotification
+
         val pushNotificationRequest = PushNotificationRequest(
-            to = recipientPushToken!!,
+            to = recipientPushToken,
             title = message.title,
             body = message.body,
             data = message.data,
