@@ -54,7 +54,7 @@ class FeedControllerTest @Autowired constructor(
         val paginationSlice = PaginationSlice(items = posts)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { postService.findAllTrending(capture(paginationRequestSlot)) } returns paginationSlice
+        every { postService.findAllTrending(capture(paginationRequestSlot), any()) } returns paginationSlice
 
         mockMvc.get("/media/feeds/trendingPosts") {
             contentType = MediaType.APPLICATION_JSON
@@ -66,7 +66,7 @@ class FeedControllerTest @Autowired constructor(
             jsonPath("$.data[0].viewCount") { value(post.viewerIds.size) }
         }
 
-        verify { postService.findAllTrending(any()) }
+        verify { postService.findAllTrending(any(), any()) }
     }
 
     @Test
@@ -93,7 +93,7 @@ class FeedControllerTest @Autowired constructor(
     @Test
     fun `should handle pagination parameters correctly`() {
         val paginationRequestSlot = slot<PaginationRequest>()
-        every { postService.findAllTrending(capture(paginationRequestSlot)) } returns PaginationSlice(items = emptyList())
+        every { postService.findAllTrending(capture(paginationRequestSlot), any()) } returns PaginationSlice(items = emptyList())
 
         mockMvc.get("/media/feeds/trendingPosts?limit=5") {
             contentType = MediaType.APPLICATION_JSON
@@ -101,7 +101,7 @@ class FeedControllerTest @Autowired constructor(
             status { isOk() }
         }
 
-        verify { postService.findAllTrending(match { it.limit == 5 }) }
+        verify { postService.findAllTrending(match { it.limit == 5 }, any()) }
     }
 
     @Test

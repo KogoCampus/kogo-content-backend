@@ -18,6 +18,7 @@ import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -66,8 +67,20 @@ class PostService(
         )
     }
 
-    fun findAllTrending(paginationRequest: PaginationRequest) = run {
-        val preAggregationOperations = Post.addPopularityAggregationOperations()
+    fun findAllTrending(paginationRequest: PaginationRequest, user: User) = run {
+        val preAggregationOperations = mutableListOf<AggregationOperation>()
+
+        // Add match operation to filter groups
+        val matchOperation = Aggregation.match(
+            Criteria().orOperator(
+                Criteria.where("group.isSchoolGroup").exists(false),
+                Criteria.where("group.id").`is`(ObjectId(user.schoolInfo.schoolGroupId))
+            )
+        )
+        preAggregationOperations.add(matchOperation)
+
+        // Add popularity scoring operations
+        preAggregationOperations.addAll(Post.addPopularityAggregationOperations())
 
         mongoPaginationQueryBuilder.getPage(
             entityClass = Post::class,

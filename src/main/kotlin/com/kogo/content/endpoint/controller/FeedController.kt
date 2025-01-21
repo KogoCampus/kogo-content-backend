@@ -52,7 +52,7 @@ class FeedController @Autowired constructor(
     )
     fun listTrendingPosts(paginationRequest: PaginationRequest) = run {
         val user = userService.findCurrentUser()
-        val paginationResponse = postService.findAllTrending(paginationRequest)
+        val paginationResponse = postService.findAllTrending(paginationRequest, user)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { PostResponse.from(it, user) },
