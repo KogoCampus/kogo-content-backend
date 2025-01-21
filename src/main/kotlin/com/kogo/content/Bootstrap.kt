@@ -114,7 +114,7 @@ class Bootstrap(private val mongoTemplate: MongoTemplate) {
                     User(
                         id = systemUserId,
                         username = "system_user",
-                        email = "op@stdout.app",
+                        email = "op@sfu.ca",
                         schoolInfo = SchoolInfo(
                             schoolKey = "system",
                             schoolName = "System",

@@ -4,23 +4,18 @@ import com.kogo.content.endpoint.model.GroupDto
 import com.kogo.content.endpoint.model.GroupUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
+import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.search.index.GroupSearchIndex
 import com.kogo.content.service.NotificationService.Companion.log
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
-import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.repository.*
 import com.kogo.content.storage.model.entity.User
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.ParameterizedTypeReference
+import org.bson.Document
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.http.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.client.RestTemplate
-import org.springframework.http.client.MultipartBodyBuilder
-import org.springframework.web.multipart.MultipartFile
+import org.springframework.data.mongodb.core.aggregation.Aggregation
 
 @Service
 class GroupService(
@@ -36,8 +31,24 @@ class GroupService(
 
     fun findAllByFollowerId(userId: String): List<Group> = groupRepository.findAllByFollowerId(userId)
 
-    // TODO: trending groups, temporarily set to find all
-    fun findAllTrending(paginationRequest: PaginationRequest) = findAll(paginationRequest)
+    fun findAllTrending(paginationRequest: PaginationRequest) = run {
+        val matchOperation = Aggregation.match(
+            Criteria.where("isSchoolGroup").ne(true)
+        )
+
+        // Add field for follower count
+        val addFieldsOperation = Aggregation.addFields()
+            .addField("followerCount")
+            .withValue(Document("\$size", "\$followers"))
+            .build()
+
+        mongoPaginationQueryBuilder.getPage(
+            entityClass = Group::class,
+            paginationRequest = paginationRequest.withSort("followerCount", SortDirection.DESC),
+            preAggregationOperations = listOf(matchOperation, addFieldsOperation),
+            allowedDynamicFields = setOf("followerCount")
+        )
+    }
 
     fun search(
         searchKeyword: String,
