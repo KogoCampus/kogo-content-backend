@@ -11,5 +11,7 @@ data class UserUpdate (
         sizeMax = 12000000, // 12MB
         acceptedMediaTypes = [MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_JPEG_VALUE],
         message = "An image must have either 'image/png' or 'image/jpeg' media type and maximum size 12MB")
-    var profileImage: MultipartFile?= null
+    var profileImage: MultipartFile?= null,
+
+    var pushToken: String? = null
 )

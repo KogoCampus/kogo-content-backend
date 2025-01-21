@@ -137,23 +137,6 @@ class MeControllerTest @Autowired constructor(
     }
 
     @Test
-    fun `should update push token successfully`() {
-        val pushToken = "new-push-token"
-        val updatedUser = currentUser.copy().apply {
-            pushNotificationToken = pushToken
-        }
-
-        every { notificationService.updatePushToken(currentUser.id!!, pushToken) } returns updatedUser
-
-        mockMvc.put("/me/push-token?push_token=$pushToken") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data.pushNotificationToken") { value(pushToken) }
-        }
-    }
-
-    @Test
     fun `should get user notifications with pagination`() {
         val sender = Fixture.createUserFixture()
         val notifications = listOf(

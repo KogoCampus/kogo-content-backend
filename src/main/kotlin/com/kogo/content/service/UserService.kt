@@ -39,6 +39,7 @@ class UserService @Autowired constructor(
     fun update(user: User, userUpdate: UserUpdate): User {
         with(userUpdate) {
             username?.let { user.username = it }
+            pushToken?.let { user.pushNotificationToken = it }
             profileImage?.let { it ->
                 user.profileImage?.let { oldImage ->
                     runCatching { fileService.deleteImage(oldImage.id) }
