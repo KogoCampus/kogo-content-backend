@@ -112,6 +112,13 @@ class GroupService(
         return false
     }
 
+    @Transactional
+    fun deleteProfileImage(group: Group): Group {
+        group.profileImage?.let { fileService.deleteImage(it.id!!) }
+        group.profileImage = null
+        return groupRepository.save(group)
+    }
+
     fun transferOwnership(group: Group, user: User): Group {
         group.owner = user
         groupRepository.save(group)

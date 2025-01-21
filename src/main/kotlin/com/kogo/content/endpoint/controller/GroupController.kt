@@ -211,4 +211,29 @@ class GroupController @Autowired constructor(
         groupService.unfollow(group, user)
         HttpJsonResponse.successResponse(GroupResponse.from(group, user), "User's follow successfully removed from group: $groupId")
     }
+
+    @DeleteMapping("groups/{id}/profileImage")
+    @Operation(
+        summary = "delete group's profile image",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))]
+            ),
+            ApiResponse(
+                responseCode = "403",
+                content = [Content(mediaType = "application/json", schema = Schema(example = "{ \"reason\": \"USER_IS_NOT_OWNER\"}"))]
+            )
+        ])
+    fun deleteGroupProfileImage(@PathVariable("id") groupId: String): ResponseEntity<*> = run {
+        val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
+        val user = userService.findCurrentUser()
+
+        if(group.owner.id != user.id)
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "group is not owned by user ${user.id}")
+
+        val updatedGroup = groupService.deleteProfileImage(group)
+        HttpJsonResponse.successResponse(GroupResponse.from(updatedGroup, user))
+    }
 }

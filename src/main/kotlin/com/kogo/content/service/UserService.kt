@@ -39,14 +39,20 @@ class UserService @Autowired constructor(
     fun update(user: User, userUpdate: UserUpdate): User {
         with(userUpdate) {
             username?.let { user.username = it }
-            profileImage?.let {
+            profileImage?.let { it ->
                 user.profileImage?.let { oldImage ->
-                    runCatching { fileService.deleteImage(oldImage.id!!) }
+                    runCatching { fileService.deleteImage(oldImage.id) }
                         .onFailure { log.error(it) { "Failed to delete old profile image: ${oldImage.id}" } }
                 }
                 user.profileImage = fileService.uploadImage(it)
             }
         }
+        return userRepository.save(user)
+    }
+
+    fun deleteProfileImage(user: User): User {
+        user.profileImage?.let { fileService.deleteImage(it.id) }
+        user.profileImage = null
         return userRepository.save(user)
     }
 }

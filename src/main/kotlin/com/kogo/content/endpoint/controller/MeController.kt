@@ -210,5 +210,20 @@ class MeController @Autowired constructor(
             headers = paginationResponse.toHttpHeaders()
         )
     }
+
+    @DeleteMapping("me/profileImage")
+    @Operation(
+        summary = "delete my profile image",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )]
+    )
+    fun deleteProfileImage(): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val updatedUser = userService.deleteProfileImage(me)
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
 }
 

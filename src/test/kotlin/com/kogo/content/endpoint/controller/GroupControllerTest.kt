@@ -272,4 +272,42 @@ class GroupControllerTest @Autowired constructor(
 
         verify(exactly = 0) { groupService.unfollow(any(), any()) }
     }
+
+    @Test
+    fun `should delete group profile image successfully when user is owner`() {
+        val updatedGroup = group.copy().apply {
+            profileImage = null
+        }
+
+        every { groupService.deleteProfileImage(group) } returns updatedGroup
+
+        mockMvc.delete("/media/groups/${group.id}/profileImage") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.profileImage") { doesNotExist() }
+        }
+
+        verify { groupService.deleteProfileImage(group) }
+    }
+
+    @Test
+    fun `should fail to delete group profile image when user is not owner`() {
+        val differentUser = Fixture.createUserFixture()
+        val groupOwnedByOther = Fixture.createGroupFixture(owner = differentUser)
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { groupService.find(groupOwnedByOther.id!!) } returns groupOwnedByOther
+        every { groupService.findOrThrow(groupOwnedByOther.id!!) } returns groupOwnedByOther
+
+        mockMvc.delete("/media/groups/${groupOwnedByOther.id}/profileImage") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
+            jsonPath("$.details") { value("group is not owned by user ${currentUser.id}") }
+        }
+
+        verify(exactly = 0) { groupService.deleteProfileImage(any()) }
+    }
 }

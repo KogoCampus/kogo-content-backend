@@ -184,4 +184,20 @@ class MeControllerTest @Autowired constructor(
             jsonPath("$.data[0].message.dataType") { value(DataType.POST.name) }
         }
     }
+
+    @Test
+    fun `should delete profile image successfully`() {
+        val updatedUser = currentUser.copy().apply {
+            profileImage = null
+        }
+
+        every { userService.deleteProfileImage(currentUser) } returns updatedUser
+
+        mockMvc.delete("/me/profileImage") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.profileImage") { doesNotExist() }
+        }
+    }
 }
