@@ -745,38 +745,6 @@
         }
       }
     },
-    "/me/push-token": {
-      "put": {
-        "tags": [
-          "me-controller"
-        ],
-        "summary": "update my push token",
-        "operationId": "updatePushToken",
-        "parameters": [
-          {
-            "name": "push_token",
-            "in": "query",
-            "description": "Push token",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserData"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/posts/{postId}/comments": {
       "get": {
         "tags": [
@@ -2125,11 +2093,11 @@
           "profileImage": {
             "type": "string",
             "format": "binary"
+          },
+          "pushToken": {
+            "type": "string"
           }
         }
-      },
-      "UserData": {
-        "type": "object"
       },
       "CommentDto": {
         "required": [
