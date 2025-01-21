@@ -1663,6 +1663,71 @@
           }
         }
       }
+    },
+    "/media/groups/{id}/profileImage": {
+      "delete": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "delete group\u0027s profile image",
+        "operationId": "deleteGroupProfileImage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": {
+                    "reason": "USER_IS_NOT_OWNER"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/profileImage": {
+      "delete": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "delete my profile image",
+        "operationId": "deleteProfileImage",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
