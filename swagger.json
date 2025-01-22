@@ -11,6 +11,75 @@
     }
   ],
   "paths": {
+    "/media/posts/{postId}": {
+      "get": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "return a post",
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "update attributes of an existing post",
+        "operationId": "updatePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/posts/{postId}/likes": {
       "put": {
         "tags": [
@@ -611,91 +680,6 @@
         }
       }
     },
-    "/media/groups/{groupId}/posts/{postId}": {
-      "put": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "update attributes of an existing post",
-        "operationId": "updatePost",
-        "parameters": [
-          {
-            "name": "groupId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/PostUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "delete a post",
-        "operationId": "deletePostInGroup",
-        "parameters": [
-          {
-            "name": "groupId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/me": {
       "get": {
         "tags": [
@@ -1142,6 +1126,38 @@
         }
       }
     },
+    "/me/blacklist": {
+      "post": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "add a user to my blacklist",
+        "operationId": "addUserToBlacklist",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "ID of the user to blacklist",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/search/posts": {
       "get": {
         "tags": [
@@ -1283,37 +1299,6 @@
                   "items": {
                     "$ref": "#/components/schemas/GroupResponse"
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/posts/{postId}": {
-      "get": {
-        "tags": [
-          "post-controller"
-        ],
-        "summary": "return a post",
-        "operationId": "getPost",
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponse"
                 }
               }
             }
@@ -1676,6 +1661,45 @@
         }
       }
     },
+    "/media/groups/{groupId}/posts/{postId}": {
+      "delete": {
+        "tags": [
+          "post-controller"
+        ],
+        "summary": "delete a post",
+        "operationId": "deletePostInGroup",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/profileImage": {
       "delete": {
         "tags": [
@@ -1906,7 +1930,6 @@
         "required": [
           "id",
           "schoolName",
-          "schoolShortenedName",
           "username"
         ],
         "type": "object",
@@ -1966,39 +1989,6 @@
           }
         }
       },
-      "CommentUpdate": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string"
-          }
-        }
-      },
-      "GroupUpdate": {
-        "type": "object",
-        "properties": {
-          "groupName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
-            }
-          },
-          "profileImage": {
-            "type": "string",
-            "format": "binary"
-          }
-        }
-      },
       "PostUpdate": {
         "type": "object",
         "properties": {
@@ -2033,8 +2023,42 @@
           }
         }
       },
+      "CommentUpdate": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupUpdate": {
+        "type": "object",
+        "properties": {
+          "groupName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "list of tags to attach to the topic. Beware that previously attached tags will be removed."
+            }
+          },
+          "profileImage": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
       "IncludeCredentials": {
         "required": [
+          "blacklistUserIds",
           "email",
           "id",
           "schoolInfo",
@@ -2059,14 +2083,19 @@
           },
           "pushNotificationToken": {
             "type": "string"
+          },
+          "blacklistUserIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
       "SchoolInfo": {
         "required": [
           "schoolKey",
-          "schoolName",
-          "schoolShortenedName"
+          "schoolName"
         ],
         "type": "object",
         "properties": {
@@ -2276,41 +2305,58 @@
           }
         }
       },
-      "Notification": {
+      "Attachment": {
         "required": [
-          "createdAt",
-          "eventType",
-          "isPushNotification",
-          "message",
-          "recipientId",
-          "sender"
+          "contentType",
+          "filename",
+          "id",
+          "size",
+          "url"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "recipientId": {
+          "filename": {
             "type": "string"
           },
+          "url": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Notification": {
+        "required": [
+          "body",
+          "createdAt",
+          "recipient",
+          "sender",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/User"
+          },
           "sender": {
-            "$ref": "#/components/schemas/Public"
+            "$ref": "#/components/schemas/User"
           },
-          "eventType": {
-            "type": "string",
-            "enum": [
-              "LIKE_TO_POST",
-              "LIKE_TO_COMMENT",
-              "LIKE_TO_REPLY",
-              "CREATE_COMMENT_TO_POST",
-              "CREATE_REPLY_TO_COMMENT"
-            ]
+          "title": {
+            "type": "string"
           },
-          "message": {
-            "$ref": "#/components/schemas/NotificationMessage"
-          },
-          "isPushNotification": {
-            "type": "boolean"
+          "body": {
+            "type": "string"
           },
           "createdAt": {
             "type": "integer",
@@ -2318,32 +2364,45 @@
           }
         }
       },
-      "NotificationMessage": {
+      "User": {
         "required": [
-          "body",
-          "data",
-          "dataType",
-          "title"
+          "blacklistUserIds",
+          "email",
+          "followingGroupIds",
+          "schoolInfo",
+          "username"
         ],
         "type": "object",
         "properties": {
-          "title": {
+          "id": {
             "type": "string"
           },
-          "body": {
+          "username": {
             "type": "string"
           },
-          "dataType": {
-            "type": "string",
-            "enum": [
-              "POST",
-              "COMMENT",
-              "REPLY",
-              "SYSTEM"
-            ]
+          "email": {
+            "type": "string"
           },
-          "data": {
-            "type": "object"
+          "schoolInfo": {
+            "$ref": "#/components/schemas/SchoolInfo"
+          },
+          "pushNotificationToken": {
+            "type": "string"
+          },
+          "profileImage": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "followingGroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blacklistUserIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
