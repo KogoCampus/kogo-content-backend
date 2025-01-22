@@ -217,6 +217,23 @@ class MeControllerTest @Autowired constructor(
     }
 
     @Test
+    fun `should remove user from blacklist successfully`() {
+        val targetUser = Fixture.createUserFixture()
+        val updatedUser = currentUser.copy().apply {
+            blacklistUserIds.remove(targetUser.id!!)
+        }
+
+        every { userService.findOrThrow(targetUser.id!!) } returns targetUser
+        every { userService.removeUserFromBlacklist(currentUser, targetUser) } returns updatedUser
+
+        mockMvc.delete("/me/blacklist/${targetUser.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+        }
+    }
+
+    @Test
     fun `should delete profile image successfully`() {
         val updatedUser = currentUser.copy().apply {
             profileImage = null

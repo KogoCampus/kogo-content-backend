@@ -215,6 +215,25 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser ?: me))
     }
 
+    @DeleteMapping("me/blacklist/{user_id}")
+    @Operation(
+        summary = "remove a user from my blacklist",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )]
+    )
+    fun removeUserFromBlacklist(@PathVariable("user_id") targetUserId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val targetUser = userService.findOrThrow(targetUserId)
+    
+        val updatedUser = userService.removeUserFromBlacklist(me, targetUser)
+        
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser ?: me))
+    }
+
+
     @DeleteMapping("me/profileImage")
     @Operation(
         summary = "delete my profile image",

@@ -64,4 +64,9 @@ class UserService @Autowired constructor(
         }
         return null
     }
+
+    fun removeUserFromBlacklist(user: User, targetUser: User): User? {
+        user.blacklistUserIds.remove(targetUser.id)
+        return userRepository.save(user)
+    }
 }
