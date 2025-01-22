@@ -11,13 +11,17 @@ abstract class Logger(loggerName: String? = null) {
     val log = LoggerInstance(kotlinLogger)
 
     class LoggerInstance(private val kLogger: KLogger) : KLogger by kLogger {
-        // Override the error method to include Sentry reporting
-        override fun error(throwable: Throwable?, msg: () -> Any?) {
-            kLogger.error(throwable, msg)
+        override fun error(throwable: Throwable?, message: () -> Any?) {
+            kLogger.error(throwable, message)
 
             throwable?.let {
                 Sentry.captureException(it)
             }
+        }
+
+        override fun error(message: () -> Any?) {
+            kLogger.error(message)
+            Sentry.captureMessage(message().toString())
         }
     }
 }

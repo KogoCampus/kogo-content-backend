@@ -6,7 +6,7 @@ import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.search.index.GroupSearchIndex
-import com.kogo.content.service.NotificationService.Companion.log
+import com.kogo.content.service.PushNotificationService.Companion.log
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.repository.*
