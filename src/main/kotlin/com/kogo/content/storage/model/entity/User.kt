@@ -4,6 +4,7 @@ import com.kogo.content.storage.model.Attachment
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.DocumentReference
 
 @Document
 data class User (
@@ -23,7 +24,8 @@ data class User (
 
     val followingGroupIds: MutableList<String> = mutableListOf(),
 
-    val blacklistUserIds: MutableList<String> = mutableListOf(),
+    @DocumentReference
+    val blacklistUsers: MutableList<User> = mutableListOf(),
 )
 
 data class SchoolInfo (

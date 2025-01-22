@@ -212,7 +212,7 @@ class MeController @Autowired constructor(
 
         val updatedUser = userService.addUserToBlacklist(me, targetUser)
 
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser ?: me))
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
     @DeleteMapping("me/blacklist/{user_id}")
@@ -227,10 +227,10 @@ class MeController @Autowired constructor(
     fun removeUserFromBlacklist(@PathVariable("user_id") targetUserId: String): ResponseEntity<*> = run {
         val me = userService.findCurrentUser()
         val targetUser = userService.findOrThrow(targetUserId)
-    
+
         val updatedUser = userService.removeUserFromBlacklist(me, targetUser)
-        
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser ?: me))
+
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
 

@@ -83,7 +83,7 @@ class Bootstrap(private val mongoTemplate: MongoTemplate) {
                         id = schoolGroupId,
                         groupName = school.name,
                         description = "Official group for ${school.name}",
-                        tags = mutableListOf(school.shortenedName),
+                        tags = school.shortenedName?.let { mutableListOf(school.shortenedName) } ?: mutableListOf(),
                         owner = systemUser,
                         isSchoolGroup = true,
                     )

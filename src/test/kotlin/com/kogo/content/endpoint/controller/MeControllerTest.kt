@@ -167,7 +167,7 @@ class MeControllerTest @Autowired constructor(
     fun `should add user to blacklist successfully`() {
         val targetUser = Fixture.createUserFixture()
         val updatedUser = currentUser.copy().apply {
-            blacklistUserIds.add(targetUser.id!!)
+            blacklistUsers.add(targetUser)
         }
 
         every { userService.findOrThrow(targetUser.id!!) } returns targetUser
@@ -220,7 +220,7 @@ class MeControllerTest @Autowired constructor(
     fun `should remove user from blacklist successfully`() {
         val targetUser = Fixture.createUserFixture()
         val updatedUser = currentUser.copy().apply {
-            blacklistUserIds.remove(targetUser.id!!)
+            blacklistUsers.add(targetUser)
         }
 
         every { userService.findOrThrow(targetUser.id!!) } returns targetUser
