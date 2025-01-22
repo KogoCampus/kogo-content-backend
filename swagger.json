@@ -1720,6 +1720,37 @@
           }
         }
       }
+    },
+    "/me/blacklist/{user_id}": {
+      "delete": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "remove a user from my blacklist",
+        "operationId": "removeUserFromBlacklist",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
