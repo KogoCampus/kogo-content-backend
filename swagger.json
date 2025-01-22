@@ -2089,7 +2089,7 @@
       },
       "IncludeCredentials": {
         "required": [
-          "blacklistUserIds",
+          "blacklistUsers",
           "email",
           "id",
           "schoolInfo",
@@ -2115,10 +2115,10 @@
           "pushNotificationToken": {
             "type": "string"
           },
-          "blacklistUserIds": {
+          "blacklistUsers": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/Public"
             }
           }
         }
@@ -2397,7 +2397,7 @@
       },
       "User": {
         "required": [
-          "blacklistUserIds",
+          "blacklistUsers",
           "email",
           "followingGroupIds",
           "schoolInfo",
@@ -2429,10 +2429,10 @@
               "type": "string"
             }
           },
-          "blacklistUserIds": {
+          "blacklistUsers": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/User"
             }
           }
         }
