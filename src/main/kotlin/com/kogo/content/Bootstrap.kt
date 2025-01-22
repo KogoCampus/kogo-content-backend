@@ -43,7 +43,7 @@ class Bootstrap(private val mongoTemplate: MongoTemplate) {
         val key: String,
         val emailDomains: List<String>,
         val name: String,
-        val shortenedName: String
+        val shortenedName: String?
     )
 
     @EventListener(ApplicationReadyEvent::class)
