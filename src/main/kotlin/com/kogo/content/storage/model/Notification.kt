@@ -14,7 +14,7 @@ data class Notification (
     val recipient: User,
 
     @DocumentReference
-    val sender: User,
+    val sender: User?,
 
     val title: String,
 

@@ -125,15 +125,19 @@ class PostService(
             )
         )
 
-        pushNotificationService.createPushNotification(
-            Notification(
-                recipient = savedPost.group.owner,
-                sender = author,
-                title = "A new post in your group!",
-                body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
-            ),
-            PushNotificationService.linkToGroup(savedPost.group.id!!)
-        )
+        savedPost.group.followers.forEach {
+            if (it.follower.id != author.id) {
+                pushNotificationService.createPushNotification(
+                    Notification(
+                        recipient = it.follower,
+                        sender = null,
+                        title = "A new post in ${savedPost.group.groupName} group!",
+                        body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
+                    ),
+                    PushNotificationService.linkToGroup(savedPost.group.id!!)
+                )
+            }
+        }
 
         return savedPost
     }
