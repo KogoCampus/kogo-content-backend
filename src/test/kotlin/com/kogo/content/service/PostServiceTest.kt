@@ -326,6 +326,12 @@ class PostServiceTest {
 
         every { fileService.uploadImage(testImage) } returns testAttachment
         every { postRepository.save(any()) } answers { firstArg() }
+        every {
+            pushNotificationService.createPushNotification(
+                any(),
+                any()
+            )
+        } returns mockk()
 
         val result = postService.create(group, user, postDto)
 
@@ -339,6 +345,7 @@ class PostServiceTest {
         verify {
             fileService.uploadImage(testImage)
             postRepository.save(any())
+            pushNotificationService.createPushNotification(any(), any())
         }
     }
 
