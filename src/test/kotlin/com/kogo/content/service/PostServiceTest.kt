@@ -110,6 +110,12 @@ class PostServiceTest {
         )
 
         every { postRepository.save(any()) } answers { firstArg() }
+        every {
+            pushNotificationService.createPushNotification(
+                any(),
+                any()
+            )
+        } returns mockk()
 
         val result = postService.create(group, user, postDto)
 
@@ -117,7 +123,10 @@ class PostServiceTest {
         assertThat(result.content).isEqualTo(postDto.content)
         assertThat(result.group).isEqualTo(group)
         assertThat(result.author).isEqualTo(user)
-        verify { postRepository.save(any()) }
+        verify {
+            postRepository.save(any())
+            pushNotificationService.createPushNotification(any(), any())
+        }
     }
 
     @Test

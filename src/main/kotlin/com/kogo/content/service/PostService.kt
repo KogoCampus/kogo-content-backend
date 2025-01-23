@@ -124,6 +124,17 @@ class PostService(
                 images = attachments.toMutableList(),
             )
         )
+
+        pushNotificationService.createPushNotification(
+            Notification(
+                recipient = savedPost.group.owner,
+                sender = author,
+                title = "A new post in your group!",
+                body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
+            ),
+            PushNotificationService.linkToGroup(savedPost.group.id!!)
+        )
+
         return savedPost
     }
 
