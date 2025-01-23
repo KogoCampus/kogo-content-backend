@@ -5,8 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.stereotype.Component
 
+@EnableAsync
 @SpringBootApplication
 class Application
 
