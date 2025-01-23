@@ -97,7 +97,7 @@ class GroupController @Autowired constructor(
         )])
     fun createGroup(@Valid groupDto: GroupDto): ResponseEntity<*> = run {
         if (groupService.findByGroupName(groupDto.groupName) != null) {
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "group name must be unique: ${groupDto.groupName}")
+            return HttpJsonResponse.errorResponse(ErrorCode.DUPLICATED, "group name must be unique: ${groupDto.groupName}")
         }
         val user = userService.findCurrentUser()
         val group = groupService.create(groupDto, owner = userService.findCurrentUser())

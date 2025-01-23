@@ -10,6 +10,7 @@ enum class ErrorCode(val httpStatus: HttpStatus) {
     USER_ACTION_DENIED(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    DUPLICATED(HttpStatus.CONFLICT),
 
     // 50X
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR)

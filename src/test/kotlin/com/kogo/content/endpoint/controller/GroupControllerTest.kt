@@ -86,8 +86,8 @@ class GroupControllerTest @Autowired constructor(
             part(MockPart("groupName", group.groupName.toByteArray()))
             part(MockPart("description", "new description".toByteArray()))
         }.andExpect {
-            status { isBadRequest() }
-            jsonPath("$.error") { value(ErrorCode.BAD_REQUEST.name) }
+            status { isConflict() }
+            jsonPath("$.error") { value(ErrorCode.DUPLICATED.name) }
         }
     }
 
