@@ -126,7 +126,7 @@ class PostService(
         )
 
         savedPost.group.followers.forEach {
-            if (it.follower.id != author.id) {
+            if (!it.follower.id.equals(author.id)) {
                 pushNotificationService.createPushNotification(
                     Notification(
                         recipient = it.follower,
@@ -134,7 +134,7 @@ class PostService(
                         title = "A new post in ${savedPost.group.groupName} group!",
                         body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
                     ),
-                    PushNotificationService.linkToGroup(savedPost.group.id!!)
+                    PushNotificationService.linkToPost(savedPost.id!!)
                 )
             }
         }
@@ -178,15 +178,17 @@ class PostService(
         post.comments.add(newComment)
         postRepository.save(post)
 
-        pushNotificationService.createPushNotification(
-            Notification(
-                recipient = post.author,
-                sender = author,
-                title = newComment.content.take(50) + if (newComment.content.length > 50) "..." else "",
-                body = "${author.username} commented on your post",
-            ),
-            PushNotificationService.linkToComment(post.id!!, newComment.id)
-        )
+        if (!post.author.id.equals(author.id)) {
+            pushNotificationService.createPushNotification(
+                Notification(
+                    recipient = post.author,
+                    sender = author,
+                    title = newComment.content.take(50) + if (newComment.content.length > 50) "..." else "",
+                    body = "${author.username} commented on your post",
+                ),
+                PushNotificationService.linkToComment(post.id!!, newComment.id)
+            )
+        }
         return newComment
     }
 
@@ -211,15 +213,17 @@ class PostService(
         comment.replies.add(newReply)
         postRepository.save(post)
 
-        pushNotificationService.createPushNotification(
-            Notification(
-                recipient = post.author,
-                sender = author,
-                title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
-                body = "${author.username} replied to your comment",
-            ),
-            PushNotificationService.linkToComment(post.id!!, newReply.id)
-        )
+        if (!comment.author.id.equals(author.id)) {
+            pushNotificationService.createPushNotification(
+                Notification(
+                    recipient = post.author,
+                    sender = author,
+                    title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
+                    body = "${author.username} replied to your comment",
+                ),
+                PushNotificationService.linkToComment(post.id!!, newReply.id)
+            )
+        }
         return newReply
     }
 
@@ -271,7 +275,9 @@ class PostService(
             postRepository.save(post)
 
             val wasPreviouslyLiked = post.likes.any { it.userId == user.id }
-            if (!wasPreviouslyLiked) {
+            val isNotAuthor = !post.author.id.equals(user.id)
+
+            if (!wasPreviouslyLiked && isNotAuthor) {
                 pushNotificationService.createPushNotification(
                     Notification(
                         recipient = post.author,
@@ -316,7 +322,9 @@ class PostService(
                 postRepository.save(post)
 
                 val wasPreviouslyLiked = comment.likes.any { it.userId == user.id }
-                if (!wasPreviouslyLiked) {
+                val isNotAuthor = !comment.author.id.equals(user.id)
+
+                if (!wasPreviouslyLiked && isNotAuthor) {
                     pushNotificationService.createPushNotification(
                         Notification(
                             recipient = comment.author,
@@ -367,7 +375,9 @@ class PostService(
                 postRepository.save(post)
 
                 val wasPreviouslyLiked = reply.likes.any { it.userId == user.id }
-                if (!wasPreviouslyLiked) {
+                val isNotAuthor = !reply.author.id.equals(user.id)
+
+                if (!wasPreviouslyLiked && isNotAuthor) {
                     pushNotificationService.createPushNotification(
                         Notification(
                             recipient = reply.author,

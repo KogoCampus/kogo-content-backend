@@ -158,12 +158,6 @@ class PostServiceTest {
         val commentContent = "Test Comment"
 
         every { postRepository.save(any()) } answers { firstArg() }
-        every {
-            pushNotificationService.createPushNotification(
-                any(),
-                match { it.startsWith("kogocampus://post/${post.id}/comment/") }
-            )
-        } returns mockk()
 
         val result = postService.addCommentToPost(post, commentContent, user)
 
@@ -173,7 +167,6 @@ class PostServiceTest {
 
         verify {
             postRepository.save(post)
-            pushNotificationService.createPushNotification(any(), any())
         }
     }
 
@@ -206,12 +199,6 @@ class PostServiceTest {
         val replyContent = "Test Reply"
 
         every { postRepository.save(any()) } answers { firstArg() }
-        every {
-            pushNotificationService.createPushNotification(
-                any(),
-                any()
-            )
-        } returns mockk()
 
         val result = postService.addReplyToComment(post, comment.id, replyContent, user)
 
@@ -221,7 +208,6 @@ class PostServiceTest {
 
         verify {
             postRepository.save(post)
-            pushNotificationService.createPushNotification(any(), any())
         }
     }
 
@@ -416,12 +402,6 @@ class PostServiceTest {
         val commentContent = "Test Comment"
 
         every { postRepository.save(any()) } answers { firstArg() }
-        every {
-            pushNotificationService.createPushNotification(
-                any(),
-                match { it.startsWith("kogocampus://post/${post.id}/comment/") }
-            )
-        } returns mockk()
 
         val result = postService.addCommentToPost(post, commentContent, user)
 
@@ -431,7 +411,6 @@ class PostServiceTest {
 
         verify {
             postRepository.save(post)
-            pushNotificationService.createPushNotification(any(), any())
         }
     }
 
@@ -446,12 +425,6 @@ class PostServiceTest {
         val replyContent = "Test Reply"
 
         every { postRepository.save(any()) } answers { firstArg() }
-        every {
-            pushNotificationService.createPushNotification(
-                any(),
-                any()
-            )
-        } returns mockk()
 
         val result = postService.addReplyToComment(post, comment.id.toString(), replyContent, user)
 
@@ -461,7 +434,6 @@ class PostServiceTest {
 
         verify {
             postRepository.save(post)
-            pushNotificationService.createPushNotification(any(), any())
         }
     }
 }
