@@ -2369,7 +2369,6 @@
           "body",
           "createdAt",
           "recipient",
-          "sender",
           "title"
         ],
         "type": "object",
