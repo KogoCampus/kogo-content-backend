@@ -1306,6 +1306,79 @@
         }
       }
     },
+    "/media/groups/{id}/followers": {
+      "get": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "return a list of users following the group",
+        "operationId": "listGroupFollowers",
+        "parameters": [
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Public"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/feeds/trendingPosts": {
       "get": {
         "tags": [
