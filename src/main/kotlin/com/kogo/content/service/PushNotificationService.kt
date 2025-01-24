@@ -23,9 +23,9 @@ class PushNotificationService(
         val url: String get() = PREFIX + path
 
         data class Post(val postId: String) : DeepLink("post/$postId")
-        data class Comment(val postId: String, val commentId: String) : DeepLink("post/$postId/comment/$commentId")
+        data class Comment(val postId: String, val commentId: String) : DeepLink("post/$postId/$commentId")
         data class Reply(val postId: String, val commentId: String, val replyId: String) :
-            DeepLink("post/$postId/comment/$commentId/reply/$replyId")
+            DeepLink("post/$postId/$commentId/$replyId")
         data class Group(val groupId: String) : DeepLink("group/$groupId")
     }
 
