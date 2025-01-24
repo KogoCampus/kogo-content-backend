@@ -124,7 +124,7 @@ class FeedController @Autowired constructor(
     )
     fun listTrendingGroups(paginationRequest: PaginationRequest) = run {
         val user = userService.findCurrentUser()
-        val paginationResponse = groupService.findAllTrending(paginationRequest)
+        val paginationResponse = groupService.findAllTrending(paginationRequest, user)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { GroupResponse.from(it, user) },

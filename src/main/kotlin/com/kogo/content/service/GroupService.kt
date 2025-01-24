@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.bson.types.ObjectId
 
 @Service
 class GroupService(
@@ -31,9 +32,12 @@ class GroupService(
 
     fun findAllByFollowerId(userId: String): List<Group> = groupRepository.findAllByFollowerId(userId)
 
-    fun findAllTrending(paginationRequest: PaginationRequest) = run {
+    fun findAllTrending(paginationRequest: PaginationRequest, user: User) = run {
         val matchOperation = Aggregation.match(
-            Criteria.where("isSchoolGroup").ne(true)
+            Criteria().orOperator(
+                Criteria.where("isSchoolGroup").ne(true),
+                Criteria.where("_id").`is`(ObjectId(user.schoolInfo.schoolGroupId))
+            )
         )
 
         // Add field for follower count

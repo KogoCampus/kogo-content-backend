@@ -110,7 +110,7 @@ class FeedControllerTest @Autowired constructor(
         val paginationSlice = PaginationSlice(items = groups)
         val paginationRequestSlot = slot<PaginationRequest>()
 
-        every { groupService.findAllTrending(capture(paginationRequestSlot)) } returns paginationSlice
+        every { groupService.findAllTrending(capture(paginationRequestSlot), currentUser) } returns paginationSlice
 
         mockMvc.get("/media/feeds/trendingGroups") {
             contentType = MediaType.APPLICATION_JSON
@@ -123,13 +123,13 @@ class FeedControllerTest @Autowired constructor(
             jsonPath("$.data[0].followerCount") { value(group.followers.size) }
         }
 
-        verify { groupService.findAllTrending(any()) }
+        verify { groupService.findAllTrending(any(), currentUser) }
     }
 
     @Test
     fun `should handle pagination parameters for trending groups`() {
         val paginationRequestSlot = slot<PaginationRequest>()
-        every { groupService.findAllTrending(capture(paginationRequestSlot)) } returns PaginationSlice(items = emptyList())
+        every { groupService.findAllTrending(capture(paginationRequestSlot), currentUser) } returns PaginationSlice(items = emptyList())
 
         mockMvc.get("/media/feeds/trendingGroups?limit=5") {
             contentType = MediaType.APPLICATION_JSON
@@ -137,7 +137,7 @@ class FeedControllerTest @Autowired constructor(
             status { isOk() }
         }
 
-        verify { groupService.findAllTrending(match { it.limit == 5 }) }
+        verify { groupService.findAllTrending(match { it.limit == 5 }, any()) }
     }
 }
 
