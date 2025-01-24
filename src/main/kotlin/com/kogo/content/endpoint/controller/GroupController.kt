@@ -236,4 +236,50 @@ class GroupController @Autowired constructor(
         val updatedGroup = groupService.deleteProfileImage(group)
         HttpJsonResponse.successResponse(GroupResponse.from(updatedGroup, user))
     }
+
+    @GetMapping("groups/{id}/followers")
+    @Operation(
+        summary = "return a list of users following the group",
+        parameters = [
+            Parameter(
+                name = PaginationRequest.PAGE_TOKEN_PARAM,
+                description = "page token",
+                schema = Schema(type = "string"),
+                required = false
+            ),
+            Parameter(
+                name = PaginationRequest.PAGE_SIZE_PARAM,
+                description = "limit for pagination",
+                schema = Schema(type = "integer", defaultValue = "10"),
+                required = false
+            )],
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            headers = [
+                Header(name = PaginationSlice.HEADER_PAGE_TOKEN, schema = Schema(type = "string")),
+                Header(name = PaginationSlice.HEADER_PAGE_SIZE, schema = Schema(type = "string")),
+            ],
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = UserData.Public::class))
+            )],
+        )])
+    fun listGroupFollowers(
+        @PathVariable("id") groupId: String,
+        paginationRequest: PaginationRequest
+    ): ResponseEntity<*> = run {
+        val group = groupService.findOrThrow(groupId)
+        val user = userService.findCurrentUser()
+
+        if (!group.owner.id.equals(user.id)) {
+            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "group is not owned by user")
+        }
+
+        val paginationResponse = userService.findAllFollowersByGroup(group, paginationRequest)
+
+        HttpJsonResponse.successResponse(
+            data = paginationResponse.items.map { UserData.Public.from(it) },
+            headers = paginationResponse.toHttpHeaders()
+        )
+    }
 }

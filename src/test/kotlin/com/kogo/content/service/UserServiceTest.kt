@@ -145,9 +145,9 @@ class UserServiceTest {
 
         assertThat(result.username).isEqualTo(user.username)
         assertThat(result.profileImage).isEqualTo(testAttachment)
-        verify { 
+        verify {
             fileService.uploadImage(testImage)
-            userRepository.save(any()) 
+            userRepository.save(any())
         }
     }
 
@@ -165,9 +165,9 @@ class UserServiceTest {
 
         assertThat(result.username).isEqualTo(update.username)
         assertThat(result.profileImage).isEqualTo(testAttachment)
-        verify { 
+        verify {
             fileService.uploadImage(testImage)
-            userRepository.save(any()) 
+            userRepository.save(any())
         }
     }
 
@@ -195,10 +195,10 @@ class UserServiceTest {
         val result = userService.update(user, update)
 
         assertThat(result.profileImage).isEqualTo(newAttachment)
-        verify { 
+        verify {
             fileService.deleteImage(testAttachment.id)
             fileService.uploadImage(newImage)
-            userRepository.save(any()) 
+            userRepository.save(any())
         }
     }
-} 
+}

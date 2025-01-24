@@ -1,6 +1,7 @@
 package com.kogo.content.endpoint.controller
 
 import com.kogo.content.endpoint.common.ErrorCode
+import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.service.*
 import com.kogo.test.util.Fixture
 import com.kogo.content.exception.ResourceNotFoundException
@@ -309,5 +310,45 @@ class GroupControllerTest @Autowired constructor(
         }
 
         verify(exactly = 0) { groupService.deleteProfileImage(any()) }
+    }
+
+    @Test
+    fun `should get group followers when user is owner`() {
+        val followerUser = Fixture.createUserFixture()
+        val paginationSlice = PaginationSlice(
+            items = listOf(followerUser),
+            nextPageToken = null
+        )
+
+        every { userService.findAllFollowersByGroup(group, any()) } returns paginationSlice
+
+        mockMvc.get("/media/groups/${group.id}/followers") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].id") { value(followerUser.id) }
+            jsonPath("$.data[0].username") { value(followerUser.username) }
+        }
+
+        verify { userService.findAllFollowersByGroup(group, any()) }
+    }
+
+    @Test
+    fun `should fail to get group followers when user is not owner`() {
+        val differentUser = Fixture.createUserFixture()
+        val groupOwnedByOther = Fixture.createGroupFixture(owner = differentUser)
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { groupService.findOrThrow(groupOwnedByOther.id!!) } returns groupOwnedByOther
+
+        mockMvc.get("/media/groups/${groupOwnedByOther.id}/followers") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.error") { value(ErrorCode.USER_ACTION_DENIED.name) }
+            jsonPath("$.details") { value("group is not owned by user") }
+        }
+
+        verify(exactly = 0) { userService.findAllFollowersByGroup(any(), any()) }
     }
 }
