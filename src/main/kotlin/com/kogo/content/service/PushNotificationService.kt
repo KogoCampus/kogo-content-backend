@@ -43,7 +43,7 @@ class PushNotificationService(
                     "title" to notification.title,
                     "body" to notification.body,
                     "data" to mapOf(
-                        "url" to (notification.deepLink)
+                        "url" to (notification.deepLinkUrl)
                     )
                 )
 

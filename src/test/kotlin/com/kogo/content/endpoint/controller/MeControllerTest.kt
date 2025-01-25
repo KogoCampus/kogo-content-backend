@@ -7,7 +7,6 @@ import com.kogo.content.storage.model.*
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
-import com.kogo.content.endpoint.model.UserData
 import com.kogo.content.exception.ResourceNotFoundException
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -146,7 +145,7 @@ class MeControllerTest @Autowired constructor(
             sender = sender,
             title = "Test notification",
             body = "Test notification body",
-            deepLink = "/"
+            deepLinkUrl = "/"
         )
 
         val paginationSlice = PaginationSlice(items = listOf(notification))

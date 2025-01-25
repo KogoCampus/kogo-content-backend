@@ -131,7 +131,7 @@ class PostService(
                         sender = null,
                         title = "A new post in ${savedPost.group.groupName} group!",
                         body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
-                        deepLink = PushNotificationService.DeepLink.Post(savedPost.id!!).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Post(savedPost.id!!).url
                     ),
                 )
             }
@@ -183,7 +183,7 @@ class PostService(
                     sender = author,
                     title = newComment.content.take(50) + if (newComment.content.length > 50) "..." else "",
                     body = "${author.username} commented on your post",
-                    deepLink = PushNotificationService.DeepLink.Post(post.id!!).url
+                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             )
         }
@@ -218,7 +218,7 @@ class PostService(
                     sender = author,
                     title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
                     body = "${author.username} replied to your comment",
-                    deepLink = PushNotificationService.DeepLink.Reply(post.id!!, comment.id, newReply.id).url
+                    deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, comment.id, newReply.id).url
                 ),
             )
         }
@@ -268,7 +268,7 @@ class PostService(
                     sender = user,
                     title = post.title.take(50) + if (post.title.length > 50) "..." else "",
                     body = "${user.username} liked your post",
-                    deepLink = PushNotificationService.DeepLink.Post(post.id!!).url
+                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             ).exceptionally { throwable ->
                 log.error(throwable) { "Failed to send push notification for post like ${post.id}" }
@@ -296,7 +296,7 @@ class PostService(
                         sender = user,
                         title = comment.content.take(50) + if (comment.content.length > 50) "..." else "",
                         body = "${user.username} liked your comment",
-                        deepLink = PushNotificationService.DeepLink.Comment(post.id!!, commentId).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Comment(post.id!!, commentId).url
                     ),
                 ).exceptionally { throwable ->
                     log.error(throwable) { "Failed to send push notification for comment like ${post.id}/${commentId}" }
@@ -325,7 +325,7 @@ class PostService(
                         sender = user,
                         title = reply.content.take(50) + if (reply.content.length > 50) "..." else "",
                         body = "${user.username} liked your reply",
-                        deepLink = PushNotificationService.DeepLink.Reply(post.id!!, commentId, replyId).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, commentId, replyId).url
                     ),
                 ).exceptionally { throwable ->
                     log.error(throwable) { "Failed to send push notification for reply like ${post.id}/${commentId}/${replyId}" }
