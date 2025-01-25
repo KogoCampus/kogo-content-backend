@@ -4,7 +4,7 @@ server:
 kogo-api:
     authenticate: "https://api.staging.kogocampus.com/student/authenticate"
     getSchools: "https://api.staging.kogocampus.com/student/schools"
-    uploadFiles: "http://localhost:8000"
+    uploadFiles: "http://localhost:3300"
 
 springdoc:
     api-docs:
