@@ -214,7 +214,7 @@ class PostService(
         if (!comment.author.id.equals(author.id)) {
             pushNotificationService.dispatchPushNotification(
                 Notification(
-                    recipient = post.author,
+                    recipient = comment.author,
                     sender = author,
                     title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
                     body = "${author.username} replied to your comment",
