@@ -2441,6 +2441,7 @@
         "required": [
           "body",
           "createdAt",
+          "deepLink",
           "recipient",
           "title"
         ],
@@ -2459,6 +2460,9 @@
             "type": "string"
           },
           "body": {
+            "type": "string"
+          },
+          "deepLink": {
             "type": "string"
           },
           "createdAt": {
