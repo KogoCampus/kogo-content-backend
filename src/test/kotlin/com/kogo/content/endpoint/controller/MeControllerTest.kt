@@ -145,7 +145,8 @@ class MeControllerTest @Autowired constructor(
             recipient = currentUser,
             sender = sender,
             title = "Test notification",
-            body = "Test notification body"
+            body = "Test notification body",
+            deepLink = "/"
         )
 
         val paginationSlice = PaginationSlice(items = listOf(notification))

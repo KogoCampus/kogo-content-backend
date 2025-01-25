@@ -22,6 +22,7 @@ class PushNotificationService(
     sealed class DeepLink(private val path: String) {
         val url: String get() = PREFIX + path
 
+        class None(): DeepLink("/")
         data class Post(val postId: String) : DeepLink("post/$postId")
         data class Comment(val postId: String, val commentId: String) : DeepLink("post/$postId/$commentId")
         data class Reply(val postId: String, val commentId: String, val replyId: String) :
@@ -29,37 +30,20 @@ class PushNotificationService(
         data class Group(val groupId: String) : DeepLink("group/$groupId")
     }
 
-    private data class ExpoPushNotificationRequest(
-        val to: String,
-        val title: String,
-        val body: String,
-        val data: ExpoPushNotificationRequestData,
-    )
-
-    private data class ExpoPushNotificationRequestData(
-        val url: String,
-    )
-
     private val expoPushNotificationApiUrl = "https://exp.host/--/api/v2/push/send"
+
     private val restTemplate = RestTemplate()
 
     @Async
-    fun dispatchPushNotification(content: Notification, deepLink: DeepLink): CompletableFuture<Notification> {
+    fun dispatchPushNotification(notification: Notification): CompletableFuture<Notification> {
         return CompletableFuture.supplyAsync {
-            val notification = Notification(
-                recipient = content.recipient,
-                sender = content.sender,
-                title = content.title,
-                body = content.body
-            )
-
             if (notification.recipient.pushNotificationToken != null) {
-                val expoPushNotificationRequest = ExpoPushNotificationRequest(
-                    to = notification.recipient.pushNotificationToken!!,
-                    title = notification.title,
-                    body = notification.body,
-                    data = ExpoPushNotificationRequestData(
-                        url = deepLink.url
+                val expoPushNotificationRequest = mapOf(
+                    "to" to notification.recipient.pushNotificationToken!!,
+                    "title" to notification.title,
+                    "body" to notification.body,
+                    "data" to mapOf(
+                        "url" to (notification.deepLink)
                     )
                 )
 

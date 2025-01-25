@@ -140,13 +140,6 @@ class PostControllerTest @Autowired constructor(
 
     @Test
     fun `should handle like operations successfully`() {
-        val expectedNotification = Notification(
-            recipient = post.author,
-            sender = currentUser,
-            title = post.title.take(50) + if (post.title.length > 50) "..." else "",
-            body = "${currentUser.username} liked your post"
-        )
-
         every { postService.findOrThrow(post.id!!) } returns post
         every { postService.addLikeToPost(post, currentUser) } returns true
 

@@ -1,5 +1,6 @@
 package com.kogo.content.storage.model
 
+import com.kogo.content.service.PushNotificationService
 import com.kogo.content.storage.model.entity.User
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -19,6 +20,8 @@ data class Notification (
     val title: String,
 
     val body: String,
+
+    val deepLink: String,
 
     var createdAt: Long = System.currentTimeMillis(),
 )

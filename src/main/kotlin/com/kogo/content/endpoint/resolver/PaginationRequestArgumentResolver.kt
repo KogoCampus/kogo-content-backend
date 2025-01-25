@@ -33,7 +33,7 @@ class PaginationRequestArgumentResolver : HandlerMethodArgumentResolver {
         val pageToken = if (pageTokenStr != null) {
             PageToken.fromString(pageTokenStr)
         } else {
-            PageToken() // Default empty PageToken
+            PageToken()
         }
 
         return PaginationRequest(pageToken, limit)

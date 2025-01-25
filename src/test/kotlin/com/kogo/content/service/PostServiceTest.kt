@@ -226,7 +226,7 @@ class PostServiceTest {
 
         assertThat(result).isFalse()
         verify { postRepository.addLikeToPost(post, user.id!!) }
-        verify(exactly = 0) { pushNotificationService.dispatchPushNotification(any(), any()) }
+        verify(exactly = 0) { pushNotificationService.dispatchPushNotification(any()) }
     }
 
     @Test
