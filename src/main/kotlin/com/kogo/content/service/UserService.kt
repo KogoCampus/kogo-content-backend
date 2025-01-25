@@ -6,12 +6,14 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService @Autowired constructor(
     private val userRepository: UserRepository,
-    private val fileService: FileUploaderService,
+    @Qualifier("prodFileUploaderService") private val fileService: FileUploaderService,
 ) : BaseEntityService<User, String>(User::class, userRepository) {
     companion object : Logger()
 

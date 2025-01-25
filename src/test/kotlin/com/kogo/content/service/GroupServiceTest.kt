@@ -7,6 +7,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.exception.FileOperationFailure
 import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.search.index.GroupSearchIndex
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
@@ -174,9 +175,9 @@ class GroupServiceTest {
         assertThat(result.owner).isEqualTo(user)
         assertThat(result.profileImage).isEqualTo(testAttachment)
 
-        verify { 
+        verify {
             fileService.uploadImage(testImage)
-            groupRepository.save(any()) 
+            groupRepository.save(any())
         }
     }
 
@@ -230,10 +231,10 @@ class GroupServiceTest {
         assertThat(result.profileImage).isEqualTo(newAttachment)
         assertThat(result.updatedAt).isGreaterThanOrEqualTo(group.updatedAt)
 
-        verify { 
+        verify {
             fileService.deleteImage(testAttachment.id)
             fileService.uploadImage(newImage)
-            groupRepository.save(any()) 
+            groupRepository.save(any())
         }
     }
 
@@ -269,10 +270,10 @@ class GroupServiceTest {
         assertThat(result.tags).isEqualTo(update.tags)
         assertThat(result.profileImage).isEqualTo(newAttachment)
 
-        verify { 
+        verify {
             fileService.deleteImage(testAttachment.id)
             fileService.uploadImage(newImage)
-            groupRepository.save(any()) 
+            groupRepository.save(any())
         }
     }
 
@@ -283,9 +284,9 @@ class GroupServiceTest {
 
         groupService.delete(group)
 
-        verify { 
+        verify {
             fileService.deleteImage(testAttachment.id)
-            groupRepository.deleteById(group.id!!) 
+            groupRepository.deleteById(group.id!!)
         }
     }
 

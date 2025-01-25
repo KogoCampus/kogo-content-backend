@@ -7,6 +7,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.search.index.GroupSearchIndex
 import com.kogo.content.service.PushNotificationService.Companion.log
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.entity.Follower
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.repository.*
@@ -17,13 +18,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.bson.types.ObjectId
+import org.springframework.beans.factory.annotation.Qualifier
 
 @Service
 class GroupService(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val groupSearchIndex: GroupSearchIndex,
-    private val fileService: FileUploaderService
+    @Qualifier("prodFileUploaderService") private val fileService: FileUploaderService
 ) : BaseEntityService<Group, String>(Group::class, groupRepository) {
 
     fun findByGroupName(groupName: String): Group? = groupRepository.findByGroupName(groupName)

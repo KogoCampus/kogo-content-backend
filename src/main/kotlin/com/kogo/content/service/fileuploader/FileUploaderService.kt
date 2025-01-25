@@ -1,12 +1,9 @@
-package com.kogo.content.service
+package com.kogo.content.service.fileuploader
 
 import com.kogo.content.exception.FileOperationFailure
 import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.model.Attachment
-import com.kogo.content.storage.repository.GroupRepository
-import com.kogo.content.storage.repository.PostRepository
-import com.kogo.content.storage.repository.UserRepository
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
@@ -19,8 +16,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 
-@Service
-class FileUploaderService(){
+open class FileUploaderService(){
     companion object : Logger()
 
     @Value("\${kogo-api.uploadFiles}")

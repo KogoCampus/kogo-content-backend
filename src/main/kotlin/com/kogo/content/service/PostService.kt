@@ -8,6 +8,7 @@ import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.search.SearchIndex
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Notification
 import com.kogo.content.storage.model.Reply
@@ -16,6 +17,7 @@ import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
 import org.bson.types.ObjectId
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.query.Criteria

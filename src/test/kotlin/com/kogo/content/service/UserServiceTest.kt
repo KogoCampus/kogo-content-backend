@@ -1,6 +1,7 @@
 package com.kogo.content.service
 
 import com.kogo.content.endpoint.model.UserUpdate
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
