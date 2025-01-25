@@ -6,6 +6,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User

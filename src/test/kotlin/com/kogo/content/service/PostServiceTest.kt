@@ -7,6 +7,7 @@ import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.exception.FileOperationFailure
 import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.search.SearchIndex
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like

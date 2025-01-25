@@ -1,19 +1,16 @@
 package com.kogo.content.service
 
-import com.kogo.content.exception.FileOperationFailure
 import com.kogo.content.exception.FileOperationFailureException
-import com.kogo.content.storage.model.Attachment
+import com.kogo.content.service.fileuploader.FileUploaderService
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.core.ParameterizedTypeReference
-import org.springframework.core.io.Resource
 import org.springframework.http.*
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.client.RestTemplate
-import org.springframework.web.multipart.MultipartFile
 
 class FileUploaderServiceTest {
     private val restTemplate: RestTemplate = mockk()

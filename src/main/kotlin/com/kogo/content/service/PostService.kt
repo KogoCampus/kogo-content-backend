@@ -8,6 +8,7 @@ import com.kogo.content.endpoint.model.CommentUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.search.SearchIndex
+import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Notification
 import com.kogo.content.storage.model.Reply
