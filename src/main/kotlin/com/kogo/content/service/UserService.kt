@@ -13,7 +13,6 @@ import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService @Autowired constructor(
     private val userRepository: UserRepository,
-    @Qualifier("prodFileUploaderService") private val fileService: FileUploaderService,
+    private val fileService: FileUploaderService,
 ) : BaseEntityService<User, String>(User::class, userRepository) {
     companion object : Logger()
 

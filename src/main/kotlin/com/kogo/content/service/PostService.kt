@@ -17,7 +17,6 @@ import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
 import org.bson.types.ObjectId
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.query.Criteria

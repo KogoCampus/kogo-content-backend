@@ -25,7 +25,7 @@ class GroupService(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val groupSearchIndex: GroupSearchIndex,
-    @Qualifier("prodFileUploaderService") private val fileService: FileUploaderService
+    private val fileService: FileUploaderService
 ) : BaseEntityService<Group, String>(Group::class, groupRepository) {
 
     fun findByGroupName(groupName: String): Group? = groupRepository.findByGroupName(groupName)
