@@ -2441,7 +2441,6 @@
         "required": [
           "body",
           "createdAt",
-          "deepLinkUrl",
           "recipient",
           "title"
         ],
