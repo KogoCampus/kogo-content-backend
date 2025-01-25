@@ -7,6 +7,7 @@ import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.repository.GroupRepository
 import com.kogo.content.storage.repository.PostRepository
 import com.kogo.content.storage.repository.UserRepository
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
@@ -25,6 +26,26 @@ class FileUploaderService(){
     @Value("\${kogo-api.uploadFiles}")
     lateinit var fileUploaderUrl: String
     var restTemplate = RestTemplate()
+
+    @PostConstruct
+    fun checkConnection(){
+        return try {
+            val response = restTemplate.exchange(
+                fileUploaderUrl,
+                HttpMethod.GET,
+                null,
+                object : ParameterizedTypeReference<Map<String, Any>>() {}
+            )
+            if (response.statusCode.is2xxSuccessful) {
+                val message = response.body!!["message"] as String
+                log.info { "File Uploader Server connected: $message" }
+            } else {
+                throw FileOperationFailureException(FileOperationFailure.CONNECT, null, "Failed to connect to File Uploader Server, status code: ${response.statusCode}")
+            }
+        } catch (ex: Exception) {
+            throw FileOperationFailureException(FileOperationFailure.CONNECT, null, "Failed to connect to File Uploader Server, status code: ${ex.message}")
+        }
+    }
 
     fun uploadImage(profileImage: MultipartFile): Attachment {
         val headers = HttpHeaders().apply {
