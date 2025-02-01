@@ -103,41 +103,5 @@ class FeedControllerTest @Autowired constructor(
 
         verify { postService.findAllTrending(match { it.limit == 5 }, any()) }
     }
-
-    @Test
-    fun `should get trending groups successfully`() {
-        val groups = listOf(group)
-        val paginationSlice = PaginationSlice(items = groups)
-        val paginationRequestSlot = slot<PaginationRequest>()
-
-        every { groupService.findAllTrending(capture(paginationRequestSlot), currentUser) } returns paginationSlice
-
-        mockMvc.get("/media/feeds/trendingGroups") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.data[0].id") { value(group.id) }
-            jsonPath("$.data[0].groupName") { value(group.groupName) }
-            jsonPath("$.data[0].description") { value(group.description) }
-            jsonPath("$.data[0].owner.id") { value(currentUser.id) }
-            jsonPath("$.data[0].followerCount") { value(group.followers.size) }
-        }
-
-        verify { groupService.findAllTrending(any(), currentUser) }
-    }
-
-    @Test
-    fun `should handle pagination parameters for trending groups`() {
-        val paginationRequestSlot = slot<PaginationRequest>()
-        every { groupService.findAllTrending(capture(paginationRequestSlot), currentUser) } returns PaginationSlice(items = emptyList())
-
-        mockMvc.get("/media/feeds/trendingGroups?limit=5") {
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
-            status { isOk() }
-        }
-
-        verify { groupService.findAllTrending(match { it.limit == 5 }, any()) }
-    }
 }
 

@@ -1,15 +1,11 @@
 package com.kogo.content.security
 
 import com.kogo.content.logging.Logger
+import com.kogo.content.service.GroupService
 import com.kogo.content.service.UserService
-import com.kogo.content.storage.model.entity.Follower
-import com.kogo.content.storage.model.entity.SchoolInfo
-import com.kogo.content.storage.model.entity.User
-import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -23,7 +19,8 @@ import org.springframework.web.client.RestTemplate
 @Component
 class AuthenticationApiClient(
     private val userService: UserService,
-    private val mongoTemplate: MongoTemplate
+    private val mongoTemplate: MongoTemplate,
+    private val groupService: GroupService
 ) {
     data class AuthenticationResponse(
         val userdata: UserData
@@ -95,13 +92,10 @@ class AuthenticationApiClient(
     }
 
     private fun joinSchoolGroup(user: User) {
-        val schoolGroup = mongoTemplate.findOne(
-            Query.query(Criteria.where("groupName").`is`(user.schoolInfo.schoolName)
-                .and("isSchoolGroup").`is`(true)),
-            Group::class.java
-        ) ?: throw RuntimeException("School group not found for school: ${user.schoolInfo.schoolName}")
+        val schoolGroup = groupService.findSchoolGroup(user.schoolInfo.schoolKey)
+            ?: groupService.createSchoolGroup(userService.getSystemUser(), user.schoolInfo)
 
-        if (!schoolGroup.isFollowing(user)) {
+        if (!schoolGroup.isFollowedBy(user)) {
             schoolGroup.followers.add(Follower(user))
             mongoTemplate.save(schoolGroup)
         }

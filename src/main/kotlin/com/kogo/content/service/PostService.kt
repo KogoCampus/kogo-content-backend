@@ -13,6 +13,7 @@ import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Notification
 import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.Group
+import com.kogo.content.storage.model.entity.GroupType
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.*
@@ -84,7 +85,7 @@ class PostService(
         // Add match operation to filter groups
         val matchOperation = Aggregation.match(
             Criteria().orOperator(
-                Criteria.where("groupDetails.isSchoolGroup").`is`(false),
+                Criteria.where("groupDetails.type").ne(GroupType.SCHOOL_GROUP),
                 Criteria.where("group").`is`(ObjectId(user.schoolInfo.schoolGroupId))
             )
         )

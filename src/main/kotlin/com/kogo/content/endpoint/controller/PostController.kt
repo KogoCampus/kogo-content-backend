@@ -90,7 +90,7 @@ class PostController @Autowired constructor(
         val user = userService.findCurrentUser()
 
         // Users cannot create a post if they are not following the group
-        if (!group.isFollowing(user))
+        if (!group.isFollowedBy(user))
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not following group id: ${group.id}")
 
         val created = postService.create(group, userService.findCurrentUser(), postDto)

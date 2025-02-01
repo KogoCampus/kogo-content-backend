@@ -53,6 +53,7 @@ class PostRepositoryTest @Autowired constructor(
             id = "test-group-id",
             groupName = "Test Group",
             description = "Test Description",
+            type = null,
             owner = testUser,
             tags = mutableListOf("test", "group")
         )
@@ -172,4 +173,4 @@ class PostRepositoryTest @Autowired constructor(
         val result = postRepository.addLikeToReply(testPost, testComment.id, "non-existent-id", testUser.id!!)
         assertThat(result).isFalse()
     }
-} 
+}

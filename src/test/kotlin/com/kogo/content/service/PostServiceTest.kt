@@ -62,10 +62,10 @@ class PostServiceTest {
             id = "test-group-id",
             groupName = "Test Group",
             description = "Test Description",
+            type = null,
             owner = user,
             tags = mutableListOf("test", "group"),
             followers = mutableListOf(Follower(user)),
-            isSchoolGroup = false
         )
 
         testImage = MockMultipartFile(

@@ -5,9 +5,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.DocumentReference
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import java.time.Instant
 
 @Document
 data class Group (
@@ -26,14 +23,19 @@ data class Group (
     @DocumentReference
     var owner: User,
 
-    var isSchoolGroup: Boolean = false,
+    var type: GroupType?,
 
     var followers: MutableList<Follower> = mutableListOf(),
 
     var createdAt: Long = System.currentTimeMillis(),
     var updatedAt: Long = System.currentTimeMillis()
 ) {
-    fun isFollowing(user: User) = followers.any { it.follower.id == user.id }
+    fun isFollowedBy(user: User) = followers.any { it.follower.id == user.id }
+}
+
+enum class GroupType {
+    SCHOOL_GROUP,
+    COURSE_GROUP,
 }
 
 data class Follower(

@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*
 class FeedController @Autowired constructor(
     private val postService: PostService,
     private val userService: UserService,
-    private val groupService: GroupService
 ) {
     @GetMapping("feeds/trendingPosts")
     @Operation(
@@ -96,39 +95,39 @@ class FeedController @Autowired constructor(
         )
     }
 
-    @GetMapping("feeds/trendingGroups")
-    @Operation(
-        summary = "return a list of trending groups",
-        parameters = [
-            Parameter(
-                name = PaginationRequest.PAGE_TOKEN_PARAM,
-                description = "page token",
-                schema = Schema(type = "string"),
-                required = false
-            ),
-            Parameter(
-                name = PaginationRequest.PAGE_SIZE_PARAM,
-                description = "limit for pagination",
-                schema = Schema(type = "integer", defaultValue = "10"),
-                required = false
-            )
-        ],
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            headers = [Header(name = "next_page", schema = Schema(type = "string"))],
-            content = [Content(mediaType = "application/json", array = ArraySchema(
-                schema = Schema(implementation = GroupResponse::class)
-            ))],
-        )]
-    )
-    fun listTrendingGroups(paginationRequest: PaginationRequest) = run {
-        val user = userService.findCurrentUser()
-        val paginationResponse = groupService.findAllTrending(paginationRequest, user)
-
-        HttpJsonResponse.successResponse(
-            data = paginationResponse.items.map { GroupResponse.from(it, user) },
-            headers = paginationResponse.toHttpHeaders()
-        )
-    }
+    //@GetMapping("feeds/trendingGroups")
+    //@Operation(
+    //    summary = "return a list of trending groups",
+    //    parameters = [
+    //        Parameter(
+    //            name = PaginationRequest.PAGE_TOKEN_PARAM,
+    //            description = "page token",
+    //            schema = Schema(type = "string"),
+    //            required = false
+    //        ),
+    //        Parameter(
+    //            name = PaginationRequest.PAGE_SIZE_PARAM,
+    //            description = "limit for pagination",
+    //            schema = Schema(type = "integer", defaultValue = "10"),
+    //            required = false
+    //        )
+    //    ],
+    //    responses = [ApiResponse(
+    //        responseCode = "200",
+    //        description = "ok",
+    //        headers = [Header(name = "next_page", schema = Schema(type = "string"))],
+    //        content = [Content(mediaType = "application/json", array = ArraySchema(
+    //            schema = Schema(implementation = GroupResponse::class)
+    //        ))],
+    //    )]
+    //)
+    //fun listTrendingGroups(paginationRequest: PaginationRequest) = run {
+    //    val user = userService.findCurrentUser()
+    //    val paginationResponse = groupService.findAllTrending(paginationRequest, user)
+    //
+    //    HttpJsonResponse.successResponse(
+    //        data = paginationResponse.items.map { GroupResponse.from(it, user) },
+    //        headers = paginationResponse.toHttpHeaders()
+    //    )
+    //}
 }

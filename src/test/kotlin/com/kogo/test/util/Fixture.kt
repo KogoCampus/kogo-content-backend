@@ -30,11 +30,12 @@ class Fixture {
             id: String = generateObjectIdString(),
             name: String = "group-$id",
             description: String = "description-$id",
+            type: GroupType? = null,
             owner: User = createUserFixture(),
-            followerIds: MutableList<String> = mutableListOf()
         ) = Group(
             id = id,
             groupName = name,
+            type = type,
             description = description,
             owner = owner,
             followers = mutableListOf(Follower(owner)),

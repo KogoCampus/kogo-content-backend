@@ -11,8 +11,14 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
+import com.kogo.content.util.convertTo12BytesHexString
+import jakarta.annotation.PostConstruct
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,7 +28,42 @@ class UserService @Autowired constructor(
     private val userRepository: UserRepository,
     private val fileService: FileUploaderService,
 ) : BaseEntityService<User, String>(User::class, userRepository) {
+
     companion object : Logger()
+
+    private val systemUserId = convertTo12BytesHexString("system_user")
+
+    @PostConstruct
+    fun createSystemUserIfNotExists() {
+        val systemUser = mongoTemplate.findOne(
+            Query.query(Criteria.where("_id").`is`(systemUserId)),
+            User::class.java
+        )
+
+        if (systemUser == null) {
+            log.info { "Creating system user..." }
+            try {
+                mongoTemplate.save(
+                    User(
+                        id = systemUserId,
+                        username = "system_user",
+                        email = "op@sfu.ca",
+                        schoolInfo = SchoolInfo(
+                            schoolKey = "system",
+                            schoolName = "System",
+                            schoolShortenedName = null,
+                        ),
+                        followingGroupIds = mutableListOf()
+                    )
+                ).also { log.info { "System user created successfully" } }
+            } catch (e: Exception) {
+                log.error(e) { "Failed to create system user" }
+                throw e
+            }
+        }
+    }
+
+    fun getSystemUser() = userRepository.findByIdOrNull(systemUserId)!!
 
     fun findUserByUsername(username: String) = userRepository.findByUsername(username)
     fun findUserByEmail(email: String) = userRepository.findByEmail(email)

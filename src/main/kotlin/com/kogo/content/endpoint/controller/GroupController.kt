@@ -83,27 +83,48 @@ class GroupController @Autowired constructor(
     }
 
     @RequestMapping(
-        path = ["groups"],
-        method = [RequestMethod.POST],
+        path = ["groups/courses/enrollment"],
+        method = [RequestMethod.PUT],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = GroupDto::class))])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = Enrollment::class))])
     @Operation(
-        summary = "create a new group",
+        summary = "enroll course groups. If course group doesn't exist, then it will create a new group",
         requestBody = RequestBody(),
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = Enrollment::class))],
         )])
-    fun createGroup(@Valid groupDto: GroupDto): ResponseEntity<*> = run {
-        if (groupService.findByGroupName(groupDto.groupName) != null) {
-            return HttpJsonResponse.errorResponse(ErrorCode.DUPLICATED, "group name must be unique: ${groupDto.groupName}")
-        }
+    fun updateCourseEnrollment(@Valid enrollment: Enrollment): ResponseEntity<*> = run {
         val user = userService.findCurrentUser()
-        val group = groupService.create(groupDto, owner = userService.findCurrentUser())
-        groupService.follow(group, user)
-        HttpJsonResponse.successResponse(GroupResponse.from(group, user))
+
+        val enrolledCourses = groupService.updateCourseEnrollment(userService.getSystemUser(), user, enrollment)
+
+        HttpJsonResponse.successResponse(enrolledCourses.map { GroupResponse.from(it, user) }, "User successfully enrolled to course groups: ${enrolledCourses.map { it.id }}")
     }
+
+    // @RequestMapping(
+    //     path = ["groups"],
+    //     method = [RequestMethod.POST],
+    //     consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    // @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = GroupDto::class))])
+    // @Operation(
+    //     summary = "create a new group",
+    //     requestBody = RequestBody(),
+    //     responses = [ApiResponse(
+    //         responseCode = "200",
+    //         description = "ok",
+    //         content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
+    //     )])
+    // fun createGroup(@Valid groupDto: GroupDto): ResponseEntity<*> = run {
+    //     if (groupService.findByGroupName(groupDto.groupName) != null) {
+    //         return HttpJsonResponse.errorResponse(ErrorCode.DUPLICATED, "group name must be unique: ${groupDto.groupName}")
+    //     }
+    //     val user = userService.findCurrentUser()
+    //     val group = groupService.create(groupDto, owner = userService.findCurrentUser())
+    //     groupService.follow(group, user)
+    //     HttpJsonResponse.successResponse(GroupResponse.from(group, user))
+    // }
 
     @RequestMapping(
         path = ["groups/{id}"],
@@ -165,52 +186,52 @@ class GroupController @Autowired constructor(
         return HttpJsonResponse.successResponse(deletedTopic)
     }
 
-    @RequestMapping(
-        path = ["groups/{id}/follow"],
-        method = [RequestMethod.PUT]
-    )
-    @Operation(
-        summary = "follow a group",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
-        )])
-    fun followGroup(@PathVariable("id") groupId: String): ResponseEntity<*> = run {
-        val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
-        val user = userService.findCurrentUser()
+    //@RequestMapping(
+    //    path = ["groups/{id}/follow"],
+    //    method = [RequestMethod.PUT]
+    //)
+    //@Operation(
+    //    summary = "follow a group",
+    //    responses = [ApiResponse(
+    //        responseCode = "200",
+    //        description = "ok",
+    //        content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
+    //    )])
+    //fun followGroup(@PathVariable("id") groupId: String): ResponseEntity<*> = run {
+    //    val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
+    //    val user = userService.findCurrentUser()
+    //
+    //    if (group.isFollowing(user))
+    //        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the group")
+    //
+    //    groupService.follow(group, user)
+    //    HttpJsonResponse.successResponse(GroupResponse.from(group, user), "User's follow added successfully to group: $groupId")
+    //}
 
-        if (group.isFollowing(user))
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is already following the group")
-
-        groupService.follow(group, user)
-        HttpJsonResponse.successResponse(GroupResponse.from(group, user), "User's follow added successfully to group: $groupId")
-    }
-
-    @RequestMapping(
-        path = ["groups/{id}/unfollow"],
-        method = [RequestMethod.PUT]
-    )
-    @Operation(
-        summary = "unfollow a group",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
-        )])
-    fun unfollowGroup(@PathVariable("id") groupId: String): ResponseEntity<*> = run {
-        val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
-        val user = userService.findCurrentUser()
-
-        if(group.owner.id == user.id)
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The owner cannot unfollow the group")
-
-        if (!group.isFollowing(user))
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the group")
-
-        groupService.unfollow(group, user)
-        HttpJsonResponse.successResponse(GroupResponse.from(group, user), "User's follow successfully removed from group: $groupId")
-    }
+    //@RequestMapping(
+    //    path = ["groups/{id}/unfollow"],
+    //    method = [RequestMethod.PUT]
+    //)
+    //@Operation(
+    //    summary = "unfollow a group",
+    //    responses = [ApiResponse(
+    //        responseCode = "200",
+    //        description = "ok",
+    //        content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
+    //    )])
+    //fun unfollowGroup(@PathVariable("id") groupId: String): ResponseEntity<*> = run {
+    //    val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
+    //    val user = userService.findCurrentUser()
+    //
+    //    if(group.owner.id == user.id)
+    //        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The owner cannot unfollow the group")
+    //
+    //    if (!group.isFollowing(user))
+    //        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "The user is not following the group")
+    //
+    //    groupService.unfollow(group, user)
+    //    HttpJsonResponse.successResponse(GroupResponse.from(group, user), "User's follow successfully removed from group: $groupId")
+    //}
 
     @DeleteMapping("groups/{id}/profileImage")
     @Operation(

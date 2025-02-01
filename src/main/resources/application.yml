@@ -5,6 +5,7 @@ kogo-api:
     authenticate: "https://api.staging.kogocampus.com/student/authenticate"
     getSchools: "https://api.staging.kogocampus.com/student/schools"
     uploadFiles: "http://localhost:3300"
+    courseListings: "https://course-scraper.kogocampus.com/api/course-listing"
 
 springdoc:
     api-docs:
