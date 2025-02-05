@@ -11,6 +11,8 @@ data class PostUpdate (
 
     var content: String? = null,
 
+    var staledImageIds: List<String>? = listOf(),
+
     @ArraySchema(schema = Schema(description = "list of attachment ids to delete from the post", type = "String"))
     var attachmentDeleteIds: List<String>? = listOf(),
 

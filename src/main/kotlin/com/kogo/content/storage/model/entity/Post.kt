@@ -27,7 +27,7 @@ data class Post (
 
     var comments: MutableList<Comment> = mutableListOf(),
 
-    var images: MutableList<Attachment> = mutableListOf(),
+    var attachments: MutableList<Attachment> = mutableListOf(),
 
     // full likes history, regardless currently active or inactive
     var likes: MutableList<Like> = mutableListOf(),

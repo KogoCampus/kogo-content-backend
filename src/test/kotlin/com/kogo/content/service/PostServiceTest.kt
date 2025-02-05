@@ -89,7 +89,7 @@ class PostServiceTest {
             content = "Test Content",
             group = group,
             author = user,
-            images = mutableListOf(testAttachment),
+            attachments = mutableListOf(testAttachment),
             comments = mutableListOf(),
             likes = mutableListOf(),
             viewerIds = mutableListOf(),
@@ -293,10 +293,11 @@ class PostServiceTest {
         val postDto = PostDto(
             title = "Test Post",
             content = "Test Content",
-            images = listOf(testImage)
+            images = listOf(testImage),
+            staledImageIds = listOf(testAttachment.id),
         )
 
-        every { fileService.uploadImage(testImage) } returns testAttachment
+        every { fileService.persistImage(testAttachment.id) } returns testAttachment
         every { postRepository.save(any()) } answers { firstArg() }
 
         val result = postService.create(group, user, postDto)
@@ -305,11 +306,11 @@ class PostServiceTest {
         assertThat(result.content).isEqualTo(postDto.content)
         assertThat(result.group).isEqualTo(group)
         assertThat(result.author).isEqualTo(user)
-        assertThat(result.images).hasSize(1)
-        assertThat(result.images[0]).isEqualTo(testAttachment)
+        assertThat(result.attachments).hasSize(1)
+        assertThat(result.attachments[0]).isEqualTo(testAttachment)
 
         verify {
-            fileService.uploadImage(testImage)
+            fileService.persistImage(testAttachment.id)
             postRepository.save(any())
         }
     }
@@ -329,10 +330,11 @@ class PostServiceTest {
             title = "Updated Title",
             content = "Updated Content",
             images = listOf(newImage),
+            staledImageIds = listOf(newAttachment.id),
             attachmentDeleteIds = listOf(testAttachment.id)
         )
 
-        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { fileService.persistImage(newAttachment.id) } returns newAttachment
         every { fileService.deleteImage(testAttachment.id) } just Runs
         every { postRepository.save(any()) } answers { firstArg() }
 
@@ -340,12 +342,12 @@ class PostServiceTest {
 
         assertThat(result.title).isEqualTo(postUpdate.title)
         assertThat(result.content).isEqualTo(postUpdate.content)
-        assertThat(result.images).hasSize(1)
-        assertThat(result.images[0]).isEqualTo(newAttachment)
+        assertThat(result.attachments).hasSize(1)
+        assertThat(result.attachments[0]).isEqualTo(newAttachment)
         assertThat(result.updatedAt).isGreaterThanOrEqualTo(post.updatedAt)
 
         verify {
-            fileService.uploadImage(newImage)
+            fileService.persistImage(newAttachment.id)
             fileService.deleteImage(testAttachment.id)
             postRepository.save(any())
         }

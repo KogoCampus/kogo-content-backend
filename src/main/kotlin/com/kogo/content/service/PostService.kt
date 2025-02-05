@@ -112,8 +112,8 @@ class PostService(
 
     @Transactional
     fun create(group: Group, author: User, dto: PostDto): Post {
-        val attachments = dto.images?.map{
-            fileService.uploadImage(it)
+        val attachments = dto.staledImageIds?.map{
+            fileService.persistImage(it)
         } ?: emptyList()
         val savedPost = postRepository.save(
             Post(
@@ -121,7 +121,7 @@ class PostService(
                 content = dto.content,
                 group = group,
                 author = author,
-                images = attachments.toMutableList(),
+                attachments = attachments.toMutableList(),
             )
         )
 
@@ -149,12 +149,12 @@ class PostService(
         post.updatedAt = System.currentTimeMillis()
 
         // Images
-        val imagesToKeep = post.images.filter { it.id !in postUpdate.attachmentDeleteIds!! }
-        val imagesToDelete = post.images.filter{ it.id in postUpdate.attachmentDeleteIds!! }
-        val newAttachments = postUpdate.images?.map{
-            fileService.uploadImage(it)
+        val imagesToKeep = post.attachments.filter { it.id !in postUpdate.attachmentDeleteIds!! }
+        val imagesToDelete = post.attachments.filter{ it.id in postUpdate.attachmentDeleteIds!! }
+        val newAttachments = postUpdate.staledImageIds?.map{
+            fileService.persistImage(it)
         } ?: emptyList()
-        post.images = (imagesToKeep + newAttachments).toMutableList()
+        post.attachments = (imagesToKeep + newAttachments).toMutableList()
         val updatedPost = postRepository.save(post)
         imagesToDelete.forEach { runCatching { fileService.deleteImage(it.id) }.onFailure { log.error(it) { it.message } } }
 
@@ -163,7 +163,7 @@ class PostService(
 
     @Transactional
     fun delete(post: Post) {
-        post.images.map{
+        post.attachments.map{
             fileService.deleteImage(it.id)
         }
         postRepository.deleteById(post.id!!)

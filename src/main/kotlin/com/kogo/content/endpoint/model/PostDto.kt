@@ -14,6 +14,9 @@ data class PostDto (
     @field:NotBlank
     var content: String,
 
+    @ArraySchema(schema = Schema(description = "list of ids of image files to add to the post", type = "String"))
+    var staledImageIds: List<String>? = listOf(),
+
     @ArraySchema(schema = Schema(description = "list of image files to add to the post", type = "File"))
     @field:ValidFile(
         sizeMax = 128000000, // 128MB
