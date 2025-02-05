@@ -5,11 +5,13 @@ import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.*
 
 @SpringBootTest
@@ -40,23 +42,23 @@ class FileUploadControllerTest @Autowired constructor(
 
     @Test
     fun `should upload image successfully`() {
-//        // Create a mock image file
-//        val mockImageFile = MockMultipartFile(
-//            "image",
-//            "test-image.png",
-//            "image/png",
-//            "test image content".toByteArray()
-//        )
-//
-//        // Perform the request
-//        mockMvc.multipart("/media/files/images") {
-//            file(mockImageFile)
-//        }.andExpect {
-//            status { isOk() }
-//            jsonPath("$.data") { value(testAttachment.id) }
-//        }
-//
-//        // Verify that the service was called
-//        verify { fileUploaderService.staleImage(mockImageFile) }
+        // Create a mock image file
+        val mockImageFile = MockMultipartFile(
+            "image",
+            "test-image.png",
+            "image/png",
+            "test image content".toByteArray()
+        )
+
+        // Perform the request
+        mockMvc.multipart("/media/files/images") {
+            file(mockImageFile)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data") { value(testAttachment.id) }
+        }
+
+        // Verify that the service was called
+        verify { fileUploaderService.staleImage(mockImageFile) }
     }
 }
