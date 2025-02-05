@@ -12,4 +12,6 @@ data class Attachment(
     var contentType: String,
 
     var size: Long, // Size in Bytes
+
+    var isPersisted: Boolean = false
 )

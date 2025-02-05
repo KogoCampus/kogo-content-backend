@@ -89,7 +89,7 @@ class PostServiceTest {
             content = "Test Content",
             group = group,
             author = user,
-            images = mutableListOf(testAttachment),
+            attachments = mutableListOf(testAttachment),
             comments = mutableListOf(),
             likes = mutableListOf(),
             viewerIds = mutableListOf(),
@@ -305,8 +305,8 @@ class PostServiceTest {
         assertThat(result.content).isEqualTo(postDto.content)
         assertThat(result.group).isEqualTo(group)
         assertThat(result.author).isEqualTo(user)
-        assertThat(result.images).hasSize(1)
-        assertThat(result.images[0]).isEqualTo(testAttachment)
+        assertThat(result.attachments).hasSize(1)
+        assertThat(result.attachments[0]).isEqualTo(testAttachment)
 
         verify {
             fileService.uploadImage(testImage)
@@ -340,8 +340,8 @@ class PostServiceTest {
 
         assertThat(result.title).isEqualTo(postUpdate.title)
         assertThat(result.content).isEqualTo(postUpdate.content)
-        assertThat(result.images).hasSize(1)
-        assertThat(result.images[0]).isEqualTo(newAttachment)
+        assertThat(result.attachments).hasSize(1)
+        assertThat(result.attachments[0]).isEqualTo(newAttachment)
         assertThat(result.updatedAt).isGreaterThanOrEqualTo(post.updatedAt)
 
         verify {

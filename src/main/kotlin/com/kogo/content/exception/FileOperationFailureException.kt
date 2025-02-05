@@ -9,5 +9,6 @@ class FileOperationFailureException(
 enum class FileOperationFailure{
     UPLOAD,
     DELETE,
-    CONNECT
+    CONNECT,
+    KEEP
 }
