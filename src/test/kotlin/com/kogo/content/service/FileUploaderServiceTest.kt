@@ -11,6 +11,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.client.RestTemplate
+import com.kogo.content.storage.model.Attachment
 
 class FileUploaderServiceTest {
     private val restTemplate: RestTemplate = mockk()
@@ -35,7 +36,7 @@ class FileUploaderServiceTest {
         )
 
         val expectedResponse = mapOf(
-            "imageId" to "test-image-id",
+            "file_id" to "test-image-id",
             "filename" to "test.jpg",
             "url" to "http://test-url/test.jpg",
             "content_type" to MediaType.IMAGE_JPEG_VALUE,
@@ -55,7 +56,7 @@ class FileUploaderServiceTest {
         val result = fileUploaderService.uploadImage(imageFile)
 
         // Then
-        assertThat(result.id).isEqualTo(expectedResponse["imageId"])
+        assertThat(result.id).isEqualTo(expectedResponse["file_id"])
         assertThat(result.filename).isEqualTo(expectedResponse["filename"])
         assertThat(result.url).isEqualTo(expectedResponse["url"])
         assertThat(result.contentType).isEqualTo(expectedResponse["content_type"])
@@ -93,6 +94,53 @@ class FileUploaderServiceTest {
         // When & Then
         assertThrows<FileOperationFailureException> {
             fileUploaderService.uploadImage(imageFile)
+        }
+    }
+
+    @Test
+    fun `should stale image successfully`(){
+        // Given
+        val imageFile = MockMultipartFile(
+            "test-image",
+            "test.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "test image content".toByteArray()
+        )
+
+        val expectedResponse = mapOf(
+            "file_id" to "test-image-id",
+            "filename" to "test.jpg",
+            "url" to "http://test-url/test.jpg",
+            "content_type" to MediaType.IMAGE_JPEG_VALUE,
+            "size" to 1024L
+        )
+
+        every {
+            restTemplate.exchange(
+                "${fileUploaderService.fileUploaderUrl}/schedules",
+                HttpMethod.POST,
+                any(),
+                any<ParameterizedTypeReference<Map<String, Any>>>()
+            )
+        } returns ResponseEntity(expectedResponse, HttpStatus.OK)
+
+        // When
+        val result = fileUploaderService.staleImage(imageFile)
+
+        // Then
+        assertThat(result.id).isEqualTo(expectedResponse["file_id"])
+        assertThat(result.filename).isEqualTo(expectedResponse["filename"])
+        assertThat(result.url).isEqualTo(expectedResponse["url"])
+        assertThat(result.contentType).isEqualTo(expectedResponse["content_type"])
+        assertThat(result.size).isEqualTo(expectedResponse["size"])
+
+        verify {
+            restTemplate.exchange(
+                "${fileUploaderService.fileUploaderUrl}/schedules",
+                HttpMethod.POST,
+                any(),
+                any<ParameterizedTypeReference<Map<String, Any>>>()
+            )
         }
     }
 

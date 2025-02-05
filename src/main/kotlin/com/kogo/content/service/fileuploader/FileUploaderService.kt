@@ -42,7 +42,7 @@ open class FileUploaderService(){
             if (response.statusCode.is2xxSuccessful) {
                 log.info { "Image uploaded successfully" }
 
-                createAttachment(response)
+                createAttachment(response, true)
             } else {
                 throw FileOperationFailureException(FileOperationFailure.UPLOAD, image.contentType!!, "Failed to upload image, status code: ${response.statusCode}")
             }
@@ -123,6 +123,7 @@ open class FileUploaderService(){
 
     private fun createAttachment(response: ResponseEntity<Map<String, Any>>, isPersisted: Boolean=false): Attachment{
         val responseBody = response.body!!
+        println(responseBody)
 
         val imageId = responseBody["file_id"] as String
         val filename = responseBody["filename"] as String
