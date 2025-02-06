@@ -96,6 +96,7 @@ class UserService @Autowired constructor(
         with(userUpdate) {
             username?.let { user.username = it }
             pushToken?.let { user.pushNotificationToken = it }
+            appData?.let { user.appData = it }
             profileImage?.let { it ->
                 user.profileImage?.let { oldImage ->
                     runCatching { fileService.deleteImage(oldImage.id) }
@@ -123,5 +124,10 @@ class UserService @Autowired constructor(
     fun removeUserFromBlacklist(user: User, targetUser: User): User {
         user.blacklistUsers.remove(targetUser)
         return userRepository.save(user)
+    }
+
+    fun updateLatestAccessTimestamp(user: User) = run {
+        user.latestAccessTimestamp = System.currentTimeMillis()
+        userRepository.save(user)
     }
 }

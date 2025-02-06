@@ -1,5 +1,6 @@
 package com.kogo.content.endpoint.model
 
+import com.kogo.content.storage.model.entity.AppData
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 
@@ -10,7 +11,7 @@ class UserData {
         var email: String,
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
-        var pushNotificationToken: String?,
+        var appData: AppData,
         var blacklistUsers: List<Public>,
     ) {
         companion object {
@@ -20,7 +21,7 @@ class UserData {
                 email = user.email,
                 profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
                 schoolInfo = user.schoolInfo,
-                pushNotificationToken = user.pushNotificationToken,
+                appData = user.appData,
                 blacklistUsers = user.blacklistUsers.map { Public.from(it) },
             )
         }

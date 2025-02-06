@@ -36,7 +36,7 @@ class ExternalAuthRequestFilter(
         try {
             if (isAuthenticationRequiredUri(request.requestURI)) {
                 val accessToken = getAccessTokenFromRequestHeader(request)
-                val user = authenticationApiClient.authenticateAndCreateUser(accessToken)
+                val user = authenticationApiClient.authenticateOrCreateUser(accessToken)
 
                 val authorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
                 val authentication = UsernamePasswordAuthenticationToken(user.username, null, authorities)

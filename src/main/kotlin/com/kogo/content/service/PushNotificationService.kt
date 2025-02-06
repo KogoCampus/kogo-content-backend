@@ -22,10 +22,10 @@ class PushNotificationService(
     sealed class DeepLink(private val path: String) {
         val url: String get() = PREFIX + path
 
-        data class Post(val postId: String) : DeepLink("post/$postId")
-        data class Comment(val postId: String, val commentId: String) : DeepLink("post/$postId/$commentId")
-        data class Reply(val postId: String, val commentId: String, val replyId: String) :
-            DeepLink("post/$postId/$commentId/$replyId")
+        data class Post(val groupId: String, val postId: String) : DeepLink("group/$groupId/post/$postId")
+        data class Comment(val groupId: String, val postId: String, val commentId: String) : DeepLink("group/$groupId/post/$postId/comment/$commentId")
+        data class Reply(val groupId: String, val postId: String, val commentId: String, val replyId: String) :
+            DeepLink("group/$groupId/post/$postId/comment/$commentId/reply/$replyId")
         data class Group(val groupId: String) : DeepLink("group/$groupId")
     }
 

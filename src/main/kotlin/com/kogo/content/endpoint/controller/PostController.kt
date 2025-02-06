@@ -26,7 +26,6 @@ class PostController @Autowired constructor(
     private val groupService: GroupService,
     private val postService: PostService,
     private val userService: UserService,
-    private val pushNotificationService: PushNotificationService
 ) {
     @GetMapping("groups/{groupId}/posts")
     @Operation(

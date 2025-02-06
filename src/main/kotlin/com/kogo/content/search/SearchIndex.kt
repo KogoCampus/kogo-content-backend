@@ -21,13 +21,18 @@ abstract class SearchIndex<TModel : Any>(val entity: KClass<TModel>) {
     fun search(
         searchText: String,
         paginationRequest: PaginationRequest
-    ): PaginationSlice<TModel> = atlasSearchQueryBuilder.search(
-        entityClass = entity,
-        searchIndex = indexName(),
-        paginationRequest = paginationRequest,
-        searchText = searchText,
-        configuration = defaultSearchConfiguration()
-    )
+    ): PaginationSlice<TModel> = run {
+        if (searchText.isBlank()) {
+            throw IllegalArgumentException("search keyword is blank")
+        }
+        atlasSearchQueryBuilder.search(
+            entityClass = entity,
+            searchIndex = indexName(),
+            paginationRequest = paginationRequest,
+            searchText = searchText,
+            configuration = defaultSearchConfiguration()
+        )
+    }
 
     fun search(
         searchText: String,

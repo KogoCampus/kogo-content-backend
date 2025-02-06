@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -28,7 +29,7 @@ class SearchController(
     private val userService: UserService
 ) {
 
-    @GetMapping("posts")
+    @GetMapping("groups/{groupId}/posts")
     @Operation(
         summary = "Search posts by keyword",
         parameters = [
@@ -64,12 +65,13 @@ class SearchController(
             )]
         )]
     )
-    fun searchPosts(
+    fun searchPostsInGroup(
+        @PathVariable("groupId") groupId: String,
         @RequestParam("q") keyword: String,
         paginationRequest: PaginationRequest
     ) = run {
         val user = userService.findCurrentUser()
-        val paginationResponse = postService.search(keyword, paginationRequest)
+        val paginationResponse = postService.searchPostsInGroup(keyword, groupId, paginationRequest)
 
         HttpJsonResponse.successResponse(
             data = paginationResponse.items.map { it ->
@@ -115,7 +117,7 @@ class SearchController(
             )]
         )]
     )
-    fun searchTopics(
+    fun searchGroups(
         @RequestParam("q") keyword: String,
         paginationRequest: PaginationRequest
     ) = run {

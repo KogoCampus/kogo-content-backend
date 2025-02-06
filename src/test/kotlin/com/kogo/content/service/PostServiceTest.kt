@@ -14,6 +14,7 @@ import com.kogo.content.storage.model.Like
 import com.kogo.content.storage.model.entity.*
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.repository.PostRepository
+import com.kogo.content.util.convertTo12BytesHexString
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.types.ObjectId
@@ -59,7 +60,7 @@ class PostServiceTest {
         )
 
         group = Group(
-            id = "test-group-id",
+            id = convertTo12BytesHexString("test-group-id"),
             groupName = "Test Group",
             description = "Test Description",
             type = null,
@@ -265,7 +266,7 @@ class PostServiceTest {
     }
 
     @Test
-    fun `should search posts`() {
+    fun `should search posts in group`() {
         val searchKeyword = "test"
         val paginationRequest = PaginationRequest(limit = 10)
         val expectedResult = PaginationSlice(items = listOf(post))
@@ -273,17 +274,17 @@ class PostServiceTest {
         every {
             postSearchIndex.search(
                 searchText = searchKeyword,
-                paginationRequest = paginationRequest
+                paginationRequest = paginationRequest.withFilter("group", ObjectId(group.id!!))
             )
         } returns expectedResult
 
-        val result = postService.search(searchKeyword, paginationRequest)
+        val result = postService.searchPostsInGroup(searchKeyword, group.id!!, paginationRequest)
 
         assertThat(result).isEqualTo(expectedResult)
         verify {
             postSearchIndex.search(
                 searchText = searchKeyword,
-                paginationRequest = paginationRequest
+                paginationRequest = paginationRequest.withFilter("group", ObjectId(group.id!!))
             )
         }
     }

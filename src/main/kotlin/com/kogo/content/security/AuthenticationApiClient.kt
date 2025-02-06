@@ -46,7 +46,7 @@ class AuthenticationApiClient(
     companion object : Logger()
 
     @Transactional
-    fun authenticateAndCreateUser(accessToken: String): User {
+    fun authenticateOrCreateUser(accessToken: String): User {
         val authResponse = authenticateWithExternalApi(accessToken)
         return createOrGetUser(authResponse.userdata)
     }
@@ -72,6 +72,7 @@ class AuthenticationApiClient(
     private fun createOrGetUser(userData: UserData): User {
         val existingUser = userService.findUserByEmail(userData.email)
         if (existingUser != null) {
+            userService.updateLatestAccessTimestamp(existingUser)
             return existingUser
         }
 
