@@ -8,9 +8,9 @@ import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.Post
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.exception.ResourceNotFoundException
+import com.kogo.content.storage.model.entity.Friend
 import com.ninjasquad.springmockk.MockkBean
-import io.mockk.every
-import io.mockk.verify
+import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.*
+import java.util.concurrent.CompletableFuture
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -63,6 +64,8 @@ class MeControllerTest @Autowired constructor(
             username = updatedUsername
         }
 
+        every { userService.findUserByUsername(updatedUsername) } returns null
+        every { userService.findUserByUsername(currentUser.username) } returns null
         every { userService.update(currentUser, any()) } returns updatedUser
 
         mockMvc.multipart("/me") {
@@ -73,6 +76,26 @@ class MeControllerTest @Autowired constructor(
             jsonPath("$.data.username") { value(updatedUsername) }
             jsonPath("$.data.email") { value(currentUser.email) }
         }
+    }
+
+    @Test
+    fun `should block update user info when username is duplicate`() {
+        val duplicateUsername = "duplicate-username"
+        val duplicateUser = Fixture.createUserFixture().copy(username = duplicateUsername, id = "another-id")
+
+        every { userService.findUserByUsername(duplicateUsername) } returns duplicateUser
+        every { userService.findUserByUsername(currentUser.username) } returns currentUser
+
+        mockMvc.multipart("/me") {
+            part(MockPart("username", duplicateUsername.toByteArray()))
+            with { it.method = "PUT"; it }
+        }.andExpect {
+            status { isConflict() }
+            jsonPath("$.error") { value("DUPLICATED") }
+            jsonPath("$.details") { value("User with the given username already exists") }
+        }
+
+        verify(exactly = 0) { userService.update(any(), any()) }
     }
 
     @Test
@@ -247,5 +270,233 @@ class MeControllerTest @Autowired constructor(
             status { isOk() }
             jsonPath("$.data.profileImage") { doesNotExist() }
         }
+    }
+
+    @Test
+    fun `should send friend request successfully`() {
+        val targetUser = Fixture.createUserFixture().copy(
+            id = "target-user-id",
+            email = "target@example.com"
+        )
+        val friendNickname = "Friend Nick"
+        val updatedUser = currentUser.copy()
+
+        every { userService.findUserByEmail(targetUser.email) } returns targetUser
+        every { userService.sendFriendRequest(currentUser, targetUser, friendNickname) } returns updatedUser
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        mockMvc.multipart("/me/friends") {
+            part(MockPart("friendEmail", targetUser.email.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+        }.andExpect {
+            status { isOk() }
+        }
+
+        verify {
+            userService.sendFriendRequest(currentUser, targetUser, friendNickname)
+        }
+    }
+
+    @Test
+    fun `should not allow sending friend request to self`() {
+        val friendNickname = "Self Nick"
+        every { userService.findUserByEmail(currentUser.email) } returns currentUser
+
+        mockMvc.multipart("/me/friends") {
+            part(MockPart("friendEmail", currentUser.email.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value("BAD_REQUEST") }
+            jsonPath("$.details") { value("You cannot send yourself to friend") }
+        }
+
+        verify(exactly = 0) { userService.sendFriendRequest(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should handle non-existent user for friend request`() {
+        val nonExistentEmail = "nonexistent@example.com"
+        val friendNickname = "Non Existent Nick"
+        every { userService.findUserByEmail(nonExistentEmail) } returns null
+
+        mockMvc.multipart("/me/friends") {
+            part(MockPart("friendEmail", nonExistentEmail.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.error") { value("NOT_FOUND") }
+            jsonPath("$.details") { value("User not found for the given email $nonExistentEmail") }
+        }
+
+        verify(exactly = 0) { userService.sendFriendRequest(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should accept friend request successfully`() {
+        // Create mock users
+        val requestedUser = mockk<User>(relaxed = true) {
+            every { id } returns "requested-user-id"
+        }
+        val friendNickname = "Accepted Nick"
+
+        // Mock currentUser with empty friends list initially
+        currentUser = mockk(relaxed = true) {
+            every { id } returns "current-user-id"
+            every { friends } returns mutableListOf()
+        }
+
+        // Mock requested user with a pending friend request to current user
+        every { requestedUser.friends } returns mutableListOf(
+            Friend(currentUser, "test-friend-name", Friend.FriendStatus.PENDING)
+        )
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { userService.find("requested-user-id") } returns requestedUser
+        every { userService.acceptFriendRequest(currentUser, requestedUser, friendNickname) } returns currentUser
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        mockMvc.multipart("/me/friends/accept") {
+            part(MockPart("requestedUserId", requestedUser.id!!.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+            with { it.method = "PUT"; it }
+        }.andExpect {
+            status { isOk() }
+        }
+
+        verify {
+            userService.acceptFriendRequest(currentUser, requestedUser, friendNickname)
+        }
+    }
+
+    @Test
+    fun `should not accept friend request when no pending request exists`() {
+        val requestedUser = mockk<User>(relaxed = true) {
+            every { id } returns "requested-user-id"
+            every { friends } returns mutableListOf()
+        }
+        val friendNickname = "No Request Nick"
+
+        // Mock currentUser with empty friends list
+        currentUser = mockk(relaxed = true) {
+            every { id } returns "current-user-id"
+            every { friends } returns mutableListOf()
+        }
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { userService.find("requested-user-id") } returns requestedUser
+
+        mockMvc.multipart("/me/friends/accept") {
+            part(MockPart("requestedUserId", requestedUser.id!!.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+            with { it.method = "PUT"; it }
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value("BAD_REQUEST") }
+            jsonPath("$.details") { value("This user has not made a friend request for you") }
+        }
+
+        verify(exactly = 0) { userService.acceptFriendRequest(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should not accept friend request when already accepted`() {
+        // Create mock users
+        val requestedUser = mockk<User>(relaxed = true) {
+            every { id } returns "requested-user-id"
+        }
+        val friendNickname = "Already Accepted Nick"
+
+        // Mock currentUser with empty friends list
+        currentUser = mockk(relaxed = true) {
+            every { id } returns "current-user-id"
+            every { friends } returns mutableListOf()
+        }
+
+        // Mock requested user with an already accepted friend relationship
+        every { requestedUser.friends } returns mutableListOf(
+            Friend(currentUser, "test-friend-name", Friend.FriendStatus.ACCEPTED)
+        )
+
+        every { userService.findCurrentUser() } returns currentUser
+        every { userService.find("requested-user-id") } returns requestedUser
+
+        mockMvc.multipart("/me/friends/accept") {
+            part(MockPart("requestedUserId", requestedUser.id!!.toByteArray()))
+            part(MockPart("friendNickname", friendNickname.toByteArray()))
+            with { it.method = "PUT"; it }
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { value("BAD_REQUEST") }
+            jsonPath("$.details") { value("User has already accepted a friend request for you") }
+        }
+
+        verify(exactly = 0) { userService.acceptFriendRequest(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should delete notification successfully`() {
+        val notification = Notification(
+            id = "test-notification-id",
+            recipient = currentUser,
+            sender = Fixture.createUserFixture(),
+            title = "Test notification",
+            body = "Test body",
+            deepLinkUrl = "/"
+        )
+
+        every { pushNotificationService.find(notification.id!!) } returns notification
+        every { pushNotificationService.deleteNotification(notification.id!!, currentUser.id!!) } just runs
+
+        mockMvc.delete("/me/notifications/${notification.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+        }
+
+        verify {
+            pushNotificationService.deleteNotification(notification.id!!, currentUser.id!!)
+        }
+    }
+
+    @Test
+    fun `should not delete notification that belongs to another user`() {
+        val otherUser = Fixture.createUserFixture().copy(id = "other-user-id")
+        val notification = Notification(
+            id = "test-notification-id",
+            recipient = otherUser,
+            sender = Fixture.createUserFixture(),
+            title = "Test notification",
+            body = "Test body",
+            deepLinkUrl = "/"
+        )
+
+        every { pushNotificationService.find(notification.id!!) } returns notification
+
+        mockMvc.delete("/me/notifications/${notification.id}") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isUnauthorized() }
+            jsonPath("$.error") { value("UNAUTHORIZED") }
+            jsonPath("$.details") { value("Notification does not belong to the user") }
+        }
+
+        verify(exactly = 0) { pushNotificationService.deleteNotification(any(), any()) }
+    }
+
+    @Test
+    fun `should handle non-existent notification deletion`() {
+        val notificationId = "non-existent-id"
+        every { pushNotificationService.find(notificationId) } returns null
+
+        mockMvc.delete("/me/notifications/$notificationId") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.error") { value("NOT_FOUND") }
+            jsonPath("$.details") { value("Notification not found for the given notificationId $notificationId") }
+        }
+
+        verify(exactly = 0) { pushNotificationService.deleteNotification(any(), any()) }
     }
 }

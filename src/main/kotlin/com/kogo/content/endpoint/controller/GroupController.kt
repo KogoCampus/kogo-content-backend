@@ -98,7 +98,7 @@ class GroupController @Autowired constructor(
     fun updateCourseEnrollment(@Valid enrollment: Enrollment): ResponseEntity<*> = run {
         val user = userService.findCurrentUser()
 
-        val enrolledCourses = groupService.updateCourseEnrollment(userService.getSystemUser(), user, enrollment)
+        val enrolledCourses = groupService.updateCourseEnrollment(user, enrollment)
 
         HttpJsonResponse.successResponse(enrolledCourses.map { GroupResponse.from(it, user) }, "User successfully enrolled to course groups: ${enrolledCourses.map { it.id }}")
     }
@@ -150,7 +150,7 @@ class GroupController @Autowired constructor(
             val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
             val user = userService.findCurrentUser()
 
-            if(group.owner.id != user.id)
+            if(group.owner?.id != user.id)
                 return HttpJsonResponse.errorResponse(ErrorCode.USER_ACTION_DENIED, "group is not owned by user ${user.id}")
 
             if (groupUpdate.groupName != null
@@ -179,7 +179,7 @@ class GroupController @Autowired constructor(
         val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
         val user = userService.findCurrentUser()
 
-        if(group.owner.id != user.id)
+        if(group.owner?.id != user.id)
            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "group is not owned by user ${user.id}")
 
         val deletedTopic = groupService.delete(group)
@@ -251,7 +251,7 @@ class GroupController @Autowired constructor(
         val group = groupService.find(groupId) ?: groupService.findOrThrow(groupId)
         val user = userService.findCurrentUser()
 
-        if(group.owner.id != user.id)
+        if(group.owner?.id != user.id)
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "group is not owned by user ${user.id}")
 
         val updatedGroup = groupService.deleteProfileImage(group)
@@ -292,7 +292,7 @@ class GroupController @Autowired constructor(
         val group = groupService.findOrThrow(groupId)
         val user = userService.findCurrentUser()
 
-        if (!group.owner.id.equals(user.id)) {
+        if (!group.owner?.id.equals(user.id)) {
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "group is not owned by user")
         }
 

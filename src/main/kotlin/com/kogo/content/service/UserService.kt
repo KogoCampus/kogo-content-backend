@@ -5,13 +5,18 @@ import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.UserUpdate
+import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.fileuploader.FileUploaderService
+import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.NotificationType
+import com.kogo.content.storage.model.entity.Friend
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 import com.kogo.content.storage.repository.UserRepository
 import com.kogo.content.util.convertTo12BytesHexString
+import com.kogo.content.util.generateRandomCode
 import jakarta.annotation.PostConstruct
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,43 +32,10 @@ import org.springframework.transaction.annotation.Transactional
 class UserService @Autowired constructor(
     private val userRepository: UserRepository,
     private val fileService: FileUploaderService,
+    private val pushNotificationService: PushNotificationService
 ) : BaseEntityService<User, String>(User::class, userRepository) {
 
     companion object : Logger()
-
-    private val systemUserId = convertTo12BytesHexString("system_user")
-
-    @PostConstruct
-    fun createSystemUserIfNotExists() {
-        val systemUser = mongoTemplate.findOne(
-            Query.query(Criteria.where("_id").`is`(systemUserId)),
-            User::class.java
-        )
-
-        if (systemUser == null) {
-            log.info { "Creating system user..." }
-            try {
-                mongoTemplate.save(
-                    User(
-                        id = systemUserId,
-                        username = "system_user",
-                        email = "op@sfu.ca",
-                        schoolInfo = SchoolInfo(
-                            schoolKey = "system",
-                            schoolName = "System",
-                            schoolShortenedName = null,
-                        ),
-                        followingGroupIds = mutableListOf()
-                    )
-                ).also { log.info { "System user created successfully" } }
-            } catch (e: Exception) {
-                log.error(e) { "Failed to create system user" }
-                throw e
-            }
-        }
-    }
-
-    fun getSystemUser() = userRepository.findByIdOrNull(systemUserId)!!
 
     fun findUserByUsername(username: String) = userRepository.findByUsername(username)
     fun findUserByEmail(email: String) = userRepository.findByEmail(email)
@@ -82,21 +54,24 @@ class UserService @Autowired constructor(
                 .withSort("username", SortDirection.ASC)
         )
 
-    fun create(username: String, email: String, schoolInfo: SchoolInfo): User =
-        userRepository.save(
+    fun create(username: String, email: String, schoolInfo: SchoolInfo): User {
+        return userRepository.save(
             User(
-            username = username,
-            email = email,
-            schoolInfo = schoolInfo
+                username = username,
+                email = email,
+                schoolInfo = schoolInfo,
             )
         )
+    }
 
     @Transactional
     fun update(user: User, userUpdate: UserUpdate): User {
         with(userUpdate) {
             username?.let { user.username = it }
             pushToken?.let { user.pushNotificationToken = it }
-            appData?.let { user.appData = it }
+            appData?.let {
+                it.courseSchedule?.let { schedule -> user.appData.courseSchedule = schedule }
+            }
             profileImage?.let { it ->
                 user.profileImage?.let { oldImage ->
                     runCatching { fileService.deleteImage(oldImage.id) }
@@ -123,6 +98,71 @@ class UserService @Autowired constructor(
 
     fun removeUserFromBlacklist(user: User, targetUser: User): User {
         user.blacklistUsers.remove(targetUser)
+        return userRepository.save(user)
+    }
+
+    @Transactional
+    fun sendFriendRequest(user: User, targetUser: User, friendNickname: String): User {
+        // Clean up old friend request notifications
+        pushNotificationService.deleteNotificationsByTypeAndUsers(
+            type = NotificationType.FRIEND_REQUEST,
+            sender = user,
+            recipient = targetUser
+        )
+
+        pushNotificationService.sendPushNotification(
+            Notification(
+                type = NotificationType.FRIEND_REQUEST,
+                recipient = targetUser,
+                sender = user,
+                title = "You have a friend request",
+                body = "${user.email} would like to be your friend",
+                deepLinkUrl = PushNotificationService.DeepLink.fallabck
+            )
+        )
+
+        if (!user.friends.any { it.user.id == targetUser.id }) {
+            user.friends.add(Friend(targetUser, friendNickname, Friend.FriendStatus.PENDING))
+        }
+        return userRepository.save(user)
+    }
+
+    @Transactional
+    fun acceptFriendRequest(user: User, requestedUser: User, friendNickname: String): User {
+        // Clean up old friend request notifications
+        pushNotificationService.deleteNotificationsByTypeAndUsers(
+            type = NotificationType.FRIEND_REQUEST,
+            sender = requestedUser,
+            recipient = user
+        )
+
+        // Update requested user's friend status to ACCEPTED
+        val requestedUserFriend = requestedUser.friends.find { it.user.id == user.id }
+        if (requestedUserFriend != null) {
+            requestedUserFriend.status = Friend.FriendStatus.ACCEPTED
+            userRepository.save(requestedUser)
+        }
+
+        // Update or add friend status for current user
+        val existingFriend = user.friends.find { it.user.id == requestedUser.id }
+        if (existingFriend != null) {
+            existingFriend.status = Friend.FriendStatus.ACCEPTED
+        } else {
+            user.friends.add(Friend(requestedUser, friendNickname, Friend.FriendStatus.ACCEPTED))
+        }
+
+        // Send notification to the requested user
+        pushNotificationService.sendPushNotification(
+            Notification(
+                type = NotificationType.GENERAL,
+                recipient = requestedUser,
+                sender = user,
+                title = "Friend request accepted",
+                body = "${user.email} has accepted your friend request",
+                deepLinkUrl = PushNotificationService.DeepLink.fallabck
+            )
+        )
+
         return userRepository.save(user)
     }
 

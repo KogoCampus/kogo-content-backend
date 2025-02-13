@@ -94,7 +94,7 @@ class AuthenticationApiClient(
 
     private fun joinSchoolGroup(user: User) {
         val schoolGroup = groupService.findSchoolGroup(user.schoolInfo.schoolKey)
-            ?: groupService.createSchoolGroup(userService.getSystemUser(), user.schoolInfo)
+            ?: groupService.createSchoolGroup(user.schoolInfo)
 
         if (!schoolGroup.isFollowedBy(user)) {
             schoolGroup.followers.add(Follower(user))

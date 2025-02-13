@@ -72,20 +72,19 @@ class GroupService(
         )
     }
 
-    fun createSchoolGroup(schoolGroupOwner: User, schoolInfo: SchoolInfo): Group {
+    fun createSchoolGroup(schoolInfo: SchoolInfo): Group {
         return groupRepository.save(
             Group(
                 id = schoolGroupId(schoolKey = schoolInfo.schoolKey),
                 groupName = schoolInfo.schoolName,
                 description = "Official group for ${schoolInfo.schoolName}",
-                owner = schoolGroupOwner,
                 type = GroupType.SCHOOL_GROUP
             )
         )
     }
 
     @Transactional
-    fun updateCourseEnrollment(courseGroupOwner: User, user: User, enrollment: Enrollment): List<Group> {
+    fun updateCourseEnrollment(user: User, enrollment: Enrollment): List<Group> {
         val courseListing = courseListingService.retrieveCourseListing(enrollment.schoolKey)
         val newCourseIds = enrollment.base64CourseCodes.map { courseGroupId(it) }
 
@@ -108,7 +107,7 @@ class GroupService(
                     id = courseGroupId(it),
                     groupName = courseInfo["courseCode"].asText(),
                     description = courseInfo["courseName"].asText(),
-                    owner = courseGroupOwner,
+                    owner = null,
                     profileImage = null,
                     tags = mutableListOf(),
                     type = GroupType.COURSE_GROUP

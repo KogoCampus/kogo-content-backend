@@ -8,19 +8,26 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference
 @Document
 data class Notification (
     @Id
-    val id: String? = null,
+    var id: String? = null,
+
+    var type: NotificationType = NotificationType.GENERAL,
 
     @DocumentReference
-    val recipient: User,
+    var recipient: User,
 
     @DocumentReference
-    val sender: User?,
+    var sender: User?,
 
-    val title: String,
+    var title: String,
 
-    val body: String,
+    var body: String,
 
-    val deepLinkUrl: String?,
+    var deepLinkUrl: String?,
 
     var createdAt: Long = System.currentTimeMillis(),
 )
+
+enum class NotificationType {
+    GENERAL,
+    FRIEND_REQUEST
+}

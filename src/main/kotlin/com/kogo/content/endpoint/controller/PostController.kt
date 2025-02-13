@@ -114,7 +114,7 @@ class PostController @Autowired constructor(
         val user = userService.findCurrentUser()
 
         // Condition: either 1. user is the author of post or 2. user is the owner of group
-        if (post.author.id != user.id && group.owner.id != user.id)
+        if (post.author.id != user.id && group.owner?.id != user.id)
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the author of this post or the topic owner")
 
         postService.delete(post)

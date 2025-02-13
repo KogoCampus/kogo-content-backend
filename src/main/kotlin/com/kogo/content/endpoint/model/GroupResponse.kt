@@ -9,7 +9,7 @@ data class GroupResponse(
     var groupName: String,
     var description: String,
     var type: GroupType? = null,
-    var owner: UserData.Public,
+    var owner: UserData.Public?,
     var tags: List<String> = emptyList(),
     var profileImage: AttachmentResponse? = null,
     var followerCount: Int,
@@ -20,7 +20,7 @@ data class GroupResponse(
     companion object {
         fun from(group: Group, currentUser: User) = GroupResponse(
             id = group.id!!,
-            owner = UserData.Public.from(group.owner),
+            owner = group.owner?.let { UserData.Public.from(it) },
             groupName = group.groupName,
             description = group.description,
             type = group.type,

@@ -21,14 +21,16 @@ data class User (
 
     var pushNotificationToken: String? = null,
 
-    var appData: AppData = AppData(),
-
     var profileImage: Attachment? = null,
 
     var followingGroupIds: MutableList<String> = mutableListOf(),
 
     @DocumentReference
     var blacklistUsers: MutableList<User> = mutableListOf(),
+
+    var friends: MutableList<Friend> = mutableListOf(),
+
+    var appData: AppData = AppData(),
 
     var latestAccessTimestamp: Long = System.currentTimeMillis(),
     var firstAccessTimestamp: Long = System.currentTimeMillis(),
@@ -44,11 +46,26 @@ data class SchoolInfo (
     var schoolShortenedName: String? = null,
 )
 
+data class Friend (
+    var user: User,
+
+    var nickname: String,
+
+    var status: FriendStatus,
+
+    var createdAt: Long = System.currentTimeMillis(),
+) {
+    enum class FriendStatus {
+        PENDING,
+        ACCEPTED,
+    }
+}
+
 data class AppData(
-    var schedule: Schedule? = null,
+    var courseSchedule: CourseSchedule? = null,
 )
 
-data class Schedule(
+data class CourseSchedule(
     var currentVersion: String,
     var versions: JsonNode,
 )

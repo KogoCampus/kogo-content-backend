@@ -128,13 +128,13 @@ class PostService(
 
         savedPost.group.followers.forEach {
             if (!it.follower.id.equals(author.id)) {
-                pushNotificationService.dispatchPushNotification(
+                pushNotificationService.sendPushNotification(
                     Notification(
                         recipient = it.follower,
                         sender = null,
                         title = "A new post in ${savedPost.group.groupName} group!",
                         body = savedPost.title.take(50) + if (savedPost.title.length > 50) "..." else "",
-                        deepLinkUrl = PushNotificationService.DeepLink.Post(savedPost.group.id!!, savedPost.id!!).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Post(savedPost.id!!).url
                     ),
                 )
             }
@@ -180,13 +180,13 @@ class PostService(
         postRepository.save(post)
 
         if (!post.author.id.equals(author.id)) {
-            pushNotificationService.dispatchPushNotification(
+            pushNotificationService.sendPushNotification(
                 Notification(
                     recipient = post.author,
                     sender = author,
                     title = newComment.content.take(50) + if (newComment.content.length > 50) "..." else "",
                     body = "${author.username} commented on your post",
-                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.group.id!!, post.id!!).url
+                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             )
         }
@@ -211,20 +211,26 @@ class PostService(
             content = content,
             author = author,
         )
+
+        val pushNotificationRecipients = mutableSetOf(comment.author)
+        pushNotificationRecipients.addAll(comment.replies.map { it.author }.filter { !it.id.equals(author.id) })
+        pushNotificationRecipients.remove(author)
+
+        pushNotificationRecipients.forEach { recipient ->
+            pushNotificationService.sendPushNotification(
+                Notification(
+                    recipient = recipient,
+                    sender = author,
+                    title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
+                    body = "${author.username} replied to a comment",
+                    deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, comment.id, newReply.id).url
+                )
+            )
+        }
+
         comment.replies.add(newReply)
         postRepository.save(post)
 
-        if (!comment.author.id.equals(author.id)) {
-            pushNotificationService.dispatchPushNotification(
-                Notification(
-                    recipient = comment.author,
-                    sender = author,
-                    title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
-                    body = "${author.username} replied to your comment",
-                    deepLinkUrl = PushNotificationService.DeepLink.Reply(post.group.id!!, post.id!!, comment.id, newReply.id).url
-                ),
-            )
-        }
         return newReply
     }
 
@@ -265,13 +271,13 @@ class PostService(
         val success = postRepository.addLikeToPost(post, user.id!!)
 
         if (success && !post.author.id.equals(user.id)) {
-            pushNotificationService.dispatchPushNotification(
+            pushNotificationService.sendPushNotification(
                 Notification(
                     recipient = post.author,
                     sender = user,
                     title = post.title.take(50) + if (post.title.length > 50) "..." else "",
                     body = "${user.username} liked your post",
-                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.group.id!!, post.id!!).url
+                    deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             ).exceptionally { throwable ->
                 log.error(throwable) { "Failed to send push notification for post like ${post.id}" }
@@ -293,13 +299,13 @@ class PostService(
         if (success) {
             val comment = findCommentOrThrow(post.id!!, commentId)
             if (!comment.author.id.equals(user.id)) {
-                pushNotificationService.dispatchPushNotification(
+                pushNotificationService.sendPushNotification(
                     Notification(
                         recipient = comment.author,
                         sender = user,
                         title = comment.content.take(50) + if (comment.content.length > 50) "..." else "",
                         body = "${user.username} liked your comment",
-                        deepLinkUrl = PushNotificationService.DeepLink.Comment(post.group.id!!, post.id!!, commentId).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Comment(post.id!!, commentId).url
                     ),
                 ).exceptionally { throwable ->
                     log.error(throwable) { "Failed to send push notification for comment like ${post.id}/${commentId}" }
@@ -322,13 +328,13 @@ class PostService(
         if (success) {
             val reply = findReplyOrThrow(post.id!!, commentId, replyId)
             if (!reply.author.id.equals(user.id)) {
-                pushNotificationService.dispatchPushNotification(
+                pushNotificationService.sendPushNotification(
                     Notification(
                         recipient = reply.author,
                         sender = user,
                         title = reply.content.take(50) + if (reply.content.length > 50) "..." else "",
                         body = "${user.username} liked your reply",
-                        deepLinkUrl = PushNotificationService.DeepLink.Reply(post.group.id!!, post.id!!, commentId, replyId).url
+                        deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, commentId, replyId).url
                     ),
                 ).exceptionally { throwable ->
                     log.error(throwable) { "Failed to send push notification for reply like ${post.id}/${commentId}/${replyId}" }

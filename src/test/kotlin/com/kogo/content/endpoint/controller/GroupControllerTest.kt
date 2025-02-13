@@ -369,8 +369,7 @@ class GroupControllerTest @Autowired constructor(
             description = "Introduction to Computer Science"
         }
 
-        every { userService.getSystemUser() } returns systemUser
-        every { groupService.updateCourseEnrollment(systemUser, currentUser, enrollment) } returns listOf(courseGroup)
+        every { groupService.updateCourseEnrollment(currentUser, enrollment) } returns listOf(courseGroup)
 
         mockMvc.multipart("/media/groups/courses/enrollment") {
             part(MockPart("schoolKey", enrollment.schoolKey.toByteArray()))
@@ -384,7 +383,7 @@ class GroupControllerTest @Autowired constructor(
             jsonPath("$.data[0].type") { value(GroupType.COURSE_GROUP.name) }
         }
 
-        verify { groupService.updateCourseEnrollment(systemUser, currentUser, enrollment) }
+        verify { groupService.updateCourseEnrollment(currentUser, enrollment) }
     }
 
     @Test
@@ -395,8 +394,7 @@ class GroupControllerTest @Autowired constructor(
             base64CourseCodes = emptyList()
         )
 
-        every { userService.getSystemUser() } returns systemUser
-        every { groupService.updateCourseEnrollment(systemUser, currentUser, enrollment) } returns emptyList()
+        every { groupService.updateCourseEnrollment(currentUser, enrollment) } returns emptyList()
 
         mockMvc.multipart("/media/groups/courses/enrollment") {
             part(MockPart("schoolKey", enrollment.schoolKey.toByteArray()))
@@ -407,6 +405,6 @@ class GroupControllerTest @Autowired constructor(
             jsonPath("$.data.length()") { value(0) }
         }
 
-        verify { groupService.updateCourseEnrollment(systemUser, currentUser, enrollment) }
+        verify { groupService.updateCourseEnrollment(currentUser, enrollment) }
     }
 }

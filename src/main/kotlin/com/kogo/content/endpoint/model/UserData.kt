@@ -1,6 +1,7 @@
 package com.kogo.content.endpoint.model
 
 import com.kogo.content.storage.model.entity.AppData
+import com.kogo.content.storage.model.entity.Friend
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
 
@@ -12,6 +13,7 @@ class UserData {
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
         var appData: AppData,
+        var friendData: List<FriendData>,
         var blacklistUsers: List<Public>,
     ) {
         companion object {
@@ -21,10 +23,22 @@ class UserData {
                 email = user.email,
                 profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
                 schoolInfo = user.schoolInfo,
-                appData = user.appData,
                 blacklistUsers = user.blacklistUsers.map { Public.from(it) },
+                appData = user.appData,
+                friendData = user.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }
+                    .map { FriendData(
+                        nickname = it.nickname,
+                        friendUserId = it.user.id!!,
+                        friendAppData = it.user.appData
+                    ) }
             )
         }
+
+        data class FriendData (
+            var nickname: String,
+            var friendUserId: String,
+            var friendAppData: AppData,
+        )
     }
 
     data class Public(

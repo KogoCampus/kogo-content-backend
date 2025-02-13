@@ -11,6 +11,7 @@ import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
 import com.kogo.content.storage.model.Comment
 import com.kogo.content.storage.model.Like
+import com.kogo.content.storage.model.Reply
 import com.kogo.content.storage.model.entity.*
 import com.kogo.content.storage.pagination.MongoPaginationQueryBuilder
 import com.kogo.content.storage.repository.PostRepository
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
+import java.util.concurrent.CompletableFuture
 
 class PostServiceTest {
     private val postRepository: PostRepository = mockk()
@@ -228,7 +230,7 @@ class PostServiceTest {
 
         assertThat(result).isFalse()
         verify { postRepository.addLikeToPost(post, user.id!!) }
-        verify(exactly = 0) { pushNotificationService.dispatchPushNotification(any()) }
+        verify(exactly = 0) { pushNotificationService.sendPushNotification(any()) }
     }
 
     @Test
@@ -394,7 +396,37 @@ class PostServiceTest {
     }
 
     @Test
-    fun `should add comment to post and send notification`() {
+    fun `should add comment to post and send notification to post author`() {
+        // Create a different user as the commenter
+        val commenter = User(
+            id = "commenter-id",
+            username = "commenter",
+            email = "commenter@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+        val commentContent = "Test Comment"
+
+        every { postRepository.save(any()) } answers { firstArg() }
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        val result = postService.addCommentToPost(post, commentContent, commenter)
+
+        assertThat(result.content).isEqualTo(commentContent)
+        assertThat(result.author).isEqualTo(commenter)
+        assertThat(post.comments).contains(result)
+
+        // Verify notification was sent to post author
+        verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
+            notification.recipient == post.author &&
+            notification.sender == commenter &&
+            notification.body == "${commenter.username} commented on your post"
+        })}
+
+        verify { postRepository.save(post) }
+    }
+
+    @Test
+    fun `should not send notification when commenting on own post`() {
         val commentContent = "Test Comment"
 
         every { postRepository.save(any()) } answers { firstArg() }
@@ -405,31 +437,163 @@ class PostServiceTest {
         assertThat(result.author).isEqualTo(user)
         assertThat(post.comments).contains(result)
 
-        verify {
-            postRepository.save(post)
-        }
+        verify(exactly = 0) { pushNotificationService.sendPushNotification(any()) }
+        verify { postRepository.save(post) }
     }
 
     @Test
-    fun `should add reply to comment and send notification`() {
+    fun `should add like to post and send notification`() {
+        val liker = User(
+            id = "liker-id",
+            username = "liker",
+            email = "liker@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+
+        every { postRepository.addLikeToPost(post, liker.id!!) } returns true
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        val result = postService.addLikeToPost(post, liker)
+
+        assertThat(result).isTrue()
+
+        // Verify notification was sent to post author
+        verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
+            notification.recipient == post.author &&
+            notification.sender == liker &&
+            notification.body == "${liker.username} liked your post"
+        })}
+    }
+
+    @Test
+    fun `should not send notification when liking own post`() {
+        every { postRepository.addLikeToPost(post, user.id!!) } returns true
+
+        val result = postService.addLikeToPost(post, user)
+
+        assertThat(result).isTrue()
+        verify(exactly = 0) { pushNotificationService.sendPushNotification(any()) }
+    }
+
+    @Test
+    fun `should add like to comment and send notification`() {
+        val commentAuthor = User(
+            id = "comment-author-id",
+            username = "commentauthor",
+            email = "commentauthor@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+        val liker = User(
+            id = "liker-id",
+            username = "liker",
+            email = "liker@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+        val comment = Comment(
+            id = ObjectId().toString(),
+            content = "Test Comment",
+            author = commentAuthor
+        )
+        post.comments.add(comment)
+
+        every { postRepository.findById(post.id!!) } returns java.util.Optional.of(post)
+        every { postRepository.addLikeToComment(post, comment.id.toString(), liker.id!!) } returns true
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        val result = postService.addLikeToComment(post, comment.id.toString(), liker)
+
+        assertThat(result).isTrue()
+
+        // Verify notification was sent to comment author
+        verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
+            notification.recipient == commentAuthor &&
+            notification.sender == liker &&
+            notification.body == "${liker.username} liked your comment"
+        })}
+    }
+
+    @Test
+    fun `should not send notification when liking own comment`() {
         val comment = Comment(
             id = ObjectId().toString(),
             content = "Test Comment",
             author = user
         )
         post.comments.add(comment)
-        val replyContent = "Test Reply"
 
-        every { postRepository.save(any()) } answers { firstArg() }
+        every { postRepository.findById(post.id!!) } returns java.util.Optional.of(post)
+        every { postRepository.addLikeToComment(post, comment.id.toString(), user.id!!) } returns true
 
-        val result = postService.addReplyToComment(post, comment.id.toString(), replyContent, user)
+        val result = postService.addLikeToComment(post, comment.id.toString(), user)
 
-        assertThat(result.content).isEqualTo(replyContent)
-        assertThat(result.author).isEqualTo(user)
-        assertThat(comment.replies).contains(result)
+        assertThat(result).isTrue()
+        verify(exactly = 0) { pushNotificationService.sendPushNotification(any()) }
+    }
 
-        verify {
-            postRepository.save(post)
-        }
+    @Test
+    fun `should add like to reply and send notification`() {
+        val replyAuthor = User(
+            id = "reply-author-id",
+            username = "replyauthor",
+            email = "replyauthor@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+        val liker = User(
+            id = "liker-id",
+            username = "liker",
+            email = "liker@example.com",
+            schoolInfo = user.schoolInfo.copy()
+        )
+        val comment = Comment(
+            id = ObjectId().toString(),
+            content = "Test Comment",
+            author = user
+        )
+        val reply = Reply(
+            id = ObjectId().toString(),
+            content = "Test Reply",
+            author = replyAuthor
+        )
+        comment.replies.add(reply)
+        post.comments.add(comment)
+
+        every { postRepository.findById(post.id!!) } returns java.util.Optional.of(post)
+        every { postRepository.addLikeToReply(post, comment.id.toString(), reply.id.toString(), liker.id!!) } returns true
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+
+        val result = postService.addLikeToReply(post, comment.id.toString(), reply.id.toString(), liker)
+
+        assertThat(result).isTrue()
+
+        // Verify notification was sent to reply author
+        verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
+            notification.recipient == replyAuthor &&
+            notification.sender == liker &&
+            notification.body == "${liker.username} liked your reply"
+        })}
+    }
+
+    @Test
+    fun `should not send notification when liking own reply`() {
+        val comment = Comment(
+            id = ObjectId().toString(),
+            content = "Test Comment",
+            author = user
+        )
+        val reply = Reply(
+            id = ObjectId().toString(),
+            content = "Test Reply",
+            author = user
+        )
+        comment.replies.add(reply)
+        post.comments.add(comment)
+
+        every { postRepository.findById(post.id!!) } returns java.util.Optional.of(post)
+        every { postRepository.addLikeToReply(post, comment.id.toString(), reply.id.toString(), user.id!!) } returns true
+
+        val result = postService.addLikeToReply(post, comment.id.toString(), reply.id.toString(), user)
+
+        assertThat(result).isTrue()
+        verify(exactly = 0) { pushNotificationService.sendPushNotification(any()) }
     }
 }

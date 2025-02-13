@@ -5,6 +5,9 @@ import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.NotificationType
+import com.kogo.content.storage.model.entity.User
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.*
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -15,17 +18,21 @@ import java.util.concurrent.CompletableFuture
 class PushNotificationService(
     private val notificationRepository: NotificationRepository,
 ){
-    companion object : Logger() {
-        private const val PREFIX = "kogocampus://"
-    }
+    companion object : Logger()
 
     sealed class DeepLink(private val path: String) {
+        companion object {
+            const val PREFIX = "kogocampus://"
+
+            const val fallabck = PREFIX
+        }
+
         val url: String get() = PREFIX + path
 
-        data class Post(val groupId: String, val postId: String) : DeepLink("group/$groupId/post/$postId")
-        data class Comment(val groupId: String, val postId: String, val commentId: String) : DeepLink("group/$groupId/post/$postId/comment/$commentId")
-        data class Reply(val groupId: String, val postId: String, val commentId: String, val replyId: String) :
-            DeepLink("group/$groupId/post/$postId/comment/$commentId/reply/$replyId")
+        data class Post(val postId: String) : DeepLink("post/$postId")
+        data class Comment(val postId: String, val commentId: String) : DeepLink("post/$postId/comment/$commentId")
+        data class Reply(val postId: String, val commentId: String, val replyId: String) :
+            DeepLink("post/$postId/comment/$commentId/reply/$replyId")
         data class Group(val groupId: String) : DeepLink("group/$groupId")
     }
 
@@ -33,8 +40,10 @@ class PushNotificationService(
 
     private val restTemplate = RestTemplate()
 
+    fun find(notificationId: String) = notificationRepository.findByIdOrNull(notificationId)
+
     @Async
-    fun dispatchPushNotification(notification: Notification): CompletableFuture<Notification> {
+    fun sendPushNotification(notification: Notification): CompletableFuture<Notification> {
         return CompletableFuture.supplyAsync {
             if (notification.recipient.pushNotificationToken != null) {
                 val expoPushNotificationRequest = mapOf(
@@ -64,6 +73,21 @@ class PushNotificationService(
 
     fun getNotificationsByRecipientId(recipientId: String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
         return notificationRepository.findAllByRecipientId(recipientId, paginationRequest)
+    }
+
+    fun deleteNotification(notificationId: String, recipientId: String) {
+        notificationRepository.deleteById(notificationId)
+    }
+
+    fun deleteNotificationsByTypeAndUsers(type: NotificationType, sender: User, recipient: User) {
+        val notifications = notificationRepository.findByTypeAndSenderIdAndRecipientId(
+            type = type,
+            senderId = sender.id!!,
+            recipientId = recipient.id!!
+        )
+        if (notifications.isNotEmpty()) {
+            notificationRepository.deleteAll(notifications)
+        }
     }
 }
 

@@ -21,7 +21,7 @@ data class Group (
     var tags: MutableList<String> = mutableListOf(),
 
     @DocumentReference
-    var owner: User,
+    var owner: User? = null,
 
     var type: GroupType?,
 

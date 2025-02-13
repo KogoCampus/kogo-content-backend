@@ -454,7 +454,7 @@ class GroupServiceTest {
         every { groupRepository.save(any()) } answers { firstArg() }
         every { userRepository.save(any()) } answers { firstArg() }
 
-        val result = groupService.updateCourseEnrollment(mockk(), user, enrollment)
+        val result = groupService.updateCourseEnrollment(user, enrollment)
 
         // Verify the result
         assertThat(result).hasSize(1)
@@ -490,7 +490,7 @@ class GroupServiceTest {
 
         every { courseListingService.retrieveCourseListing(enrollment.schoolKey) } returns courseListing
 
-        val result = groupService.updateCourseEnrollment(mockk(), user, enrollment)
+        val result = groupService.updateCourseEnrollment(user, enrollment)
 
         assertThat(result).isEmpty()
         verify { courseListingService.retrieveCourseListing(enrollment.schoolKey) }

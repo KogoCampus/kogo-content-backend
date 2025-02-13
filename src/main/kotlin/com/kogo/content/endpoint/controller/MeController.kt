@@ -11,6 +11,8 @@ import com.kogo.content.service.PostService
 import com.kogo.content.service.GroupService
 import com.kogo.content.service.UserService
 import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.NotificationType
+import com.kogo.content.storage.model.entity.Friend
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -61,10 +63,18 @@ class MeController @Autowired constructor(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
         )]
     )
-    fun updateMe(@Valid meUpdate: UserUpdate) = run {
+    fun updateMe(@Valid meUpdate: UserUpdate): ResponseEntity<*> {
         val me = userService.findCurrentUser()
+
+        if (meUpdate.username != null) {
+            val existingUser = userService.findUserByUsername(meUpdate.username!!)
+            if (existingUser != null && existingUser.id != me.id) {
+                return HttpJsonResponse.errorResponse(ErrorCode.DUPLICATED, "User with the given username already exists")
+            }
+        }
+
         val updatedUser = userService.update(me, meUpdate)
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+        return HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
     @GetMapping("me/ownership/posts")
@@ -118,7 +128,7 @@ class MeController @Autowired constructor(
         val newOwner = userService.findOrThrow(newOwnerId)
         val originalOwner = userService.findCurrentUser()
 
-        if(group.owner.id != originalOwner.id)
+        if(group.owner?.id != originalOwner.id)
             return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this group")
 
         if(originalOwner.id == newOwnerId)
@@ -185,6 +195,28 @@ class MeController @Autowired constructor(
         )
     }
 
+    @DeleteMapping("me/notifications/{notificationId}")
+    @Operation(
+        summary = "delete a notification",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok"
+        )]
+    )
+    fun deleteNotification(@PathVariable("notificationId") notificationId: String): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+
+        val notification = pushNotificationService.find(notificationId)
+            ?: return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, "Notification not found for the given notificationId $notificationId")
+
+        if (notification.recipient.id != me.id) {
+            return HttpJsonResponse.errorResponse(ErrorCode.UNAUTHORIZED, "Notification does not belong to the user")
+        }
+
+        pushNotificationService.deleteNotification(notificationId, me.id!!)
+        HttpJsonResponse.successResponse(null)
+    }
+
     @PostMapping("me/blacklist")
     @Operation(
         summary = "add a user to my blacklist",
@@ -233,6 +265,62 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
     }
 
+    @RequestMapping(
+        path = ["me/friends"],
+        method = [RequestMethod.POST],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @Operation(
+        summary = "send a friend request to user",
+        requestBody = RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = FriendRequest::class))]),
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )]
+    )
+    fun sendFriendRequest(@Valid friendRequest: FriendRequest): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val targetUser = userService.findUserByEmail(friendRequest.friendEmail)
+            ?: return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, "User not found for the given email ${friendRequest.friendEmail}")
+
+        if (targetUser.id == me.id)
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot send yourself to friend")
+
+        val updatedUser = userService.sendFriendRequest(me, targetUser, friendRequest.friendNickname)
+
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
+
+    @RequestMapping(
+        path = ["me/friends/accept"],
+        method = [RequestMethod.PUT],
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @Operation(
+        summary = "accept friend request",
+        requestBody = RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = AcceptFriendRequest::class))]),
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+        )]
+    )
+    fun acceptFriendRequest(@Valid acceptRequest: AcceptFriendRequest): ResponseEntity<*> = run {
+        val me = userService.findCurrentUser()
+        val requestedUser = userService.find(acceptRequest.requestedUserId)
+            ?: return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, "User not found for the given id ${acceptRequest.requestedUserId}")
+
+        if (requestedUser.friends.any { it.user.id == me.id }) {
+            if (requestedUser.friends.any { it.user.id == me.id && it.status == Friend.FriendStatus.ACCEPTED }) {
+                return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "User has already accepted a friend request for you")
+            }
+        } else {
+            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "This user has not made a friend request for you")
+        }
+
+        val updatedUser = userService.acceptFriendRequest(me, requestedUser, acceptRequest.friendNickname)
+
+        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+    }
 
     @DeleteMapping("me/profileImage")
     @Operation(
