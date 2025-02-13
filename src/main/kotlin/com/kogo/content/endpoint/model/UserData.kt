@@ -13,7 +13,7 @@ class UserData {
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
         var appData: AppData,
-        var friendData: List<FriendData>,
+        var friends: List<FriendData>,
         var blacklistUsers: List<Public>,
     ) {
         companion object {
@@ -25,7 +25,7 @@ class UserData {
                 schoolInfo = user.schoolInfo,
                 blacklistUsers = user.blacklistUsers.map { Public.from(it) },
                 appData = user.appData,
-                friendData = user.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }
+                friends = user.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }
                     .map { FriendData(
                         nickname = it.nickname,
                         friendUserId = it.user.id!!,
