@@ -618,61 +618,29 @@
         }
       }
     },
-    "/media/groups/{id}/unfollow": {
+    "/media/groups/courses/enrollment": {
       "put": {
         "tags": [
           "group-controller"
         ],
-        "summary": "unfollow a group",
-        "operationId": "unfollowGroup",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GroupResponse"
-                }
+        "summary": "enroll course groups. If course group doesn\u0027t exist, then it will create a new group",
+        "operationId": "updateCourseEnrollment",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Enrollment"
               }
             }
           }
-        }
-      }
-    },
-    "/media/groups/{id}/follow": {
-      "put": {
-        "tags": [
-          "group-controller"
-        ],
-        "summary": "follow a group",
-        "operationId": "followGroup",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        },
         "responses": {
           "200": {
             "description": "ok",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GroupResponse"
+                  "$ref": "#/components/schemas/Enrollment"
                 }
               }
             }
@@ -711,6 +679,36 @@
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/friends/accept": {
+      "put": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "accept friend request",
+        "operationId": "acceptFriendRequest",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptFriendRequest"
               }
             }
           }
@@ -883,99 +881,6 @@
         }
       }
     },
-    "/media/groups": {
-      "get": {
-        "tags": [
-          "group-controller"
-        ],
-        "summary": "return a list of groups",
-        "operationId": "listGroups",
-        "parameters": [
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "headers": {
-              "X-Page-Token": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "X-Page-Size": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GroupResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "group-controller"
-        ],
-        "summary": "create a new group",
-        "operationId": "createGroup",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/GroupDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ok",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GroupResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/groups/{groupId}/posts": {
       "get": {
         "tags": [
@@ -1087,6 +992,36 @@
         }
       }
     },
+    "/media/files/images": {
+      "post": {
+        "tags": [
+          "file-upload-controller"
+        ],
+        "summary": "upload and stale an image file, will return a token indicating the stored image file that lives until expiry.",
+        "operationId": "uploadImage",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Image"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/ownership/groups/{groupId}/transfer": {
       "post": {
         "tags": [
@@ -1126,6 +1061,36 @@
         }
       }
     },
+    "/me/friends": {
+      "post": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "send a friend request to user",
+        "operationId": "sendFriendRequest",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FriendRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncludeCredentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/blacklist": {
       "post": {
         "tags": [
@@ -1158,13 +1123,13 @@
         }
       }
     },
-    "/media/search/posts": {
+    "/media/search/groups": {
       "get": {
         "tags": [
           "search-controller"
         ],
-        "summary": "Search posts by keyword",
-        "operationId": "searchPosts",
+        "summary": "Search topics by keyword",
+        "operationId": "searchGroups",
         "parameters": [
           {
             "name": "q",
@@ -1223,7 +1188,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PostResponse"
+                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -1232,13 +1197,13 @@
         }
       }
     },
-    "/media/search/groups": {
+    "/media/search/groups/{groupId}/posts": {
       "get": {
         "tags": [
           "search-controller"
         ],
-        "summary": "Search topics by keyword",
-        "operationId": "searchTopics",
+        "summary": "Search posts by keyword",
+        "operationId": "searchPostsInGroup",
         "parameters": [
           {
             "name": "q",
@@ -1249,6 +1214,79 @@
               "type": "string"
             }
           },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "page token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "limit for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paginationRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaginationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "headers": {
+              "X-Page-Token": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/groups": {
+      "get": {
+        "tags": [
+          "group-controller"
+        ],
+        "summary": "return a list of groups",
+        "operationId": "listGroups",
+        "parameters": [
           {
             "name": "page_token",
             "in": "query",
@@ -1430,65 +1468,6 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PostResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/feeds/trendingGroups": {
-      "get": {
-        "tags": [
-          "feed-controller"
-        ],
-        "summary": "return a list of trending groups",
-        "operationId": "listTrendingGroups",
-        "parameters": [
-          {
-            "name": "page_token",
-            "in": "query",
-            "description": "page token",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "limit for pagination",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "paginationRequest",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PaginationRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ok",
-            "headers": {
-              "next_page": {
-                "style": "simple",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GroupResponse"
                   }
                 }
               }
@@ -1794,6 +1773,37 @@
         }
       }
     },
+    "/me/notifications/{notificationId}": {
+      "delete": {
+        "tags": [
+          "me-controller"
+        ],
+        "summary": "delete a notification",
+        "operationId": "deleteNotification",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/blacklist/{user_id}": {
       "delete": {
         "tags": [
@@ -1917,7 +1927,6 @@
           "followerCount",
           "groupName",
           "id",
-          "owner",
           "tags",
           "updatedAt"
         ],
@@ -1931,6 +1940,13 @@
           },
           "description": {
             "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SCHOOL_GROUP",
+              "COURSE_GROUP"
+            ]
           },
           "owner": {
             "$ref": "#/components/schemas/Public"
@@ -2102,6 +2118,12 @@
           "content": {
             "type": "string"
           },
+          "staledImageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "attachmentDeleteIds": {
             "type": "array",
             "items": {
@@ -2160,10 +2182,73 @@
           }
         }
       },
+      "Enrollment": {
+        "required": [
+          "base64CourseCodes",
+          "schoolKey"
+        ],
+        "type": "object",
+        "properties": {
+          "schoolKey": {
+            "type": "string"
+          },
+          "base64CourseCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "list of course codes for course groups to join"
+            }
+          }
+        }
+      },
+      "AppData": {
+        "type": "object",
+        "properties": {
+          "courseSchedule": {
+            "$ref": "#/components/schemas/CourseSchedule"
+          }
+        }
+      },
+      "CourseSchedule": {
+        "required": [
+          "currentVersion",
+          "versions"
+        ],
+        "type": "object",
+        "properties": {
+          "currentVersion": {
+            "type": "string"
+          },
+          "versions": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        }
+      },
+      "FriendData": {
+        "required": [
+          "friendAppData",
+          "friendUserId",
+          "nickname"
+        ],
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string"
+          },
+          "friendUserId": {
+            "type": "string"
+          },
+          "friendAppData": {
+            "$ref": "#/components/schemas/AppData"
+          }
+        }
+      },
       "IncludeCredentials": {
         "required": [
+          "appData",
           "blacklistUsers",
           "email",
+          "friendData",
           "id",
           "schoolInfo",
           "username"
@@ -2185,8 +2270,14 @@
           "schoolInfo": {
             "$ref": "#/components/schemas/SchoolInfo"
           },
-          "pushNotificationToken": {
-            "type": "string"
+          "appData": {
+            "$ref": "#/components/schemas/AppData"
+          },
+          "friendData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendData"
+            }
           },
           "blacklistUsers": {
             "type": "array",
@@ -2195,6 +2286,9 @@
             }
           }
         }
+      },
+      "JsonNode": {
+        "type": "object"
       },
       "SchoolInfo": {
         "required": [
@@ -2229,6 +2323,24 @@
           },
           "pushToken": {
             "type": "string"
+          },
+          "appData": {
+            "$ref": "#/components/schemas/AppData"
+          }
+        }
+      },
+      "AcceptFriendRequest": {
+        "required": [
+          "friendNickname",
+          "requestedUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "requestedUserId": {
+            "type": "string"
+          },
+          "friendNickname": {
+            "type": "string"
           }
         }
       },
@@ -2240,33 +2352,6 @@
         "properties": {
           "content": {
             "type": "string"
-          }
-        }
-      },
-      "GroupDto": {
-        "required": [
-          "description",
-          "groupName",
-          "tags"
-        ],
-        "type": "object",
-        "properties": {
-          "groupName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of tags to attach to the group. Valid tag must not contain any special characters."
-            }
-          },
-          "profileImage": {
-            "type": "string",
-            "format": "binary"
           }
         }
       },
@@ -2283,6 +2368,13 @@
           "content": {
             "type": "string"
           },
+          "staledImageIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "list of ids of image files to add to the post"
+            }
+          },
           "images": {
             "type": "array",
             "items": {
@@ -2298,6 +2390,33 @@
               "description": "list of video files to add to the post",
               "format": "binary"
             }
+          }
+        }
+      },
+      "Image": {
+        "required": [
+          "image"
+        ],
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "FriendRequest": {
+        "required": [
+          "friendEmail",
+          "friendNickname"
+        ],
+        "type": "object",
+        "properties": {
+          "friendEmail": {
+            "type": "string"
+          },
+          "friendNickname": {
+            "type": "string"
           }
         }
       },
@@ -2414,6 +2533,7 @@
           "contentType",
           "filename",
           "id",
+          "isPersisted",
           "size",
           "url"
         ],
@@ -2434,6 +2554,41 @@
           "size": {
             "type": "integer",
             "format": "int64"
+          },
+          "isPersisted": {
+            "type": "boolean"
+          },
+          "persisted": {
+            "type": "boolean",
+            "writeOnly": true
+          }
+        }
+      },
+      "Friend": {
+        "required": [
+          "createdAt",
+          "nickname",
+          "status",
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED"
+            ]
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -2442,12 +2597,20 @@
           "body",
           "createdAt",
           "recipient",
-          "title"
+          "title",
+          "type"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "GENERAL",
+              "FRIEND_REQUEST"
+            ]
           },
           "recipient": {
             "$ref": "#/components/schemas/User"
@@ -2472,9 +2635,13 @@
       },
       "User": {
         "required": [
+          "appData",
           "blacklistUsers",
           "email",
+          "firstAccessTimestamp",
           "followingGroupIds",
+          "friends",
+          "latestAccessTimestamp",
           "schoolInfo",
           "username"
         ],
@@ -2509,6 +2676,23 @@
             "items": {
               "$ref": "#/components/schemas/User"
             }
+          },
+          "friends": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Friend"
+            }
+          },
+          "appData": {
+            "$ref": "#/components/schemas/AppData"
+          },
+          "latestAccessTimestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "firstAccessTimestamp": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       }
