@@ -2248,7 +2248,7 @@
           "appData",
           "blacklistUsers",
           "email",
-          "friendData",
+          "friends",
           "id",
           "schoolInfo",
           "username"
@@ -2273,7 +2273,7 @@
           "appData": {
             "$ref": "#/components/schemas/AppData"
           },
-          "friendData": {
+          "friends": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FriendData"
