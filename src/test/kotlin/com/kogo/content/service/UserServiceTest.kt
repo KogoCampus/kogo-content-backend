@@ -20,6 +20,10 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import java.util.concurrent.CompletableFuture
+import org.junit.jupiter.api.assertThrows
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 
 class UserServiceTest {
     private val userRepository: UserRepository = mockk()
@@ -31,7 +35,7 @@ class UserServiceTest {
         userRepository = userRepository,
         fileService = fileService,
         pushNotificationService = pushNotificationService,
-        notificationRepository = notificationRepository
+        notificationRepository = notificationRepository,
     )
 
     private lateinit var user: User
@@ -395,5 +399,44 @@ class UserServiceTest {
                 notification.body == "${user.email} has accepted your friend request"
             })
         }
+    }
+
+    @Test
+    fun `should update app data successfully`() {
+        val validAppDataJson = """
+            {
+                "courseSchedule": {
+                    "currentVersion": "1.0",
+                    "versions": {}
+                }
+            }
+        """.trimIndent()
+
+        val update = UserUpdate(
+            appData = validAppDataJson
+        )
+
+        every { userRepository.save(any()) } answers { firstArg() }
+
+        val result = userService.update(user, update)
+
+        assertThat(result.appData.courseSchedule).isNotNull
+        assertThat(result.appData.courseSchedule?.currentVersion).isEqualTo("1.0")
+        assertThat(result.appData.courseSchedule?.versions).isNotNull
+        verify { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `should throw IllegalArgumentException when app data JSON is invalid`() {
+        val invalidAppDataJson = "{ invalid json }"
+        val update = UserUpdate(
+            appData = invalidAppDataJson
+        )
+
+        assertThrows<IllegalArgumentException> {
+            userService.update(user, update)
+        }
+
+        verify(exactly = 0) { userRepository.save(any()) }
     }
 }

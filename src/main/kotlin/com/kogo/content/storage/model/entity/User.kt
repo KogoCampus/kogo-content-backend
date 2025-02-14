@@ -1,6 +1,8 @@
 package com.kogo.content.storage.model.entity
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.kogo.content.storage.model.Attachment
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
@@ -34,7 +36,17 @@ data class User (
 
     var latestAccessTimestamp: Long = System.currentTimeMillis(),
     var firstAccessTimestamp: Long = System.currentTimeMillis(),
-)
+) {
+    companion object {
+        fun parseAppData(jsonString: String, objectMapper: ObjectMapper): AppData {
+            try {
+                return objectMapper.readValue(jsonString, AppData::class.java)
+            } catch (e: JsonProcessingException) {
+                throw IllegalArgumentException("Invalid app data format. Please provide valid JSON.", e)
+            }
+        }
+    }
+}
 
 data class SchoolInfo (
     var schoolKey: String,
@@ -63,7 +75,21 @@ data class Friend (
 
 data class AppData(
     var courseSchedule: CourseSchedule? = null,
-)
+) {
+    companion object {
+        private val objectMapper = ObjectMapper().apply {
+            findAndRegisterModules()
+        }
+
+        fun fromJson(jsonString: String): AppData {
+            try {
+                return objectMapper.readValue(jsonString, AppData::class.java)
+            } catch (e: JsonProcessingException) {
+                throw IllegalArgumentException("Invalid app data format. Please provide valid JSON.", e)
+            }
+        }
+    }
+}
 
 data class CourseSchedule(
     var currentVersion: String,

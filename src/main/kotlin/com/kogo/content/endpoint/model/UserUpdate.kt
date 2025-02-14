@@ -16,5 +16,5 @@ data class UserUpdate (
 
     var pushToken: String? = null,
 
-    var appData: AppData? = null,
+    var appData: String? = null,
 )

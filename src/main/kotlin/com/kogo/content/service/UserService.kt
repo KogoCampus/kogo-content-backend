@@ -1,5 +1,8 @@
 package com.kogo.content.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.kogo.content.endpoint.common.FilterOperator
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
@@ -9,6 +12,7 @@ import com.kogo.content.logging.Logger
 import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Notification
 import com.kogo.content.storage.model.NotificationType
+import com.kogo.content.storage.model.entity.AppData
 import com.kogo.content.storage.model.entity.Friend
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
@@ -26,7 +30,7 @@ class UserService @Autowired constructor(
     private val userRepository: UserRepository,
     private val fileService: FileUploaderService,
     private val pushNotificationService: PushNotificationService,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
 ) : BaseEntityService<User, String>(User::class, userRepository) {
 
     companion object : Logger()
@@ -63,8 +67,8 @@ class UserService @Autowired constructor(
         with(userUpdate) {
             username?.let { user.username = it }
             pushToken?.let { user.pushNotificationToken = it }
-            appData?.let {
-                it.courseSchedule?.let { schedule -> user.appData.courseSchedule = schedule }
+            appData?.let { appDataString ->
+                user.appData = AppData.fromJson(appDataString)
             }
             profileImage?.let { it ->
                 user.profileImage?.let { oldImage ->
