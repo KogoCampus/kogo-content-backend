@@ -11,7 +11,7 @@ class UserData {
         var email: String,
         var profileImage: AttachmentResponse? = null,
         var schoolInfo: SchoolInfo,
-        var appLocalData: String,
+        var appLocalData: String?,
         var friends: List<FriendData>,
         var blacklistUsers: List<Public>,
     ) {
@@ -23,12 +23,12 @@ class UserData {
                 profileImage = user.profileImage?.let { AttachmentResponse.from(it) },
                 schoolInfo = user.schoolInfo,
                 blacklistUsers = user.blacklistUsers.map { Public.from(it) },
-                appLocalData = user.appLocalData ?: "",
+                appLocalData = user.appLocalData,
                 friends = user.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }
                     .map { FriendData(
                         nickname = it.nickname,
                         friendUserId = it.user.id!!,
-                        appLocalData = it.user.appLocalData ?: "",
+                        appLocalData = it.user.appLocalData,
                     ) }
             )
         }
@@ -36,7 +36,7 @@ class UserData {
         data class FriendData (
             var nickname: String,
             var friendUserId: String,
-            var appLocalData: String,
+            var appLocalData: String?,
         )
     }
 
