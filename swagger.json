@@ -2201,32 +2201,9 @@
           }
         }
       },
-      "AppData": {
-        "type": "object",
-        "properties": {
-          "courseSchedule": {
-            "$ref": "#/components/schemas/CourseSchedule"
-          }
-        }
-      },
-      "CourseSchedule": {
-        "required": [
-          "currentVersion",
-          "versions"
-        ],
-        "type": "object",
-        "properties": {
-          "currentVersion": {
-            "type": "string"
-          },
-          "versions": {
-            "$ref": "#/components/schemas/JsonNode"
-          }
-        }
-      },
       "FriendData": {
         "required": [
-          "friendAppData",
+          "appLocalData",
           "friendUserId",
           "nickname"
         ],
@@ -2238,14 +2215,14 @@
           "friendUserId": {
             "type": "string"
           },
-          "friendAppData": {
-            "$ref": "#/components/schemas/AppData"
+          "appLocalData": {
+            "type": "string"
           }
         }
       },
       "IncludeCredentials": {
         "required": [
-          "appData",
+          "appLocalData",
           "blacklistUsers",
           "email",
           "friends",
@@ -2270,8 +2247,8 @@
           "schoolInfo": {
             "$ref": "#/components/schemas/SchoolInfo"
           },
-          "appData": {
-            "$ref": "#/components/schemas/AppData"
+          "appLocalData": {
+            "type": "string"
           },
           "friends": {
             "type": "array",
@@ -2286,9 +2263,6 @@
             }
           }
         }
-      },
-      "JsonNode": {
-        "type": "object"
       },
       "SchoolInfo": {
         "required": [
@@ -2324,7 +2298,7 @@
           "pushToken": {
             "type": "string"
           },
-          "appData": {
+          "appLocalData": {
             "type": "string"
           }
         }
@@ -2636,7 +2610,6 @@
       },
       "User": {
         "required": [
-          "appData",
           "blacklistUsers",
           "email",
           "firstAccessTimestamp",
@@ -2684,8 +2657,8 @@
               "$ref": "#/components/schemas/Friend"
             }
           },
-          "appData": {
-            "$ref": "#/components/schemas/AppData"
+          "appLocalData": {
+            "type": "string"
           },
           "latestAccessTimestamp": {
             "type": "integer",
