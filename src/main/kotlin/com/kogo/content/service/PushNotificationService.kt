@@ -20,7 +20,7 @@ class PushNotificationService(
 
     sealed class DeepLink(private val path: String) {
         companion object {
-            const val PREFIX = "kogocampus://"
+            const val PREFIX = "assembli://"
 
             const val fallback = PREFIX
         }
