@@ -3,10 +3,12 @@ package com.kogo.content.service
 import com.kogo.content.endpoint.model.UserUpdate
 import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Attachment
+import com.kogo.content.storage.model.Notification
 import com.kogo.content.storage.model.NotificationType
 import com.kogo.content.storage.model.entity.Friend
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.storage.repository.UserRepository
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
@@ -23,11 +25,13 @@ class UserServiceTest {
     private val userRepository: UserRepository = mockk()
     private val fileService: FileUploaderService = mockk()
     private val pushNotificationService: PushNotificationService = mockk()
+    private val notificationRepository: NotificationRepository = mockk()
 
     private val userService = UserService(
         userRepository = userRepository,
         fileService = fileService,
-        pushNotificationService = pushNotificationService
+        pushNotificationService = pushNotificationService,
+        notificationRepository = notificationRepository
     )
 
     private lateinit var user: User
@@ -215,41 +219,19 @@ class UserServiceTest {
             every { email } returns "target@example.com"
         }
 
-        every { pushNotificationService.deleteNotificationsByTypeAndUsers(any(), any(), any()) } just Runs
-        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
-        every { userRepository.save(any()) } answers { firstArg() }
-
-        val result = userService.sendFriendRequest(user, targetUser, "test-nickname")
-
-        assertThat(result.friends).hasSize(1)
-        assertThat(result.friends[0].user.id).isEqualTo(targetUser.id)
-        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.PENDING)
-
-        verify {
-            pushNotificationService.deleteNotificationsByTypeAndUsers(
-                NotificationType.FRIEND_REQUEST,
-                user,
-                targetUser
+        val existingNotifications = listOf(
+            Notification(
+                type = NotificationType.FRIEND_REQUEST,
+                recipient = targetUser,
+                sender = user,
+                title = "Friend Request",
+                body = "You have a friend request",
+                deepLinkUrl = PushNotificationService.DeepLink.fallback
             )
-            pushNotificationService.sendPushNotification(match { notification ->
-                notification.recipient == targetUser &&
-                notification.sender == user
-            })
-            userRepository.save(user)
-        }
-    }
+        )
 
-    @Test
-    fun `should not send duplicate friend request`() {
-        val targetUser = mockk<User>(relaxed = true) {
-            every { id } returns "target-user-id"
-            every { email } returns "target@example.com"
-        }
-
-        // Add existing friend request
-        user.friends.add(Friend(targetUser, "test-nickname", Friend.FriendStatus.PENDING))
-
-        every { pushNotificationService.deleteNotificationsByTypeAndUsers(any(), any(), any()) } just Runs
+        every { pushNotificationService.getNotificationsByRecipientId("target-user-id") } returns existingNotifications
+        every { notificationRepository.delete(any()) } just Runs
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
         every { userRepository.save(any()) } answers { firstArg() }
 
@@ -260,11 +242,54 @@ class UserServiceTest {
         assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.PENDING)
 
         verify(exactly = 1) {
-            pushNotificationService.deleteNotificationsByTypeAndUsers(
-                NotificationType.FRIEND_REQUEST,
-                user,
-                targetUser
+            pushNotificationService.getNotificationsByRecipientId("target-user-id")
+            notificationRepository.delete(existingNotifications[0])
+            pushNotificationService.sendPushNotification(match { notification ->
+                notification.recipient == targetUser &&
+                notification.sender == user &&
+                notification.type == NotificationType.FRIEND_REQUEST &&
+                notification.title == "You have a friend request" &&
+                notification.body == "${user.email} would like to be your friend"
+            })
+            userRepository.save(user)
+        }
+    }
+
+    @Test
+    fun `should not send duplicate friend request`() {
+        val targetUser = mockk<User> {
+            every { id } returns "target-user-id"
+            every { email } returns "target@example.com"
+        }
+
+        // Add existing friend request
+        user.friends.add(Friend(targetUser, "test-nickname", Friend.FriendStatus.PENDING))
+
+        val existingNotifications = listOf(
+            Notification(
+                type = NotificationType.FRIEND_REQUEST,
+                recipient = targetUser,
+                sender = user,
+                title = "Friend Request",
+                body = "You have a friend request",
+                deepLinkUrl = PushNotificationService.DeepLink.fallback
             )
+        )
+
+        every { pushNotificationService.getNotificationsByRecipientId("target-user-id") } returns existingNotifications
+        every { notificationRepository.delete(any()) } just Runs
+        every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
+        every { userRepository.save(any()) } answers { firstArg() }
+
+        val result = userService.sendFriendRequest(user, targetUser, "test-nickname")
+
+        assertThat(result.friends).hasSize(1)
+        assertThat(result.friends[0].user.id).isEqualTo("target-user-id")
+        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.PENDING)
+
+        verify(exactly = 1) {
+            pushNotificationService.getNotificationsByRecipientId("target-user-id")
+            notificationRepository.delete(existingNotifications[0])
             pushNotificationService.sendPushNotification(any())
             userRepository.save(user)
         }
@@ -281,9 +306,19 @@ class UserServiceTest {
         // Setup pending friend request
         user.friends.add(Friend(requestedUser, "test-nickname", Friend.FriendStatus.PENDING))
 
+        val existingNotification = Notification(
+            type = NotificationType.FRIEND_REQUEST,
+            recipient = user,
+            sender = requestedUser,
+            title = "Friend Request",
+            body = "You have a friend request",
+            deepLinkUrl = PushNotificationService.DeepLink.fallback
+        )
+
+        every { pushNotificationService.getNotificationsByRecipientId(user.id!!) } returns listOf(existingNotification)
+        every { notificationRepository.save(any()) } answers { firstArg() }
         every { userRepository.save(requestedUser) } returns requestedUser
         every { userRepository.save(user) } returns user
-        every { pushNotificationService.deleteNotificationsByTypeAndUsers(any(), any(), any()) } just Runs
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
 
         val result = userService.acceptFriendRequest(user, requestedUser, "test-nickname")
@@ -293,16 +328,20 @@ class UserServiceTest {
         assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.ACCEPTED)
 
         verify {
-            pushNotificationService.deleteNotificationsByTypeAndUsers(
-                NotificationType.FRIEND_REQUEST,
-                requestedUser,
-                user
-            )
+            pushNotificationService.getNotificationsByRecipientId(user.id!!)
+            notificationRepository.save(match { notification ->
+                notification.type == NotificationType.FRIEND_REQUEST_ACCEPTED &&
+                notification.title == "Friend Request" &&
+                notification.body == "You have a friend request"
+            })
             userRepository.save(requestedUser)
             userRepository.save(user)
             pushNotificationService.sendPushNotification(match { notification ->
                 notification.recipient == requestedUser &&
-                notification.sender == user
+                notification.sender == user &&
+                notification.type == NotificationType.GENERAL &&
+                notification.title == "Friend request accepted" &&
+                notification.body == "${user.email} has accepted your friend request"
             })
         }
     }
@@ -318,9 +357,19 @@ class UserServiceTest {
         // Setup existing friend entries
         user.friends.add(Friend(requestedUser, "test-nickname", Friend.FriendStatus.PENDING))
 
+        val existingNotification = Notification(
+            type = NotificationType.FRIEND_REQUEST,
+            recipient = user,
+            sender = requestedUser,
+            title = "Friend Request",
+            body = "You have a friend request",
+            deepLinkUrl = PushNotificationService.DeepLink.fallback
+        )
+
+        every { pushNotificationService.getNotificationsByRecipientId(user.id!!) } returns listOf(existingNotification)
+        every { notificationRepository.save(any()) } answers { firstArg() }
         every { userRepository.save(requestedUser) } returns requestedUser
         every { userRepository.save(user) } returns user
-        every { pushNotificationService.deleteNotificationsByTypeAndUsers(any(), any(), any()) } just Runs
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
 
         val result = userService.acceptFriendRequest(user, requestedUser, "test-nickname")
@@ -330,16 +379,20 @@ class UserServiceTest {
         assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.ACCEPTED)
 
         verify {
-            pushNotificationService.deleteNotificationsByTypeAndUsers(
-                NotificationType.FRIEND_REQUEST,
-                requestedUser,
-                user
-            )
+            pushNotificationService.getNotificationsByRecipientId(user.id!!)
+            notificationRepository.save(match { notification ->
+                notification.type == NotificationType.FRIEND_REQUEST_ACCEPTED &&
+                notification.title == "Friend Request" &&
+                notification.body == "You have a friend request"
+            })
             userRepository.save(requestedUser)
             userRepository.save(user)
             pushNotificationService.sendPushNotification(match { notification ->
                 notification.recipient == requestedUser &&
-                notification.sender == user
+                notification.sender == user &&
+                notification.type == NotificationType.GENERAL &&
+                notification.title == "Friend request accepted" &&
+                notification.body == "${user.email} has accepted your friend request"
             })
         }
     }

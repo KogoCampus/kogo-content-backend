@@ -5,8 +5,6 @@ import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.model.Notification
-import com.kogo.content.storage.model.NotificationType
-import com.kogo.content.storage.model.entity.User
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.*
 import org.springframework.scheduling.annotation.Async
@@ -24,7 +22,7 @@ class PushNotificationService(
         companion object {
             const val PREFIX = "kogocampus://"
 
-            const val fallabck = PREFIX
+            const val fallback = PREFIX
         }
 
         val url: String get() = PREFIX + path
@@ -71,23 +69,14 @@ class PushNotificationService(
         }
     }
 
+    fun getNotificationsByRecipientId(recipientId: String): List<Notification> = notificationRepository.findAllByRecipientId(recipientId)
+
     fun getNotificationsByRecipientId(recipientId: String, paginationRequest: PaginationRequest): PaginationSlice<Notification> {
         return notificationRepository.findAllByRecipientId(recipientId, paginationRequest)
     }
 
     fun deleteNotification(notificationId: String, recipientId: String) {
         notificationRepository.deleteById(notificationId)
-    }
-
-    fun deleteNotificationsByTypeAndUsers(type: NotificationType, sender: User, recipient: User) {
-        val notifications = notificationRepository.findByTypeAndSenderIdAndRecipientId(
-            type = type,
-            senderId = sender.id!!,
-            recipientId = recipient.id!!
-        )
-        if (notifications.isNotEmpty()) {
-            notificationRepository.deleteAll(notifications)
-        }
     }
 }
 

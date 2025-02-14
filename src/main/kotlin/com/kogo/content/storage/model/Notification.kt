@@ -29,5 +29,6 @@ data class Notification (
 
 enum class NotificationType {
     GENERAL,
-    FRIEND_REQUEST
+    FRIEND_REQUEST,
+    FRIEND_REQUEST_ACCEPTED,
 }

@@ -5,7 +5,6 @@ import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.PaginationSlice
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.UserUpdate
-import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.service.fileuploader.FileUploaderService
 import com.kogo.content.storage.model.Notification
@@ -14,16 +13,10 @@ import com.kogo.content.storage.model.entity.Friend
 import com.kogo.content.storage.model.entity.Group
 import com.kogo.content.storage.model.entity.SchoolInfo
 import com.kogo.content.storage.model.entity.User
+import com.kogo.content.storage.repository.NotificationRepository
 import com.kogo.content.storage.repository.UserRepository
-import com.kogo.content.util.convertTo12BytesHexString
-import com.kogo.content.util.generateRandomCode
-import jakarta.annotation.PostConstruct
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -32,7 +25,8 @@ import org.springframework.transaction.annotation.Transactional
 class UserService @Autowired constructor(
     private val userRepository: UserRepository,
     private val fileService: FileUploaderService,
-    private val pushNotificationService: PushNotificationService
+    private val pushNotificationService: PushNotificationService,
+    private val notificationRepository: NotificationRepository
 ) : BaseEntityService<User, String>(User::class, userRepository) {
 
     companion object : Logger()
@@ -104,11 +98,10 @@ class UserService @Autowired constructor(
     @Transactional
     fun sendFriendRequest(user: User, targetUser: User, friendNickname: String): User {
         // Clean up old friend request notifications
-        pushNotificationService.deleteNotificationsByTypeAndUsers(
-            type = NotificationType.FRIEND_REQUEST,
-            sender = user,
-            recipient = targetUser
-        )
+        val notifications = pushNotificationService.getNotificationsByRecipientId(targetUser.id!!).filter {
+            it.sender?.id == user.id && it.type == NotificationType.FRIEND_REQUEST
+        }
+        notifications.forEach { notificationRepository.delete(it) }
 
         pushNotificationService.sendPushNotification(
             Notification(
@@ -117,7 +110,7 @@ class UserService @Autowired constructor(
                 sender = user,
                 title = "You have a friend request",
                 body = "${user.email} would like to be your friend",
-                deepLinkUrl = PushNotificationService.DeepLink.fallabck
+                deepLinkUrl = PushNotificationService.DeepLink.fallback
             )
         )
 
@@ -130,11 +123,11 @@ class UserService @Autowired constructor(
     @Transactional
     fun acceptFriendRequest(user: User, requestedUser: User, friendNickname: String): User {
         // Clean up old friend request notifications
-        pushNotificationService.deleteNotificationsByTypeAndUsers(
-            type = NotificationType.FRIEND_REQUEST,
-            sender = requestedUser,
-            recipient = user
-        )
+        val notification = pushNotificationService.getNotificationsByRecipientId(user.id!!).find {
+            it.sender?.id == requestedUser.id && it.type == NotificationType.FRIEND_REQUEST
+        }
+        notification?.type = NotificationType.FRIEND_REQUEST_ACCEPTED
+        notificationRepository.save(notification!!)
 
         // Update requested user's friend status to ACCEPTED
         val requestedUserFriend = requestedUser.friends.find { it.user.id == user.id }
@@ -159,7 +152,7 @@ class UserService @Autowired constructor(
                 sender = user,
                 title = "Friend request accepted",
                 body = "${user.email} has accepted your friend request",
-                deepLinkUrl = PushNotificationService.DeepLink.fallabck
+                deepLinkUrl = PushNotificationService.DeepLink.fallback
             )
         )
 
