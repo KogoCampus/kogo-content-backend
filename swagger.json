@@ -2325,7 +2325,7 @@
             "type": "string"
           },
           "appData": {
-            "$ref": "#/components/schemas/AppData"
+            "type": "string"
           }
         }
       },
