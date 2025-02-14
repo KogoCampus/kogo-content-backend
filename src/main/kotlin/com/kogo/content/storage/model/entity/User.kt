@@ -32,21 +32,11 @@ data class User (
 
     var friends: MutableList<Friend> = mutableListOf(),
 
-    var appData: AppData = AppData(),
+    var appLocalData: String? = null, // Stringified Json
 
     var latestAccessTimestamp: Long = System.currentTimeMillis(),
     var firstAccessTimestamp: Long = System.currentTimeMillis(),
-) {
-    companion object {
-        fun parseAppData(jsonString: String, objectMapper: ObjectMapper): AppData {
-            try {
-                return objectMapper.readValue(jsonString, AppData::class.java)
-            } catch (e: JsonProcessingException) {
-                throw IllegalArgumentException("Invalid app data format. Please provide valid JSON.", e)
-            }
-        }
-    }
-}
+)
 
 data class SchoolInfo (
     var schoolKey: String,
@@ -72,26 +62,3 @@ data class Friend (
         ACCEPTED,
     }
 }
-
-data class AppData(
-    var courseSchedule: CourseSchedule? = null,
-) {
-    companion object {
-        private val objectMapper = ObjectMapper().apply {
-            findAndRegisterModules()
-        }
-
-        fun fromJson(jsonString: String): AppData {
-            try {
-                return objectMapper.readValue(jsonString, AppData::class.java)
-            } catch (e: JsonProcessingException) {
-                throw IllegalArgumentException("Invalid app data format. Please provide valid JSON.", e)
-            }
-        }
-    }
-}
-
-data class CourseSchedule(
-    var currentVersion: String,
-    var versions: JsonNode,
-)

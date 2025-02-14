@@ -1,7 +1,6 @@
 package com.kogo.content.endpoint.model
 
 import com.kogo.content.endpoint.validator.ValidFile
-import com.kogo.content.storage.model.entity.AppData
 import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
 
@@ -16,5 +15,5 @@ data class UserUpdate (
 
     var pushToken: String? = null,
 
-    var appData: String? = null,
+    var appLocalData: String? = null,
 )

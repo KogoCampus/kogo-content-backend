@@ -400,43 +400,4 @@ class UserServiceTest {
             })
         }
     }
-
-    @Test
-    fun `should update app data successfully`() {
-        val validAppDataJson = """
-            {
-                "courseSchedule": {
-                    "currentVersion": "1.0",
-                    "versions": {}
-                }
-            }
-        """.trimIndent()
-
-        val update = UserUpdate(
-            appData = validAppDataJson
-        )
-
-        every { userRepository.save(any()) } answers { firstArg() }
-
-        val result = userService.update(user, update)
-
-        assertThat(result.appData.courseSchedule).isNotNull
-        assertThat(result.appData.courseSchedule?.currentVersion).isEqualTo("1.0")
-        assertThat(result.appData.courseSchedule?.versions).isNotNull
-        verify { userRepository.save(any()) }
-    }
-
-    @Test
-    fun `should throw IllegalArgumentException when app data JSON is invalid`() {
-        val invalidAppDataJson = "{ invalid json }"
-        val update = UserUpdate(
-            appData = invalidAppDataJson
-        )
-
-        assertThrows<IllegalArgumentException> {
-            userService.update(user, update)
-        }
-
-        verify(exactly = 0) { userRepository.save(any()) }
-    }
 }
