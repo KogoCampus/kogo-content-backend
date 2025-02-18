@@ -204,8 +204,8 @@ class GroupServiceTest {
             profileImage = newImage
         )
 
-        every { fileService.deleteImage(testAttachment.id) } just Runs
-        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { fileService.deleteFile(testAttachment.id) } just Runs
+        every { fileService.uploadFile(newImage) } returns newAttachment
         every { groupRepository.save(any()) } answers { firstArg() }
 
         val result = groupService.update(group, update)
@@ -217,8 +217,8 @@ class GroupServiceTest {
         assertThat(result.updatedAt).isGreaterThanOrEqualTo(group.updatedAt)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
-            fileService.uploadImage(newImage)
+            fileService.deleteFile(testAttachment.id)
+            fileService.uploadFile(newImage)
             groupRepository.save(any())
         }
     }
@@ -240,12 +240,12 @@ class GroupServiceTest {
             profileImage = newImage
         )
 
-        every { fileService.deleteImage(testAttachment.id) } throws FileOperationFailureException(
+        every { fileService.deleteFile(testAttachment.id) } throws FileOperationFailureException(
             FileOperationFailure.DELETE,
             null,
             "Failed to delete"
         )
-        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { fileService.uploadFile(newImage) } returns newAttachment
         every { groupRepository.save(any()) } answers { firstArg() }
 
         val result = groupService.update(group, update)
@@ -256,21 +256,21 @@ class GroupServiceTest {
         assertThat(result.profileImage).isEqualTo(newAttachment)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
-            fileService.uploadImage(newImage)
+            fileService.deleteFile(testAttachment.id)
+            fileService.uploadFile(newImage)
             groupRepository.save(any())
         }
     }
 
     @Test
     fun `should delete group and its profile image`() {
-        every { fileService.deleteImage(testAttachment.id) } just Runs
+        every { fileService.deleteFile(testAttachment.id) } just Runs
         every { groupRepository.deleteById(group.id!!) } just Runs
 
         groupService.delete(group)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
+            fileService.deleteFile(testAttachment.id)
             groupRepository.deleteById(group.id!!)
         }
     }

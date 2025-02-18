@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -35,15 +36,15 @@ class FileUploadController @Autowired constructor(
             description = "ok",
             content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))],
         )])
-    fun uploadImage(dto: FileUploaderDto.Image): ResponseEntity<*> {
+    fun uploadImage(@Valid dto: FileUploaderDto.Image): ResponseEntity<*> {
         val imageFile = dto.image
 
         // upload an image using fileUploaderService(schedule)
-        val attachment = fileUploaderService.staleImage(imageFile)
+        val attachment = fileUploaderService.staleFile(imageFile)
 
         // return the stale file token
-        val stalingToken = attachment.id
-        return HttpJsonResponse.successResponse(stalingToken)
+        val fileToken = fileUploaderService.createFileToken(attachment)
+        return HttpJsonResponse.successResponse(fileToken)
     }
 }
 

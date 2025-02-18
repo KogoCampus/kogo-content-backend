@@ -23,6 +23,7 @@ class FileUploadControllerTest @Autowired constructor(
     @MockkBean private lateinit var fileUploaderService: FileUploaderService
 
     private lateinit var testAttachment: Attachment
+    private lateinit var testFileToken: String
 
     @BeforeEach
     fun setup() {
@@ -36,8 +37,11 @@ class FileUploadControllerTest @Autowired constructor(
             isPersisted = false
         )
 
+        testFileToken = "test-file-token"
+
         // Mock the service to return the test attachment
-        every { fileUploaderService.staleImage(any()) } returns testAttachment
+        every { fileUploaderService.staleFile(any()) } returns testAttachment
+        every { fileUploaderService.createFileToken(testAttachment)} returns testFileToken
     }
 
     @Test
@@ -55,10 +59,11 @@ class FileUploadControllerTest @Autowired constructor(
             file(mockImageFile)
         }.andExpect {
             status { isOk() }
-            jsonPath("$.data") { value(testAttachment.id) }
+            jsonPath("$.data") { testFileToken }
         }
 
         // Verify that the service was called
-        verify { fileUploaderService.staleImage(mockImageFile) }
+        verify { fileUploaderService.staleFile(mockImageFile) }
+        verify { fileUploaderService.createFileToken(testAttachment) }
     }
 }

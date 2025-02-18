@@ -2,6 +2,8 @@ kogo-api:
     authenticate: ENC[AES256_GCM,data:QFZoS8DbWMG1qjX1vjJvilsyijjahsdDT0BJtdXRllzc8Pg8An8pNTH7cMmcJdQ=,iv:5VqnSM/UB2iUK7JYyeLgxza7u7sZpWUUwT5BT7BC+88=,tag:/9Lk10oZ+XV4vrwUm2qFgw==,type:str]
     getSchools: ENC[AES256_GCM,data:ZrPhovzp7ZxrdOqC2pFGROab7YYsS1ot28D2Jrm8B7nOx5O0O5D/KV6x,iv:D4cloji/WLDL7KWMO9/xiilmDt7cIBdkkRoupUyoTfA=,tag:Mw4JMLNUaJlMPPyQmrIhRw==,type:str]
     uploadFiles: ENC[AES256_GCM,data:OnccwCDn5I82CIn6x+G3bpG+z1Gz,iv:LYjXuJJ82HUpzk5jJXtuuHyaEJ0ivs9ZxduGnsOJ8d4=,tag:La7VkZ5ys7+PqZk8SaPflQ==,type:str]
+security:
+    secret-key: "S33KrcdZ8uua2tsGFkpzWnu4Q4Mu31P7QWf3A7BD050"
 spring:
     data:
         mongodb:

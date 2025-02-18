@@ -39,13 +39,15 @@ class FileUploaderServiceTest {
             "file_id" to "test-image-id",
             "filename" to "test.jpg",
             "url" to "http://test-url/test.jpg",
-            "content_type" to MediaType.IMAGE_JPEG_VALUE,
-            "size" to 1024L
+            "metadata" to mapOf(
+                "content_type" to MediaType.IMAGE_JPEG_VALUE,
+                "size" to 1024L
+            )
         )
 
         every {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/images",
+                "${fileUploaderService.fileUploaderUrl}/files",
                 HttpMethod.POST,
                 any(),
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -53,18 +55,21 @@ class FileUploaderServiceTest {
         } returns ResponseEntity(expectedResponse, HttpStatus.OK)
 
         // When
-        val result = fileUploaderService.uploadImage(imageFile)
+        val result = fileUploaderService.uploadFile(imageFile)
 
         // Then
         assertThat(result.id).isEqualTo(expectedResponse["file_id"])
         assertThat(result.filename).isEqualTo(expectedResponse["filename"])
         assertThat(result.url).isEqualTo(expectedResponse["url"])
-        assertThat(result.contentType).isEqualTo(expectedResponse["content_type"])
-        assertThat(result.size).isEqualTo(expectedResponse["size"])
+        // Extract metadata
+        val metadata = expectedResponse["metadata"] as Map<String, Any>
+        // Validate metadata fields
+        assertThat(result.contentType).isEqualTo(metadata["content_type"])
+        assertThat(result.size).isEqualTo(metadata["size"])
 
         verify {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/images",
+                "${fileUploaderService.fileUploaderUrl}/files",
                 HttpMethod.POST,
                 any(),
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -93,7 +98,7 @@ class FileUploaderServiceTest {
 
         // When & Then
         assertThrows<FileOperationFailureException> {
-            fileUploaderService.uploadImage(imageFile)
+            fileUploaderService.uploadFile(imageFile)
         }
     }
 
@@ -111,13 +116,15 @@ class FileUploaderServiceTest {
             "file_id" to "test-image-id",
             "filename" to "test.jpg",
             "url" to "http://test-url/test.jpg",
-            "content_type" to MediaType.IMAGE_JPEG_VALUE,
-            "size" to 1024L
+            "metadata" to mapOf(
+                "content_type" to MediaType.IMAGE_JPEG_VALUE,
+                "size" to 1024L
+            )
         )
 
         every {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/schedules",
+                "${fileUploaderService.fileUploaderUrl}/stale",
                 HttpMethod.POST,
                 any(),
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -125,18 +132,21 @@ class FileUploaderServiceTest {
         } returns ResponseEntity(expectedResponse, HttpStatus.OK)
 
         // When
-        val result = fileUploaderService.staleImage(imageFile)
+        val result = fileUploaderService.staleFile(imageFile)
 
         // Then
         assertThat(result.id).isEqualTo(expectedResponse["file_id"])
         assertThat(result.filename).isEqualTo(expectedResponse["filename"])
         assertThat(result.url).isEqualTo(expectedResponse["url"])
-        assertThat(result.contentType).isEqualTo(expectedResponse["content_type"])
-        assertThat(result.size).isEqualTo(expectedResponse["size"])
+        // Extract metadata
+                val metadata = expectedResponse["metadata"] as Map<String, Any>
+        // Validate metadata fields
+                assertThat(result.contentType).isEqualTo(metadata["content_type"])
+                assertThat(result.size).isEqualTo(metadata["size"])
 
         verify {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/schedules",
+                "${fileUploaderService.fileUploaderUrl}/stale",
                 HttpMethod.POST,
                 any(),
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -145,14 +155,14 @@ class FileUploaderServiceTest {
     }
 
     @Test
-    fun `should delete image successfully`() {
+    fun `should delete file successfully`() {
         // Given
-        val imageId = "test-image-id"
+        val fileId = "test-filee-id"
         val expectedResponse = mapOf<String, Any>()
 
         every {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/images/$imageId",
+                "${fileUploaderService.fileUploaderUrl}/files/$fileId",
                 HttpMethod.DELETE,
                 null,
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -160,11 +170,11 @@ class FileUploaderServiceTest {
         } returns ResponseEntity(expectedResponse, HttpStatus.OK)
 
         // When & Then
-        fileUploaderService.deleteImage(imageId)
+        fileUploaderService.deleteFile(fileId)
 
         verify {
             restTemplate.exchange(
-                "${fileUploaderService.fileUploaderUrl}/images/$imageId",
+                "${fileUploaderService.fileUploaderUrl}/files/$fileId",
                 HttpMethod.DELETE,
                 null,
                 any<ParameterizedTypeReference<Map<String, Any>>>()
@@ -188,7 +198,7 @@ class FileUploaderServiceTest {
 
         // When & Then
         assertThrows<FileOperationFailureException> {
-            fileUploaderService.deleteImage(imageId)
+            fileUploaderService.deleteFile(imageId)
         }
     }
 
@@ -213,7 +223,7 @@ class FileUploaderServiceTest {
 
         // When & Then
         assertThrows<FileOperationFailureException> {
-            fileUploaderService.uploadImage(imageFile)
+            fileUploaderService.uploadFile(imageFile)
         }
     }
 }

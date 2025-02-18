@@ -7,6 +7,9 @@ kogo-api:
     uploadFiles: "http://localhost:3300"
     courseListings: "https://course-scraper.kogocampus.com/api/course-listing"
 
+security:
+    secret-key: "3q2+7wH4X7x9e8E1mWq1yTzvOBx9/df5WxAyzF5J93M="
+
 springdoc:
     api-docs:
         path: /api-docs
