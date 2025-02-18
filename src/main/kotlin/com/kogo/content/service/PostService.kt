@@ -184,8 +184,8 @@ class PostService(
                 Notification(
                     recipient = post.author,
                     sender = author,
-                    title = newComment.content.take(50) + if (newComment.content.length > 50) "..." else "",
-                    body = "${author.username} commented on your post",
+                    title = author.username,
+                    body = "commented on your post: ${newComment.content.take(50)}" + if (newComment.content.length > 50) "..." else "",
                     deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             )
@@ -221,8 +221,8 @@ class PostService(
                 Notification(
                     recipient = recipient,
                     sender = author,
-                    title = newReply.content.take(50) + if (newReply.content.length > 50) "..." else "",
-                    body = "${author.username} replied to a comment",
+                    title = author.username,
+                    body = "replied to a comment: ${newReply.content.take(50)}" + if (newReply.content.length > 50) "..." else "",
                     deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, comment.id, newReply.id).url
                 )
             )
@@ -275,8 +275,8 @@ class PostService(
                 Notification(
                     recipient = post.author,
                     sender = user,
-                    title = post.title.take(50) + if (post.title.length > 50) "..." else "",
-                    body = "${user.username} liked your post",
+                    title = user.username,
+                    body = "Liked your post.",
                     deepLinkUrl = PushNotificationService.DeepLink.Post(post.id!!).url
                 ),
             ).exceptionally { throwable ->
@@ -303,8 +303,8 @@ class PostService(
                     Notification(
                         recipient = comment.author,
                         sender = user,
-                        title = comment.content.take(50) + if (comment.content.length > 50) "..." else "",
-                        body = "${user.username} liked your comment",
+                        title = user.username,
+                        body = "Liked your comment.",
                         deepLinkUrl = PushNotificationService.DeepLink.Comment(post.id!!, commentId).url
                     ),
                 ).exceptionally { throwable ->
@@ -332,8 +332,8 @@ class PostService(
                     Notification(
                         recipient = reply.author,
                         sender = user,
-                        title = reply.content.take(50) + if (reply.content.length > 50) "..." else "",
-                        body = "${user.username} liked your reply",
+                        title = user.username,
+                        body = "Liked your reply.",
                         deepLinkUrl = PushNotificationService.DeepLink.Reply(post.id!!, commentId, replyId).url
                     ),
                 ).exceptionally { throwable ->
