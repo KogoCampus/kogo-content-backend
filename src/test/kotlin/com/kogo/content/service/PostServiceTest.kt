@@ -419,7 +419,7 @@ class PostServiceTest {
         verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
             notification.recipient == post.author &&
             notification.sender == commenter &&
-            notification.body == "${commenter.username} commented on your post"
+            notification.body == "commented on your post: ${commentContent}"
         })}
 
         verify { postRepository.save(post) }
@@ -461,7 +461,7 @@ class PostServiceTest {
         verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
             notification.recipient == post.author &&
             notification.sender == liker &&
-            notification.body == "${liker.username} liked your post"
+            notification.body == "Liked your post."
         })}
     }
 
@@ -508,7 +508,7 @@ class PostServiceTest {
         verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
             notification.recipient == commentAuthor &&
             notification.sender == liker &&
-            notification.body == "${liker.username} liked your comment"
+            notification.body == "Liked your comment."
         })}
     }
 
@@ -569,7 +569,7 @@ class PostServiceTest {
         verify(exactly = 1) { pushNotificationService.sendPushNotification(match { notification ->
             notification.recipient == replyAuthor &&
             notification.sender == liker &&
-            notification.body == "${liker.username} liked your reply"
+            notification.body == "Liked your reply."
         })}
     }
 
