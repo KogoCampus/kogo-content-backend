@@ -862,7 +862,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CommentDto"
+                "$ref": "#/components/schemas/ReplyDto"
               }
             }
           }
@@ -2323,6 +2323,20 @@
         "type": "object",
         "properties": {
           "content": {
+            "type": "string"
+          }
+        }
+      },
+      "ReplyDto": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "mentionUserId": {
             "type": "string"
           }
         }
