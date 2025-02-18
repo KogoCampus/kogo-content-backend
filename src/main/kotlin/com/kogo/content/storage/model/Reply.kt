@@ -13,7 +13,7 @@ data class Reply(
     @DocumentReference
     var author: User,
 
-    var mentionReplyId: String? = null,
+    var mention: User? = null,
 
     // full likes history, regardless currently active or inactive
     var likes: MutableList<Like> = mutableListOf(),
