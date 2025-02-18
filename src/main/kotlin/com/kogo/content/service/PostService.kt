@@ -5,6 +5,7 @@ import com.kogo.content.endpoint.model.PostUpdate
 import com.kogo.content.endpoint.common.PaginationRequest
 import com.kogo.content.endpoint.common.SortDirection
 import com.kogo.content.endpoint.model.CommentUpdate
+import com.kogo.content.endpoint.model.ReplyUpdate
 import com.kogo.content.exception.ResourceNotFoundException
 import com.kogo.content.logging.Logger
 import com.kogo.content.search.SearchIndex
@@ -29,7 +30,7 @@ class PostService(
     private val postRepository: PostRepository,
     private val postSearchIndex: SearchIndex<Post>,
     private val fileService: FileUploaderService,
-    private val pushNotificationService: PushNotificationService
+    private val pushNotificationService: PushNotificationService,
 ) : BaseEntityService<Post, String>(Post::class, postRepository) {
     companion object : Logger()
 
@@ -205,15 +206,20 @@ class PostService(
     }
 
     @Transactional
-    fun addReplyToComment(post: Post, commentId: String, content: String, author: User): Reply {
+    fun addReplyToComment(post: Post, commentId: String, content: String, author: User, mentionedUser: User? = null): Reply {
         val comment = post.comments.find { it.id == commentId }!!
         val newReply = Reply(
             content = content,
+            mention = mentionedUser,
             author = author,
         )
 
         val pushNotificationRecipients = mutableSetOf(comment.author)
         pushNotificationRecipients.addAll(comment.replies.map { it.author }.filter { !it.id.equals(author.id) })
+        if (mentionedUser != null) {
+            pushNotificationRecipients.add(mentionedUser)
+        }
+
         pushNotificationRecipients.remove(author)
 
         pushNotificationRecipients.forEach { recipient ->

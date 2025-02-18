@@ -438,7 +438,7 @@ class PostController @Autowired constructor(
         method = [RequestMethod.POST],
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
-    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = CommentDto::class))])
+    @RequestBody(content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = Schema(implementation = ReplyDto::class))])
     @Operation(
         summary = "Create a new reply under the comment",
         responses = [ApiResponse(
@@ -450,13 +450,13 @@ class PostController @Autowired constructor(
     fun createReplyToComment(
         @PathVariable("postId") postId: String,
         @PathVariable("commentId") commentId: String,
-        @Valid commentDto: CommentDto
+        @Valid replyDto: ReplyDto
     ): ResponseEntity<*> = run {
         val post = postService.findOrThrow(postId)
         val comment = postService.findCommentOrThrow(post.id!!, commentId)
         val author = userService.findCurrentUser()
 
-        val newReply = postService.addReplyToComment(post, commentId, commentDto.content, author)
+        val newReply = postService.addReplyToComment(post, commentId, replyDto.content, author, replyDto.mentionUserId?.let{ userService.find(it)})
 
         HttpJsonResponse.successResponse(ReplyResponse.from(newReply, author))
     }
