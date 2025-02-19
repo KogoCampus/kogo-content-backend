@@ -144,10 +144,10 @@ class GroupService(
             tags?.let { group.tags = it.toMutableList() }
             profileImage?.let {
                 group.profileImage?.let { profileImage ->
-                    runCatching { fileService.deleteImage(profileImage.id!!) }
+                    runCatching { fileService.deleteFile(profileImage.id!!) }
                         .onFailure { log.error(it) { "Failed to delete old profile image: ${profileImage.id}" } }
                 }
-                group.profileImage = fileService.uploadImage(it)
+                group.profileImage = fileService.uploadFile(it)
             }
         }
         group.updatedAt = System.currentTimeMillis()
@@ -157,7 +157,7 @@ class GroupService(
     @Transactional
     fun delete(group: Group) {
         group.profileImage?.let { profileImage ->
-            fileService.deleteImage(profileImage.id!!)
+            fileService.deleteFile(profileImage.id!!)
         }
         groupRepository.deleteById(group.id!!)
     }
@@ -187,7 +187,7 @@ class GroupService(
 
     @Transactional
     fun deleteProfileImage(group: Group): Group {
-        group.profileImage?.let { fileService.deleteImage(it.id!!) }
+        group.profileImage?.let { fileService.deleteFile(it.id!!) }
         group.profileImage = null
         return groupRepository.save(group)
     }

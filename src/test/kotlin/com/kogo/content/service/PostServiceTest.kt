@@ -46,6 +46,7 @@ class PostServiceTest {
     private lateinit var post: Post
     private lateinit var testImage: MockMultipartFile
     private lateinit var testAttachment: Attachment
+    private lateinit var testFileToken: String
 
     @BeforeEach
     fun setup() {
@@ -86,6 +87,8 @@ class PostServiceTest {
             size = 1024L
         )
 
+        testFileToken = "test-file-token"
+
         post = Post(
             id = "test-post-id",
             title = "Test Post",
@@ -104,8 +107,6 @@ class PostServiceTest {
         val postDto = PostDto(
             title = "Test Post",
             content = "Test Content",
-            images = emptyList(),
-            videos = emptyList()
         )
 
         every { postRepository.save(any()) } answers { firstArg() }
@@ -141,13 +142,13 @@ class PostServiceTest {
 
     @Test
     fun `should delete post`() {
-        every { fileService.deleteImage(testAttachment.id) } just Runs
+        every { fileService.deleteFile(testAttachment.id) } just Runs
         every { postRepository.deleteById(post.id!!) } just Runs
 
         postService.delete(post)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
+            fileService.deleteFile(testAttachment.id)
             postRepository.deleteById(post.id!!)
         }
     }
@@ -296,11 +297,11 @@ class PostServiceTest {
         val postDto = PostDto(
             title = "Test Post",
             content = "Test Content",
-            images = listOf(testImage),
-            staledImageIds = listOf(testAttachment.id),
+            fileTokens = listOf(testFileToken),
         )
 
-        every { fileService.persistImage(testAttachment.id) } returns testAttachment
+        every { fileService.decodeFileToken(testFileToken) } returns testAttachment.id
+        every { fileService.persistFile(testAttachment.id) } returns testAttachment
         every { postRepository.save(any()) } answers { firstArg() }
 
         val result = postService.create(group, user, postDto)
@@ -313,7 +314,8 @@ class PostServiceTest {
         assertThat(result.attachments[0]).isEqualTo(testAttachment)
 
         verify {
-            fileService.persistImage(testAttachment.id)
+            fileService.decodeFileToken(testFileToken)
+            fileService.persistFile(testAttachment.id)
             postRepository.save(any())
         }
     }
@@ -333,12 +335,13 @@ class PostServiceTest {
             title = "Updated Title",
             content = "Updated Content",
             images = listOf(newImage),
-            staledImageIds = listOf(newAttachment.id),
+            fileTokens = listOf(testFileToken),
             attachmentDeleteIds = listOf(testAttachment.id)
         )
 
-        every { fileService.persistImage(newAttachment.id) } returns newAttachment
-        every { fileService.deleteImage(testAttachment.id) } just Runs
+        every { fileService.decodeFileToken(testFileToken) } returns newAttachment.id
+        every { fileService.persistFile(newAttachment.id) } returns newAttachment
+        every { fileService.deleteFile(testAttachment.id) } just Runs
         every { postRepository.save(any()) } answers { firstArg() }
 
         val result = postService.update(post, postUpdate)
@@ -350,8 +353,9 @@ class PostServiceTest {
         assertThat(result.updatedAt).isGreaterThanOrEqualTo(post.updatedAt)
 
         verify {
-            fileService.persistImage(newAttachment.id)
-            fileService.deleteImage(testAttachment.id)
+            fileService.decodeFileToken(testFileToken)
+            fileService.persistFile(newAttachment.id)
+            fileService.deleteFile(testAttachment.id)
             postRepository.save(any())
         }
     }
@@ -364,7 +368,7 @@ class PostServiceTest {
             attachmentDeleteIds = listOf(testAttachment.id)
         )
 
-        every { fileService.deleteImage(testAttachment.id) } throws FileOperationFailureException(
+        every { fileService.deleteFile(testAttachment.id) } throws FileOperationFailureException(
             FileOperationFailure.DELETE,
             null,
             "Failed to delete"
@@ -377,20 +381,20 @@ class PostServiceTest {
         assertThat(result.content).isEqualTo(postUpdate.content)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
+            fileService.deleteFile(testAttachment.id)
             postRepository.save(any())
         }
     }
 
     @Test
     fun `should delete post and its images`() {
-        every { fileService.deleteImage(testAttachment.id) } just Runs
+        every { fileService.deleteFile(testAttachment.id) } just Runs
         every { postRepository.deleteById(post.id!!) } just Runs
 
         postService.delete(post)
 
         verify {
-            fileService.deleteImage(testAttachment.id)
+            fileService.deleteFile(testAttachment.id)
             postRepository.deleteById(post.id!!)
         }
     }

@@ -2,6 +2,9 @@
 server:
     port: 8081
 
+security:
+    secret-key: "test-secret-key"
+
 spring:
     data:
         mongodb:

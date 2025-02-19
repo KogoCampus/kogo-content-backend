@@ -4,15 +4,15 @@ import com.kogo.content.exception.FileOperationFailure
 import com.kogo.content.exception.FileOperationFailureException
 import com.kogo.content.logging.Logger
 import com.kogo.content.storage.model.Attachment
-import jakarta.annotation.PostConstruct
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.http.client.MultipartBodyBuilder
-import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
-import org.springframework.web.client.exchange
 import org.springframework.web.multipart.MultipartFile
+import java.util.*
 
 open class FileUploaderService(){
     companion object : Logger()
@@ -21,18 +21,21 @@ open class FileUploaderService(){
     lateinit var fileUploaderUrl: String
     var restTemplate = RestTemplate()
 
-    fun uploadImage(image: MultipartFile): Attachment {
+    @Value("\${security.secret-key}")
+    private lateinit var secretKey: String
+
+    fun uploadFile(file: MultipartFile): Attachment {
         val headers = HttpHeaders().apply {
             contentType = MediaType.MULTIPART_FORM_DATA
         }
         val bodyBuilder = MultipartBodyBuilder().apply {
-            part("file", image.resource)
+            part("file", file.resource)
         }
         val requestEntity = HttpEntity(bodyBuilder.build(), headers)
 
         return try {
             val response = restTemplate.exchange(
-                "${fileUploaderUrl}/images", // URL for file upload
+                "${fileUploaderUrl}/files", // URL for file upload
                 HttpMethod.POST,
                 requestEntity,
                 object : ParameterizedTypeReference<Map<String, Any>>() {}
@@ -40,29 +43,27 @@ open class FileUploaderService(){
 
             // Check if the upload was successful
             if (response.statusCode.is2xxSuccessful) {
-                log.info { "Image uploaded successfully" }
-
                 createAttachment(response, true)
             } else {
-                throw FileOperationFailureException(FileOperationFailure.UPLOAD, image.contentType!!, "Failed to upload image, status code: ${response.statusCode}")
+                throw FileOperationFailureException(FileOperationFailure.UPLOAD, file.contentType!!, "Failed to upload a file, status code: ${response.statusCode}")
             }
         } catch (ex: Exception) {
-            throw FileOperationFailureException(FileOperationFailure.UPLOAD, image.contentType!!, ex.toString())
+            throw FileOperationFailureException(FileOperationFailure.UPLOAD, file.contentType!!, ex.toString())
         }
     }
 
-    fun staleImage(image: MultipartFile): Attachment {
+    fun staleFile(file: MultipartFile): Attachment {
         val headers = HttpHeaders().apply {
             contentType = MediaType.MULTIPART_FORM_DATA
         }
         val bodyBuilder = MultipartBodyBuilder().apply {
-            part("file", image.resource)
+            part("file", file.resource)
         }
         val requestEntity = HttpEntity(bodyBuilder.build(), headers)
 
         return try {
             val response = restTemplate.exchange(
-                "${fileUploaderUrl}/schedules", // URL for file upload
+                "${fileUploaderUrl}/stale", // URL for file upload
                 HttpMethod.POST,
                 requestEntity,
                 object : ParameterizedTypeReference<Map<String, Any>>() {}
@@ -70,27 +71,25 @@ open class FileUploaderService(){
 
             // Check if the upload was successful
             if (response.statusCode.is2xxSuccessful) {
-                log.info { "Image uploaded successfully" }
-                println(response)
                 createAttachment(response)
             } else {
-                throw FileOperationFailureException(FileOperationFailure.UPLOAD, image.contentType!!, "Failed to upload image, status code: ${response.statusCode}")
+                throw FileOperationFailureException(FileOperationFailure.UPLOAD, file.contentType!!, "Failed to upload a file, status code: ${response.statusCode}")
             }
         } catch (ex: Exception) {
-            throw FileOperationFailureException(FileOperationFailure.UPLOAD, image.contentType!!, ex.toString())
+            throw FileOperationFailureException(FileOperationFailure.UPLOAD, file.contentType!!, ex.toString())
         }
     }
 
-    fun persistImage(imageId: String): Attachment{
+    fun persistFile(fileId: String): Attachment{
         return try {
             restTemplate.exchange(
-                "${fileUploaderUrl}/schedules/keep/${imageId}", // URL for file staling
+                "${fileUploaderUrl}/stale/persist/${fileId}", // URL for file staling
                 HttpMethod.POST,
                 null,
                 object : ParameterizedTypeReference<Map<String, Any>>() {}
             )
             val response = restTemplate.exchange(
-                "${fileUploaderUrl}/images/${imageId}", // URL for file staling
+                "${fileUploaderUrl}/files/${fileId}", // URL for file staling
                 HttpMethod.GET,
                 null,
                 object : ParameterizedTypeReference<Map<String, Any>>() {}
@@ -103,53 +102,63 @@ open class FileUploaderService(){
         }
     }
 
-    fun deleteImage(imageId: String){
+    fun deleteFile(fileId: String){
         try{
             val response = restTemplate.exchange(
-                "$fileUploaderUrl/images/$imageId", // URL for file delete
+                "$fileUploaderUrl/files/$fileId", // URL for file delete
                 HttpMethod.DELETE,
                 null, // No body or headers required
                 object : ParameterizedTypeReference<Map<String, Any>>() {}
             )
             if (response.statusCode.is2xxSuccessful) {
-                log.info { "Successfully deleted image with ID: $imageId" }
+                log.info { "Successfully deleted a file with ID: $fileId" }
             } else {
-                throw FileOperationFailureException(FileOperationFailure.DELETE, null, "Failed to delete image with ID: $imageId, status code: ${response.statusCode}")
+                throw FileOperationFailureException(FileOperationFailure.DELETE, null, "Failed to delete a file with ID: $fileId, status code: ${response.statusCode}")
             }
         } catch (ex: Exception) {
-            throw FileOperationFailureException(FileOperationFailure.DELETE, null, "Error while deleting image with ID: $imageId: ${ex.message}")
+            throw FileOperationFailureException(FileOperationFailure.DELETE, null, "Error while deleting a file with ID: $fileId: ${ex.message}")
         }
     }
 
     private fun createAttachment(response: ResponseEntity<Map<String, Any>>, isPersisted: Boolean=false): Attachment{
         val responseBody = response.body!!
-        println(responseBody)
 
-        val imageId = responseBody["file_id"] as String
+        val file_id = responseBody["file_id"] as String
         val filename = responseBody["filename"] as String
         val url = responseBody["url"] as String
 
-        val metadata = responseBody["metadata"] as? Map<*, *>
+        val metadata = responseBody["metadata"] as Map<*, *>
 
-        val contentType: String
-        val finalSize: Long
-
-        if (metadata != null) {
-            contentType = metadata["content_type"] as String
-            finalSize = (metadata["size"] as Number).toLong()
-        } else {
-            contentType = responseBody["content_type"] as String
-            finalSize = (responseBody["size"] as Number).toLong()
-        }
+        val contentType = metadata["content_type"] as String
+        val finalSize = (metadata["size"] as Number).toLong()
 
         // Return the Attachment object with extracted values
         return Attachment(
-            id = imageId,
+            id = file_id,
             filename = filename,
             url = url,
             contentType = contentType,
             size = finalSize,
             isPersisted = isPersisted
         )
+    }
+
+    fun createFileToken(file: Attachment): String {
+        val algorithm = Algorithm.HMAC256(secretKey)
+
+        return JWT.create()
+            .withSubject("file_token")
+            .withClaim("file_id", file.id)
+            .withClaim("filename", file.filename)
+            .withClaim("url", file.url)
+            .withClaim("contentType", file.contentType)
+            .withClaim("size", file.size)
+            .withExpiresAt(Date(System.currentTimeMillis() + 20 * 60 * 1000)) // Expires in 20 mins
+            .sign(algorithm)
+    }
+
+    fun decodeFileToken(fileToken: String): String {
+        val decodedJWT = JWT.decode(fileToken)
+        return decodedJWT.getClaim("file_id").asString()
     }
 }

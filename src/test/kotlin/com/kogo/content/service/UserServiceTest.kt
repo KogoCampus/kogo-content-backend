@@ -152,7 +152,7 @@ class UserServiceTest {
             profileImage = testImage
         )
 
-        every { fileService.uploadImage(testImage) } returns testAttachment
+        every { fileService.uploadFile(testImage) } returns testAttachment
         every { userRepository.save(any()) } answers { firstArg() }
 
         val result = userService.update(user, update)
@@ -160,7 +160,7 @@ class UserServiceTest {
         assertThat(result.username).isEqualTo(user.username)
         assertThat(result.profileImage).isEqualTo(testAttachment)
         verify {
-            fileService.uploadImage(testImage)
+            fileService.uploadFile(testImage)
             userRepository.save(any())
         }
     }
@@ -172,7 +172,7 @@ class UserServiceTest {
             profileImage = testImage
         )
 
-        every { fileService.uploadImage(testImage) } returns testAttachment
+        every { fileService.uploadFile(testImage) } returns testAttachment
         every { userRepository.save(any()) } answers { firstArg() }
 
         val result = userService.update(user, update)
@@ -180,7 +180,7 @@ class UserServiceTest {
         assertThat(result.username).isEqualTo(update.username)
         assertThat(result.profileImage).isEqualTo(testAttachment)
         verify {
-            fileService.uploadImage(testImage)
+            fileService.uploadFile(testImage)
             userRepository.save(any())
         }
     }
@@ -202,16 +202,16 @@ class UserServiceTest {
             profileImage = newImage
         )
 
-        every { fileService.deleteImage(testAttachment.id) } just Runs
-        every { fileService.uploadImage(newImage) } returns newAttachment
+        every { fileService.deleteFile(testAttachment.id) } just Runs
+        every { fileService.uploadFile(newImage) } returns newAttachment
         every { userRepository.save(any()) } answers { firstArg() }
 
         val result = userService.update(user, update)
 
         assertThat(result.profileImage).isEqualTo(newAttachment)
         verify {
-            fileService.deleteImage(testAttachment.id)
-            fileService.uploadImage(newImage)
+            fileService.deleteFile(testAttachment.id)
+            fileService.uploadFile(newImage)
             userRepository.save(any())
         }
     }

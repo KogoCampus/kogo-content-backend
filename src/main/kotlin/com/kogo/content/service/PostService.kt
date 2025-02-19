@@ -114,8 +114,8 @@ class PostService(
 
     @Transactional
     fun create(group: Group, author: User, dto: PostDto): Post {
-        val attachments = dto.staledImageIds?.map{
-            fileService.persistImage(it)
+        val attachments = dto.fileTokens?.map{
+            fileService.persistFile(fileService.decodeFileToken(it))
         } ?: emptyList()
         val savedPost = postRepository.save(
             Post(
@@ -153,12 +153,12 @@ class PostService(
         // Images
         val imagesToKeep = post.attachments.filter { it.id !in postUpdate.attachmentDeleteIds!! }
         val imagesToDelete = post.attachments.filter{ it.id in postUpdate.attachmentDeleteIds!! }
-        val newAttachments = postUpdate.staledImageIds?.map{
-            fileService.persistImage(it)
+        val newAttachments = postUpdate.fileTokens?.map{
+            fileService.persistFile(fileService.decodeFileToken(it))
         } ?: emptyList()
         post.attachments = (imagesToKeep + newAttachments).toMutableList()
         val updatedPost = postRepository.save(post)
-        imagesToDelete.forEach { runCatching { fileService.deleteImage(it.id) }.onFailure { log.error(it) { it.message } } }
+        imagesToDelete.forEach { runCatching { fileService.deleteFile(it.id) }.onFailure { log.error(it) { it.message } } }
 
         return updatedPost
     }
@@ -166,7 +166,7 @@ class PostService(
     @Transactional
     fun delete(post: Post) {
         post.attachments.map{
-            fileService.deleteImage(it.id)
+            fileService.deleteFile(it.id)
         }
         postRepository.deleteById(post.id!!)
     }
