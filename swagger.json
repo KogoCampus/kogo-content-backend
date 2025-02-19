@@ -2118,10 +2118,11 @@
           "content": {
             "type": "string"
           },
-          "staledImageIds": {
+          "fileTokens": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "List of file tokens to validate and persist"
             }
           },
           "attachmentDeleteIds": {
@@ -2354,27 +2355,11 @@
           "content": {
             "type": "string"
           },
-          "staledImageIds": {
+          "fileTokens": {
             "type": "array",
             "items": {
               "type": "string",
-              "description": "list of ids of image files to add to the post"
-            }
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of image files to add to the post",
-              "format": "binary"
-            }
-          },
-          "videos": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "list of video files to add to the post",
-              "format": "binary"
+              "description": "List of file tokens to validate and persist"
             }
           }
         }
