@@ -719,7 +719,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
+                  "$ref": "#/components/schemas/FriendResponse"
                 }
               }
             }
@@ -1022,46 +1022,29 @@
         }
       }
     },
-    "/me/ownership/groups/{groupId}/transfer": {
-      "post": {
+    "/me/friends": {
+      "get": {
         "tags": [
           "me-controller"
         ],
-        "summary": "transfer the group ownership",
-        "operationId": "transferOwner",
-        "parameters": [
-          {
-            "name": "groupId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "transfer_to",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "get my friend info",
+        "operationId": "getFriends",
         "responses": {
           "200": {
             "description": "ok",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GroupResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendResponse"
+                  }
                 }
               }
             }
           }
         }
-      }
-    },
-    "/me/friends": {
+      },
       "post": {
         "tags": [
           "me-controller"
@@ -1081,11 +1064,7 @@
           "200": {
             "description": "ok",
             "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncludeCredentials"
-                }
-              }
+              "application/json": {}
             }
           }
         }
@@ -2202,29 +2181,10 @@
           }
         }
       },
-      "FriendData": {
-        "required": [
-          "friendUserId",
-          "nickname"
-        ],
-        "type": "object",
-        "properties": {
-          "nickname": {
-            "type": "string"
-          },
-          "friendUserId": {
-            "type": "string"
-          },
-          "appLocalData": {
-            "type": "string"
-          }
-        }
-      },
       "IncludeCredentials": {
         "required": [
           "blacklistUsers",
           "email",
-          "friends",
           "id",
           "schoolInfo",
           "username"
@@ -2248,12 +2208,6 @@
           },
           "appLocalData": {
             "type": "string"
-          },
-          "friends": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FriendData"
-            }
           },
           "blacklistUsers": {
             "type": "array",
@@ -2313,6 +2267,24 @@
             "type": "string"
           },
           "friendNickname": {
+            "type": "string"
+          }
+        }
+      },
+      "FriendResponse": {
+        "required": [
+          "friend",
+          "nickname"
+        ],
+        "type": "object",
+        "properties": {
+          "friend": {
+            "$ref": "#/components/schemas/Public"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "appLocalData": {
             "type": "string"
           }
         }
@@ -2538,14 +2510,14 @@
       "Friend": {
         "required": [
           "createdAt",
+          "friendUserId",
           "nickname",
-          "status",
-          "user"
+          "status"
         ],
         "type": "object",
         "properties": {
-          "user": {
-            "$ref": "#/components/schemas/User"
+          "friendUserId": {
+            "type": "string"
           },
           "nickname": {
             "type": "string"
