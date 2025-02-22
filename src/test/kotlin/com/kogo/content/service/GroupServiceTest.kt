@@ -18,7 +18,6 @@ import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
@@ -29,6 +28,8 @@ class GroupServiceTest {
     private val groupSearchIndex: GroupSearchIndex = mockk()
     private val fileService: FileUploaderService = mockk()
     private val courseListingService: CourseListingService = mockk()
+    private val userService: UserService = mockk()
+    private val pushNotificationService: PushNotificationService = mockk()
     private val objectMapper = ObjectMapper()
 
     private val groupService = GroupService(
@@ -37,6 +38,8 @@ class GroupServiceTest {
         groupSearchIndex = groupSearchIndex,
         fileService = fileService,
         courseListingService = courseListingService,
+        pushNotificationService = pushNotificationService,
+        userService = userService,
     )
 
     private lateinit var user: User

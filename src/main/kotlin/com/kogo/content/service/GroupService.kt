@@ -7,6 +7,8 @@ import com.kogo.content.endpoint.model.Enrollment
 import com.kogo.content.search.index.GroupSearchIndex
 import com.kogo.content.service.PushNotificationService.Companion.log
 import com.kogo.content.service.fileuploader.FileUploaderService
+import com.kogo.content.storage.model.Notification
+import com.kogo.content.storage.model.NotificationType
 import com.kogo.content.storage.model.entity.*
 import com.kogo.content.storage.repository.*
 import com.kogo.content.util.convertTo12BytesHexString
@@ -23,6 +25,8 @@ class GroupService(
     private val groupSearchIndex: GroupSearchIndex,
     private val fileService: FileUploaderService,
     private val courseListingService: CourseListingService,
+    private val pushNotificationService: PushNotificationService,
+    private val userService: UserService,
 ) : BaseEntityService<Group, String>(Group::class, groupRepository) {
 
     fun findByGroupName(groupName: String): Group? = groupRepository.findByGroupName(groupName)
@@ -97,6 +101,22 @@ class GroupService(
 
         coursesToDrop.forEach {
             unfollow(it, user)
+        }
+
+        // Alert friends about course enrollment update
+        user.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }.forEach {
+            userService.find(it.friendUserId)?.let { friend ->
+                pushNotificationService.sendPushNotification(
+                    Notification(
+                        type = NotificationType.GENERAL,
+                        recipient = friend,
+                        sender = user,
+                        title = "Friend's update",
+                        body = "Your friend ${friend.username} has updated course schedule",
+                        deepLinkUrl = PushNotificationService.DeepLink.Friend(friend.id!!).url
+                    )
+                )
+            }
         }
 
         return enrollment.base64CourseCodes.map {

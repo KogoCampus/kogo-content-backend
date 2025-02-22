@@ -32,6 +32,7 @@ class PushNotificationService(
         data class Reply(val postId: String, val commentId: String, val replyId: String) :
             DeepLink("post/$postId/comment/$commentId/reply/$replyId")
         data class Group(val groupId: String) : DeepLink("group/$groupId")
+        data class Friend(val friendUserId: String) : DeepLink("friend/${friendUserId}")
     }
 
     private val expoPushNotificationApiUrl = "https://exp.host/--/api/v2/push/send"
