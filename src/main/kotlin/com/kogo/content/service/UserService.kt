@@ -94,7 +94,7 @@ class UserService @Autowired constructor(
     }
 
     @Transactional
-    fun sendFriendRequest(user: User, targetUser: User, friendNickname: String): User {
+    fun sendFriendRequest(user: User, targetUser: User, friendNickname: String) {
         // Clean up old friend request notifications
         val notifications = pushNotificationService.getNotificationsByRecipientId(targetUser.id!!).filter {
             it.sender?.id == user.id && it.type == NotificationType.FRIEND_REQUEST
@@ -112,14 +112,15 @@ class UserService @Autowired constructor(
             )
         )
 
-        if (!user.friends.any { it.user.id == targetUser.id }) {
-            user.friends.add(Friend(targetUser, friendNickname, Friend.FriendStatus.PENDING))
+        if (!user.friends.any { it.friendUserId == targetUser.id }) {
+            user.friends.add(Friend(targetUser.id!!, friendNickname, Friend.FriendStatus.PENDING))
         }
-        return userRepository.save(user)
+
+        userRepository.save(user)
     }
 
     @Transactional
-    fun acceptFriendRequest(user: User, requestedUser: User, friendNickname: String): User {
+    fun acceptFriendRequest(user: User, requestedUser: User, friendNickname: String): Friend {
         // Clean up old friend request notifications
         val notification = pushNotificationService.getNotificationsByRecipientId(user.id!!).find {
             it.sender?.id == requestedUser.id && it.type == NotificationType.FRIEND_REQUEST
@@ -128,18 +129,19 @@ class UserService @Autowired constructor(
         notificationRepository.save(notification!!)
 
         // Update requested user's friend status to ACCEPTED
-        val requestedUserFriend = requestedUser.friends.find { it.user.id == user.id }
+        val requestedUserFriend = requestedUser.friends.find { it.friendUserId == user.id }
         if (requestedUserFriend != null) {
             requestedUserFriend.status = Friend.FriendStatus.ACCEPTED
             userRepository.save(requestedUser)
         }
 
         // Update or add friend status for current user
-        val existingFriend = user.friends.find { it.user.id == requestedUser.id }
-        if (existingFriend != null) {
-            existingFriend.status = Friend.FriendStatus.ACCEPTED
+        var newFriend = user.friends.find { it.friendUserId == requestedUser.id }
+        if (newFriend != null) {
+            newFriend.status = Friend.FriendStatus.ACCEPTED
         } else {
-            user.friends.add(Friend(requestedUser, friendNickname, Friend.FriendStatus.ACCEPTED))
+            newFriend = Friend(requestedUser.id!!, friendNickname, Friend.FriendStatus.ACCEPTED)
+            user.friends.add(newFriend)
         }
 
         // Send notification to the requested user
@@ -154,7 +156,8 @@ class UserService @Autowired constructor(
             )
         )
 
-        return userRepository.save(user)
+        userRepository.save(user)
+        return newFriend
     }
 
     fun updateLatestAccessTimestamp(user: User) = run {

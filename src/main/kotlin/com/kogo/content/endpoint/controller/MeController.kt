@@ -49,6 +49,29 @@ class MeController @Autowired constructor(
         HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(me))
     }
 
+    @GetMapping("me/friends")
+    @Operation(
+        summary = "get my friend info",
+        responses = [ApiResponse(
+            responseCode = "200",
+            description = "ok",
+            content = [Content(mediaType = "application/json", array = ArraySchema(
+                schema = Schema(implementation = FriendResponse::class)))],
+        )])
+    fun getFriends() = run {
+        val me = userService.findCurrentUser()
+
+        val friends = me.friends.filter { it.status == Friend.FriendStatus.ACCEPTED }.mapNotNull {
+            userService.find(it.friendUserId)?.let { friend -> FriendResponse(
+                friend = UserData.Public.from(friend),
+                appLocalData = friend.appLocalData,
+                nickname = it.nickname
+            ) }
+        }
+
+        HttpJsonResponse.successResponse(friends)
+    }
+
     @RequestMapping(
         path = ["me"],
         method = [RequestMethod.PUT],
@@ -109,36 +132,36 @@ class MeController @Autowired constructor(
         })
     }
 
-    @RequestMapping(
-        path = ["me/ownership/groups/{groupId}/transfer"],
-        method = [RequestMethod.POST],
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    @Operation(
-        summary = "transfer the group ownership",
-        responses = [ApiResponse(
-            responseCode = "200",
-            description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))]
-        )]
-    )
-    fun transferOwner(
-        @PathVariable("groupId") groupId: String,
-        @RequestParam("transfer_to") newOwnerId: String): ResponseEntity<*> = run {
-        val group = groupService.findOrThrow(groupId)
-        val newOwner = userService.findOrThrow(newOwnerId)
-        val originalOwner = userService.findCurrentUser()
-
-        if(group.owner?.id != originalOwner.id)
-            return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this group")
-
-        if(originalOwner.id == newOwnerId)
-            return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot transfer ownership to yourself")
-
-        groupService.follow(group, newOwner)
-        val transferredGroup = groupService.transferOwnership(group, newOwner)
-
-        HttpJsonResponse.successResponse(GroupResponse.from(transferredGroup, originalOwner))
-    }
+    //@RequestMapping(
+    //    path = ["me/ownership/groups/{groupId}/transfer"],
+    //    method = [RequestMethod.POST],
+    //    consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    //@Operation(
+    //    summary = "transfer the group ownership",
+    //    responses = [ApiResponse(
+    //        responseCode = "200",
+    //        description = "ok",
+    //        content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupResponse::class))]
+    //    )]
+    //)
+    //fun transferOwner(
+    //    @PathVariable("groupId") groupId: String,
+    //    @RequestParam("transfer_to") newOwnerId: String): ResponseEntity<*> = run {
+    //    val group = groupService.findOrThrow(groupId)
+    //    val newOwner = userService.findOrThrow(newOwnerId)
+    //    val originalOwner = userService.findCurrentUser()
+    //
+    //    if(group.owner?.id != originalOwner.id)
+    //        return HttpJsonResponse.errorResponse(errorCode = ErrorCode.USER_ACTION_DENIED, "user is not the owner of this group")
+    //
+    //    if(originalOwner.id == newOwnerId)
+    //        return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot transfer ownership to yourself")
+    //
+    //    groupService.follow(group, newOwner)
+    //    val transferredGroup = groupService.transferOwnership(group, newOwner)
+    //
+    //    HttpJsonResponse.successResponse(GroupResponse.from(transferredGroup, originalOwner))
+    //}
 
     @GetMapping("me/following")
     @Operation(
@@ -275,7 +298,7 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+            content = [Content(mediaType = "application/json")]
         )]
     )
     fun sendFriendRequest(@Valid friendRequest: FriendRequest): ResponseEntity<*> = run {
@@ -286,9 +309,9 @@ class MeController @Autowired constructor(
         if (targetUser.id == me.id)
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "You cannot send yourself to friend")
 
-        val updatedUser = userService.sendFriendRequest(me, targetUser, friendRequest.friendNickname)
+        userService.sendFriendRequest(me, targetUser, friendRequest.friendNickname)
 
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+        HttpJsonResponse.successResponse(null)
     }
 
     @RequestMapping(
@@ -301,7 +324,7 @@ class MeController @Autowired constructor(
         responses = [ApiResponse(
             responseCode = "200",
             description = "ok",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = UserData.IncludeCredentials::class))]
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = FriendResponse::class))]
         )]
     )
     fun acceptFriendRequest(@Valid acceptRequest: AcceptFriendRequest): ResponseEntity<*> = run {
@@ -309,17 +332,23 @@ class MeController @Autowired constructor(
         val requestedUser = userService.find(acceptRequest.requestedUserId)
             ?: return HttpJsonResponse.errorResponse(ErrorCode.NOT_FOUND, "User not found for the given id ${acceptRequest.requestedUserId}")
 
-        if (requestedUser.friends.any { it.user.id == me.id }) {
-            if (requestedUser.friends.any { it.user.id == me.id && it.status == Friend.FriendStatus.ACCEPTED }) {
+        if (requestedUser.friends.any { it.friendUserId == me.id }) {
+            if (requestedUser.friends.any { it.friendUserId == me.id && it.status == Friend.FriendStatus.ACCEPTED }) {
                 return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "User has already accepted a friend request for you")
             }
         } else {
             return HttpJsonResponse.errorResponse(ErrorCode.BAD_REQUEST, "This user has not made a friend request for you")
         }
 
-        val updatedUser = userService.acceptFriendRequest(me, requestedUser, acceptRequest.friendNickname)
+        val newFriend = userService.acceptFriendRequest(me, requestedUser, acceptRequest.friendNickname)
 
-        HttpJsonResponse.successResponse(UserData.IncludeCredentials.from(updatedUser))
+        HttpJsonResponse.successResponse(
+            FriendResponse(
+                friend = UserData.Public.from(requestedUser),
+                nickname = newFriend.nickname,
+                appLocalData = requestedUser.appLocalData
+            )
+        )
     }
 
     @DeleteMapping("me/profileImage")

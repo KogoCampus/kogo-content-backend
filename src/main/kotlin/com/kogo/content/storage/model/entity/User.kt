@@ -49,7 +49,7 @@ data class SchoolInfo (
 )
 
 data class Friend (
-    var user: User,
+    var friendUserId: String,
 
     var nickname: String,
 

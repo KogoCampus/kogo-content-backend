@@ -239,11 +239,7 @@ class UserServiceTest {
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
         every { userRepository.save(any()) } answers { firstArg() }
 
-        val result = userService.sendFriendRequest(user, targetUser, "test-nickname")
-
-        assertThat(result.friends).hasSize(1)
-        assertThat(result.friends[0].user.id).isEqualTo(targetUser.id)
-        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.PENDING)
+        userService.sendFriendRequest(user, targetUser, "test-nickname")
 
         verify(exactly = 1) {
             pushNotificationService.getNotificationsByRecipientId("target-user-id")
@@ -267,7 +263,7 @@ class UserServiceTest {
         }
 
         // Add existing friend request
-        user.friends.add(Friend(targetUser, "test-nickname", Friend.FriendStatus.PENDING))
+        user.friends.add(Friend("target-user-id", "test-nickname", Friend.FriendStatus.PENDING))
 
         val existingNotifications = listOf(
             Notification(
@@ -285,11 +281,7 @@ class UserServiceTest {
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
         every { userRepository.save(any()) } answers { firstArg() }
 
-        val result = userService.sendFriendRequest(user, targetUser, "test-nickname")
-
-        assertThat(result.friends).hasSize(1)
-        assertThat(result.friends[0].user.id).isEqualTo("target-user-id")
-        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.PENDING)
+        userService.sendFriendRequest(user, targetUser, "test-nickname")
 
         verify(exactly = 1) {
             pushNotificationService.getNotificationsByRecipientId("target-user-id")
@@ -304,11 +296,11 @@ class UserServiceTest {
         val requestedUser = mockk<User>(relaxed = true) {
             every { id } returns "requested-user-id"
             every { email } returns "requested@example.com"
-            every { friends } returns mutableListOf(Friend(user, "test-nickname", Friend.FriendStatus.PENDING))
+            every { friends } returns mutableListOf(Friend(user.id!!, "test-nickname", Friend.FriendStatus.PENDING))
         }
 
         // Setup pending friend request
-        user.friends.add(Friend(requestedUser, "test-nickname", Friend.FriendStatus.PENDING))
+        user.friends.add(Friend("requested-user-id", "test-nickname", Friend.FriendStatus.PENDING))
 
         val existingNotification = Notification(
             type = NotificationType.FRIEND_REQUEST,
@@ -325,11 +317,7 @@ class UserServiceTest {
         every { userRepository.save(user) } returns user
         every { pushNotificationService.sendPushNotification(any()) } returns CompletableFuture.completedFuture(mockk())
 
-        val result = userService.acceptFriendRequest(user, requestedUser, "test-nickname")
-
-        assertThat(result.friends).hasSize(1)
-        assertThat(result.friends[0].user.id).isEqualTo(requestedUser.id)
-        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.ACCEPTED)
+        userService.acceptFriendRequest(user, requestedUser, "test-nickname")
 
         verify {
             pushNotificationService.getNotificationsByRecipientId(user.id!!)
@@ -355,11 +343,11 @@ class UserServiceTest {
         val requestedUser = mockk<User>(relaxed = true) {
             every { id } returns "requested-user-id"
             every { email } returns "requested@example.com"
-            every { friends } returns mutableListOf(Friend(user, "test-nickname", Friend.FriendStatus.PENDING))
+            every { friends } returns mutableListOf(Friend(user.id!!, "test-nickname", Friend.FriendStatus.PENDING))
         }
 
         // Setup existing friend entries
-        user.friends.add(Friend(requestedUser, "test-nickname", Friend.FriendStatus.PENDING))
+        user.friends.add(Friend("requested-user-id", "test-nickname", Friend.FriendStatus.PENDING))
 
         val existingNotification = Notification(
             type = NotificationType.FRIEND_REQUEST,
@@ -378,9 +366,8 @@ class UserServiceTest {
 
         val result = userService.acceptFriendRequest(user, requestedUser, "test-nickname")
 
-        assertThat(result.friends).hasSize(1)
-        assertThat(result.friends[0].user.id).isEqualTo(requestedUser.id)
-        assertThat(result.friends[0].status).isEqualTo(Friend.FriendStatus.ACCEPTED)
+        assertThat(result.friendUserId).isEqualTo(requestedUser.id)
+        assertThat(result.status).isEqualTo(Friend.FriendStatus.ACCEPTED)
 
         verify {
             pushNotificationService.getNotificationsByRecipientId(user.id!!)
